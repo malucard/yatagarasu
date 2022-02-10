@@ -88,11 +88,11 @@ function setup(receivedMessage, content, mafiaPlayer, everyone) {
 				}
 				secret.overwritePermissions(players[i], {VIEW_CHANNEL: true, READ_MESSAGE_HISTORY: true});
 				if(roles[i][1] !== roles[i][0]) {
-					mafia += "\n" + roles[i][0] + "/" + roles[i][1] + "; " + players[i].user.username;
-					mafia2 += "\n" + players[i].user.username + "; " + roles[i][0] + "/" + roles[i][1];
+					mafia += "\n" + roles[i][0] + "/" + roles[i][1] + ": " + players[i].user.username;
+					mafia2 += "\n" + players[i].user.username + ": " + roles[i][0] + "/" + roles[i][1];
 				} else {
-					mafia += "\n" + roles[i][0] + "; " + players[i].user.username;
-					mafia2 += "\n" + players[i].user.username + "; " + roles[i][0];
+					mafia += "\n" + roles[i][0] + ": " + players[i].user.username;
+					mafia2 += "\n" + players[i].user.username + ": " + roles[i][0];
 				}
 				setTimeout(() => {
 					secret.send("<@" + players[i].id + ">, You are a " + roles[i][1] + ", number " + (i + 1) + ".");
@@ -104,27 +104,27 @@ function setup(receivedMessage, content, mafiaPlayer, everyone) {
 				}
 				secret.overwritePermissions(players[i], {VIEW_CHANNEL: false, READ_MESSAGE_HISTORY: false});
 				if(roles[i][1] !== roles[i][0]) {
-					third += "\n" + roles[i][0] + "/" + roles[i][1] + "; " + players[i].user.username;
-					third2 += "\n" + players[i].user.username + "; " + roles[i][0] + "/" + roles[i][1];
+					third += "\n" + roles[i][0] + "/" + roles[i][1] + ": " + players[i].user.username;
+					third2 += "\n" + players[i].user.username + ": " + roles[i][0] + "/" + roles[i][1];
 				} else {
-					third += "\n" + roles[i][0] + "; " + players[i].user.username;
-					third2 += "\n" + players[i].user.username + "; " + roles[i][0];
+					third += "\n" + roles[i][0] + ": " + players[i].user.username;
+					third2 += "\n" + players[i].user.username + ": " + roles[i][0];
 				}
 				players[i].send("You are a " + roles[i][1] + ", number " + (i + 1) + ".\n\n\
 If you're a power role, please send your actions to the game master, not to me!");
 			} else {
 				if(roles[i][1] !== roles[i][0]) {
-					village += "\n" + roles[i][0] + "/" + roles[i][1] + "; " + players[i].user.username;
-					village2 += "\n" + players[i].user.username + "; " + roles[i][0] + "/" + roles[i][1];
+					village += "\n" + roles[i][0] + "/" + roles[i][1] + ": " + players[i].user.username;
+					village2 += "\n" + players[i].user.username + ": " + roles[i][0] + "/" + roles[i][1];
 				} else {
-					village += "\n" + roles[i][0] + "; " + players[i].user.username;
-					village2 += "\n" + players[i].user.username + "; " + roles[i][0];
+					village += "\n" + roles[i][0] + ": " + players[i].user.username;
+					village2 += "\n" + players[i].user.username + ": " + roles[i][0];
 				}
 				secret.overwritePermissions(players[i], {VIEW_CHANNEL: false, READ_MESSAGE_HISTORY: false});
 				players[i].send("You are a " + roles[i][1] + ", number " + (i + 1) + ".\n\n\
 If you're a power role, please send your actions to the game master, not to me!");
 			}
-			text += "\n" + (i + 1) + "; " + players[i].user.username;
+			text += "\n" + (i + 1) + ": " + players[i].user.username;
 		}
 		receivedMessage.member.send(village + mafia + third + village2 + mafia2 + third2 + "\n---------------------------------------------");
 		receivedMessage.member.send(text);
@@ -150,10 +150,10 @@ client.on("message", async receivedMessage => {
 			let mafiaPlayer = receivedMessage.guild.roles.find(role => role.name === "Mafia Player");
 			let master = receivedMessage.guild.roles.find(role => role.name === "Mafia Master");
 			let everyone = receivedMessage.guild.roles.find(role => role.name === "@everyone");
-			if(receivedMessage.content === ";startmafia" && receivedMessage.member.roles.has(moderator.id)) {
+			if(receivedMessage.content === ":startmafia" && receivedMessage.member.roles.has(moderator.id)) {
 				stopped = false;
 				receivedMessage.react("497430068331544577");
-			} else if(receivedMessage.content === ";stopmafia" && receivedMessage.member.roles.has(moderator.id)) {
+			} else if(receivedMessage.content === ":stopmafia" && receivedMessage.member.roles.has(moderator.id)) {
 				stopped = true;
 				receivedMessage.react("497430068331544577");
 			} else if(!stopped) {
@@ -164,21 +164,21 @@ client.on("message", async receivedMessage => {
 						"<nobody>";	
 					votes[user1] = user2;
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";removelynch" && receivedMessage.member.roles.has(mafiaPlayer.id)) {
+				} else if(receivedMessage.content === ":removelynch" && receivedMessage.member.roles.has(mafiaPlayer.id)) {
 					delete votes[receivedMessage.author.username];
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";listlynch") {
+				} else if(receivedMessage.content === ":listlynch") {
 					receivedMessage.reply(listLynch(mafiaPlayer.members.size));
-				} else if(receivedMessage.content === ";resetlynch" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":resetlynch" && receivedMessage.member.roles.has(master.id)) {
 					votes = {};
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";setup" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":setup" && receivedMessage.member.roles.has(master.id)) {
 					setup(receivedMessage, savedsetup, mafiaPlayer, everyone);
 					savedsetup = undefined;
-				} else if(receivedMessage.content.startsWith(";setup") && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content.startsWith(":setup") && receivedMessage.member.roles.has(master.id)) {
 					setup(receivedMessage, receivedMessage.content, mafiaPlayer, everyone);
-				} else if(receivedMessage.content.match(/^;startsignup(\s+[0-9]+)?$/) && receivedMessage.member.roles.has(master.id)) {
-					let matches = receivedMessage.content.match(/^;startsignup(?:\s+([0-9]+))?$/);
+				} else if(receivedMessage.content.match(/^:startsignup(\s+[0-9]+)?$/) && receivedMessage.member.roles.has(master.id)) {
+					let matches = receivedMessage.content.match(/^:startsignup(?:\s+([0-9]+))?$/);
 					signupsize = matches[1]? parseInt(matches[1]): 0;
 					signup = true;
 					if(signupsize !== 0) {
@@ -186,14 +186,14 @@ client.on("message", async receivedMessage => {
 					} else {
 						receivedMessage.channel.send("Everybody! Signup for a new round of Mafia has started! If you want to join, type `:signup`.");
 					}
-				} else if(receivedMessage.content === ";standoff") {
+				} else if(receivedMessage.content === ":standoff") {
 					receivedMessage.reply("https://pbs.twimg.com/media/DYYRl-XVAAEalDH.jpg");
-				} else if(receivedMessage.content === ";standoffgif") {
+				} else if(receivedMessage.content === ":standoffgif") {
 					receivedMessage.reply("https://thumbs.gfycat.com/SmoothGraciousHomalocephale-size_restricted.gif");
-				} else if(receivedMessage.content === ";endsignup" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":endsignup" && receivedMessage.member.roles.has(master.id)) {
 					signup = false;
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";signup") {
+				} else if(receivedMessage.content === ":signup") {
 					if(signup) {
 						await receivedMessage.member.addRole(mafiaPlayer);
 						if(signupsize !== 0 && mafiaPlayer.members.size >= signupsize) {
@@ -202,13 +202,13 @@ client.on("message", async receivedMessage => {
 						}
 						receivedMessage.react("497430068331544577");
 					}
-				} else if(receivedMessage.content === ";signout" && receivedMessage.member.roles.has(mafiaPlayer.id)) {
+				} else if(receivedMessage.content === ":signout" && receivedMessage.member.roles.has(mafiaPlayer.id)) {
 					if(signup) {
 						receivedMessage.member.removeRole(mafiaPlayer);
 						receivedMessage.react("497430068331544577");
 					}
-				} else if(receivedMessage.content.match(/^;timer [0-9]+$/) && receivedMessage.member.roles.has(master.id)) {
-					let ms = parseInt(receivedMessage.content.match(/^;timer ([0-9]+)$/)[1]) * 60000;
+				} else if(receivedMessage.content.match(/^:timer [0-9]+$/) && receivedMessage.member.roles.has(master.id)) {
+					let ms = parseInt(receivedMessage.content.match(/^:timer ([0-9]+)$/)[1]) * 60000;
 					if(timers) {
 						for(let timer of timers) {
 							clearTimeout(timer);
@@ -261,7 +261,7 @@ client.on("message", async receivedMessage => {
 						}, ms - 10000)
 					];
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";stoptimer" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":stoptimer" && receivedMessage.member.roles.has(master.id)) {
 					if(timers) {
 						for(let timer of timers) {
 							clearTimeout(timer);
@@ -269,12 +269,12 @@ client.on("message", async receivedMessage => {
 						timers = undefined;
 						receivedMessage.react("497430068331544577");
 					}
-				} else if(receivedMessage.content === ";startgame" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":startgame" && receivedMessage.member.roles.has(master.id)) {
 					signup = false;
 					votes = {};
 					receivedMessage.channel.overwritePermissions(everyone, {SEND_MESSAGES: false, ADD_REACTIONS: false});
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";endgame" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":endgame" && receivedMessage.member.roles.has(master.id)) {
 					signup = false;
 					if(timers) {
 						for(let timer of timers) {
@@ -296,13 +296,13 @@ client.on("message", async receivedMessage => {
 					receivedMessage.channel.overwritePermissions(everyone, {SEND_MESSAGES: true, ADD_REACTIONS: true});
 					receivedMessage.channel.overwritePermissions(mafiaPlayer, {SEND_MESSAGES: true, ADD_REACTIONS: true});
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";silence" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":silence" && receivedMessage.member.roles.has(master.id)) {
 					receivedMessage.channel.overwritePermissions(mafiaPlayer, {SEND_MESSAGES: false, ADD_REACTIONS: false});
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";nosilence" && receivedMessage.member.roles.has(master.id)) {
+				} else if(receivedMessage.content === ":nosilence" && receivedMessage.member.roles.has(master.id)) {
 					receivedMessage.channel.overwritePermissions(mafiaPlayer, {SEND_MESSAGES: true, ADD_REACTIONS: true});
 					receivedMessage.react("497430068331544577");
-				} else if(receivedMessage.content === ";listlunch") {
+				} else if(receivedMessage.content === ":listlunch") {
 					let foods = [
 						"spaghetti",
 						"rice",
