@@ -1,6 +1,6 @@
 import Discord = require("discord.js");
-import {SetupInstance} from "./Setup";
-import {Role, RoleInstance} from "./Role";
+import { SetupInstance } from "./Setup";
+import { Role, RoleInstance } from "./Role";
 
 export default class Player {
 	number: number;

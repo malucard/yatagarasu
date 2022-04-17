@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.set_setup = exports.setup = void 0;
 const http = require("http");
 const Discord = require("discord.js");
 const parser = require("discord-command-parser");
@@ -10,7 +11,7 @@ const server = http.createServer((req, res) => {
     res.end();
 });
 server.listen();
-db_1.init_db();
+(0, db_1.init_db)();
 function set_setup(s) {
     exports.setup = s;
 }
@@ -29,7 +30,7 @@ client.on("error", (error) => {
     console.error(error.message);
 });
 client.on("message", (message) => {
-    if (!db_1.config_db || !((message.channel instanceof Discord.TextChannel && db_1.is_mafia_channel(message.channel)) || message.channel instanceof Discord.DMChannel)) {
+    if (!db_1.config_db || !((message.channel instanceof Discord.TextChannel && (0, db_1.is_mafia_channel)(message.channel)) || message.channel instanceof Discord.DMChannel)) {
         return;
     }
     let parsed = parser.parse(message, ";;");

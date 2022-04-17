@@ -1,7 +1,7 @@
 import Discord = require("discord.js");
 import ChannelManager = require("./ChannelManager");
 import Player from "./Player";
-import {get_confirm_react, get_error_react} from "./db"
+import { get_confirm_react, get_error_react } from "./db"
 
 export default class Env {
 	players: Player[];
@@ -20,16 +20,16 @@ export default class Env {
 	clear_member_overwrites(channel: Discord.TextChannel) {
 		ChannelManager.clear_member_overwrites(channel);
 	}
-	
+
 	get_confirm_react(): string {
 		return get_confirm_react();
 	}
-	
+
 	get_error_react(): string {
 		return get_error_react();
 	}
-	
+
 	get_player(n: number | string) {
-		return typeof n === "string"? this.players.find(x => x.id === n): this.players.find(x => x.number === n);
+		return typeof n === "string" ? this.players.find(x => x.id === n) : this.players.find(x => x.number === n);
 	}
 }

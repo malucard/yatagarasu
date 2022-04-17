@@ -2152,19 +2152,18 @@ const setups = {
         daystart: true
     }
 };
-mclient.connect((error) => {
-    if (error) {
-        client.destroy();
-        mclient.close();
-        console.error("Failed to connect to Mongo server");
-        console.error(error.message);
-    }
-    else {
-        console.log("Connected to Mongo server");
-        let db = mclient.db("keebot");
-        collection = db.collection("mafia");
-    }
-});
+// mclient.connect((error) => {
+// 	if(error) {
+// 		client.destroy();
+// 		mclient.close();
+// 		console.error("Failed to connect to Mongo server");
+// 		console.error(error.message);
+// 	} else {
+// 		console.log("Connected to Mongo server");
+// 		let db = mclient.db("keebot");
+// 		collection = db.collection("mafia");
+// 	}
+// });
 client.on("ready", () => {
     console.log("Connected as " + client.user.tag);
 });

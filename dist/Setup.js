@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SetupInstance = exports.create_setup = exports.setups = exports.Setup = void 0;
 const db_1 = require("./db");
 const Env_1 = __importDefault(require("./Env"));
 const Role_1 = require("./Role");
@@ -163,8 +164,8 @@ class SetupInstance extends Env_1.default {
         this.player_roles = setup.player_roles;
         this.opt = setup.opt;
         this.channel = channel;
-        this.secret_channel = db_1.get_secret_channel(channel.guild);
-        this.mafia_player = db_1.get_player_role(channel.guild);
+        this.secret_channel = (0, db_1.get_secret_channel)(channel.guild);
+        this.mafia_player = (0, db_1.get_player_role)(channel.guild);
         this.isDay = false;
         this.turn = 0;
         if (exports.setups.Classic) {

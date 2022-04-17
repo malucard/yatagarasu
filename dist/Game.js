@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Game = exports.Arg = void 0;
 var Arg;
 (function (Arg) {
     Arg[Arg["User"] = 0] = "User";

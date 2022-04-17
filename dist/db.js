@@ -9,6 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.get_secret_channel = exports.is_mafia_channel = exports.has_perms = exports.get_player_role = exports.get_error_react = exports.get_confirm_react = exports.random_in = exports.get_db = exports.save_roles = exports.init_db = exports.roles_db = exports.config_db = void 0;
 const mongodb_1 = require("mongodb");
 let client;
 let collection;

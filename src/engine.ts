@@ -9,7 +9,7 @@ interface Client {
 }
 
 class LocalClient implements Client {
-	commands: {[name: string]: Arg[]} = {};
+	commands: { [name: string]: Arg[] } = {};
 
 	add_command(name: string): void {
 		this.commands[name] = [Arg.Player];
@@ -32,11 +32,11 @@ class WSServer {
 	ws: ws.Server;
 
 	constructor() {
-		this.ws = new ws.Server({port: 42066});
+		this.ws = new ws.Server({ port: 42066 });
 		this.ws.on("connection", () => {
 
 		});
 	}
 
-	
+
 }

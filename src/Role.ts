@@ -1,7 +1,7 @@
 import Discord = require("discord.js");
 import Parser = require("discord-command-parser");
 import Env from "./Env";
-import {SetupInstance} from "./Setup";
+import { SetupInstance } from "./Setup";
 import Player from "./Player";
 
 export class Role {
@@ -18,7 +18,7 @@ export class Role {
 	}
 }
 
-export let roles: {[name: string]: Role} = {
+export let roles: { [name: string]: Role } = {
 	Blue: new Role("Blue", new Function(`
 		this.start = () => {
 			this.player.member.send(this.fmt("You are a %r, number %n."));
@@ -103,7 +103,7 @@ export class RoleInstance extends Env {
 	name: string;
 	player: Player;
 	setup: SetupInstance;
-	dm_commands: {[name: string]: (args: string[], msg: Discord.Message) => void} = {};
+	dm_commands: { [name: string]: (args: string[], msg: Discord.Message) => void } = {};
 	start: () => void;
 	day: () => void;
 	night: () => void;
@@ -129,18 +129,18 @@ export class RoleInstance extends Env {
 
 	receive_dm(msg: Discord.Message) {
 		let parsed = Parser.parse(msg, ";");
-		if(parsed.success && parsed.command in this.dm_commands) {
+		if (parsed.success && parsed.command in this.dm_commands) {
 			this.dm_commands[parsed.command](parsed.arguments, parsed.message);
 		}
 	}
-	
+
 	others(): Player[] {
 		return this.players.filter(x => x.id !== this.player.id);
 	}
 
 	fmt(str: string): string {
 		return this.setup.fmt(str.replace(/%r/g, this.name).replace(/%m/g, this.player.name)
-		.replace(/%n/g, this.player.number.toString()).replace(/%id/g, this.player.id)
-		.replace(/%others/g, this.others().map(x => x.number + "- " + x.name).join("\n")));
+			.replace(/%n/g, this.player.number.toString()).replace(/%id/g, this.player.id)
+			.replace(/%others/g, this.others().map(x => x.number + "- " + x.name).join("\n")));
 	}
 }

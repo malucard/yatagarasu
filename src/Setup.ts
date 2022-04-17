@@ -1,8 +1,8 @@
 import Discord = require("discord.js");
-import {get_player_role, get_secret_channel} from "./db";
+import { get_player_role, get_secret_channel } from "./db";
 import ChannelManager = require("./ChannelManager");
 import Env from "./Env";
-import {Role, roles} from "./Role";
+import { Role, roles } from "./Role";
 import Player from "./Player";
 
 export class Setup {
@@ -26,7 +26,7 @@ export class Setup {
 	}
 }
 
-export let setups: {[name: string]: Setup} = {
+export let setups: { [name: string]: Setup } = {
 	Classic: new Setup("Classic", [[roles.Blue], [roles.Blue], [roles.Blue], [roles.Doc], [roles.Cop], [roles.Vanilla], [roles.Vanilla]], [], new Function(`
 		this.start = () => {
 			for(let p of this.players) {
@@ -169,8 +169,8 @@ export class SetupInstance extends Env {
 	isDay: boolean;
 	turn: number;
 	start: () => void;
-	commands: {[name: string]: (args: string[], player: Player, msg: Discord.Message) => void} = {};
-	dm_commands: {[name: string]: (args: string[], player: Player, msg: Discord.Message) => void} = {};
+	commands: { [name: string]: (args: string[], player: Player, msg: Discord.Message) => void } = {};
+	dm_commands: { [name: string]: (args: string[], player: Player, msg: Discord.Message) => void } = {};
 
 	constructor(channel: Discord.TextChannel, players: Player[], setup: Setup) {
 		super();
@@ -183,12 +183,12 @@ export class SetupInstance extends Env {
 		this.mafia_player = get_player_role(channel.guild);
 		this.isDay = false;
 		this.turn = 0;
-		if(setups.Classic) {
+		if (setups.Classic) {
 			setups.Classic.define.call(this);
 		}
 		setup.define.call(this);
 	}
-	
+
 	kill(player: Player) {
 		player.role.die("lynch");
 		this.players = this.players.filter(x => x !== player);

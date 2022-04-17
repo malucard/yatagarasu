@@ -3,11 +3,11 @@ export enum Arg {
 }
 
 export class Game {
-	commands: {[name: string]: [string[], () => void]};
+	commands: { [name: string]: [string[], () => void] };
 
 	add_command(name: string, args: string[], run: () => void) {
 		this.commands[name] = [args, run];
 	}
 
-	
+
 }

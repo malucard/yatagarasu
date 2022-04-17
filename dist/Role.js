@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RoleInstance = exports.create_role = exports.roles = exports.Role = void 0;
 const Parser = require("discord-command-parser");
 const Env_1 = __importDefault(require("./Env"));
 class Role {

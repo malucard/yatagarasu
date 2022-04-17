@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.clear_member_overwrites = exports.set_can_see = exports.set_can_speak = exports.get_everyone = void 0;
 function get_everyone(guild) {
     return guild.roles.find((x) => x.name === "@everyone");
 }

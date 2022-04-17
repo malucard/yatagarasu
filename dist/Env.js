@@ -13,10 +13,10 @@ class Env {
         ChannelManager.clear_member_overwrites(channel);
     }
     get_confirm_react() {
-        return db_1.get_confirm_react();
+        return (0, db_1.get_confirm_react)();
     }
     get_error_react() {
-        return db_1.get_error_react();
+        return (0, db_1.get_error_react)();
     }
     get_player(n) {
         return typeof n === "string" ? this.players.find(x => x.id === n) : this.players.find(x => x.number === n);
