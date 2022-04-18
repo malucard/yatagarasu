@@ -31,6 +31,9 @@ export const death_messages = [
     "%pr's body was found wearing a fancy red suit and sunglasses this morning."
 ];
 
+const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
+const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
+
 export const roles: { [name: string]: Role } = {
     Blue: {
         name: "Blue",
@@ -888,7 +891,7 @@ export const roles: { [name: string]: Role } = {
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
-                secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true })
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Vanilla, number ${player.number}.`);
                 }, 2000);
@@ -901,14 +904,14 @@ export const roles: { [name: string]: Role } = {
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
-                secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true })
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 player.actionDone = true;
             });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
-                secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false })
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
     },
@@ -918,29 +921,29 @@ export const roles: { [name: string]: Role } = {
         side: Side.MAFIA,
         vengeful: true,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            setTimeout(() => {
-                secret.send("<@" + member.id + ">, You are a Vanilla, number " + player.number + ".");
-            }, 2000);
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                setTimeout(() => {
+                    secret.send(`<@${member.id}>, You are a Vengeful Vanilla, number ${player.number}.`);
+                }, 2000);
+            });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
-            if (overwrites) {
-                overwrites.delete();
-            }
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+                secret.permissionOverwrites.delete(member);
+            });
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            player.actionDone = true;
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                player.actionDone = true;
+            });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
+            });
         }
     },
 
@@ -948,79 +951,81 @@ export const roles: { [name: string]: Role } = {
         name: "Hooker",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            setTimeout(() => {
-                secret.send("<@" + member.id + ">, You are a Hooker, number " + player.number + ".");
-            }, 2000);
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                setTimeout(() => {
+                    secret.send(`<@${member.id}>, You are a Hooker, number ${player.number}.`);
+                }, 2000);
+            });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
-            if (overwrites) {
-                overwrites.delete();
-            }
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+                secret.permissionOverwrites.delete(member);
+            });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             other.hookDecided = [];
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            secret.send("<@" + member.id + "> Use `;hook <number>` to hook someone, or just `;hook` to not hook tonight.");
-            let collector = secret.createMessageCollector((message: Discord.Message) =>
-                message.content.match(/^;hook( [0-9]+)?$/) && message.author.id === member.id
-            );
-            collector.on("collect", (message, collector) => {
-                let match = message.content.match(/^;hook ([0-9]+)$/);
-                if (match) {
-                    let n = parseInt(match[1]);
-                    for (let target of other.players) {
-                        if (target.number === n) {
-                            collector.stop();
-                            player.data = null;
-                            target.hooked = true;
-                            for (let cb of other.hookDecided) {
-                                cb();
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS);
+                secret.send(`<@${member.id}> Use \`;hook <number>\` to hook someone, or just \`;hook\` to not hook tonight.`);
+                let collector = secret.createMessageCollector({
+                    filter: (message: Discord.Message) =>
+                        message.content.match(/^;hook( [0-9]+)?$/) && message.author.id === member.id
+                });
+                collector.on("collect", (message: Discord.Message) => {
+                    let match = message.content.match(/^;hook ([0-9]+)$/);
+                    if (match) {
+                        let n = parseInt(match[1]);
+                        for (let target of other.players) {
+                            if (target.number === n) {
+                                collector.stop();
+                                player.data = null;
+                                target.hooked = true;
+                                for (let cb of other.hookDecided) {
+                                    cb();
+                                }
+                                other.hookDecided = null;
+                                message.reply(`You decided to hook number ${target.number}, ${target.name}.`);
+                                player.actionDone = true;
+                                updateNight();
                             }
-                            other.hookDecided = null;
-                            message.reply("You decided to hook number " + target.number + ", " + target.name + ".");
-                            player.actionDone = true;
-                            updateNight();
                         }
+                    } else if (message.content === ";hook") {
+                        collector.stop();
+                        player.data = null;
+                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
+                        secret.send(`<@${member.id}> You decided to hook no one.`);
+                        for (let cb of other.hookDecided) {
+                            cb();
+                        }
+                        other.hookDecided = null;
+                        player.actionDone = true;
+                        updateNight();
                     }
-                } else if (message.content === ";hook") {
-                    collector.stop();
-                    player.data = null;
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> You decided to hook no one.");
-                    for (let cb of other.hookDecided) {
-                        cb();
-                    }
-                    other.hookDecided = null;
-                    player.actionDone = true;
-                    updateNight();
-                }
+                });
+                player.data = collector;
             });
-            player.data = collector;
         },
         endNight: (member: Discord.GuildMember, player: Player, other) => {
             if (player.data) {
                 if (!player.actionDone) {
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> Hook timed out. You hook no one.");
-                    player.actionDone = true;
-                    for (let cb of other.hookDecided) {
-                        cb();
-                    }
-                    other.hookDecided = null;
+                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                        secret.send(`<@${member.id}> Hook timed out. You hook no one.`);
+                        player.actionDone = true;
+                        for (let cb of other.hookDecided) {
+                            cb();
+                        }
+                        other.hookDecided = null;
+                    });
                 }
                 player.data.stop();
                 player.data = null;
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
+            });
         }
     },
 
@@ -1029,29 +1034,29 @@ export const roles: { [name: string]: Role } = {
         side: Side.MAFIA,
         fakeSide: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            setTimeout(() => {
-                secret.send("<@" + member.id + ">, You are a Godfather, number " + player.number + ".");
-            }, 2000);
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                setTimeout(() => {
+                    secret.send(`<@${member.id}>, You are a Godfather, number ${player.number}.`);
+                }, 2000);
+            });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
-            if (overwrites) {
-                overwrites.delete();
-            }
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+                secret.permissionOverwrites.delete(member);
+            });
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            player.actionDone = true;
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                player.actionDone = true;
+            });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
+            });
         }
     },
 
@@ -1059,71 +1064,73 @@ export const roles: { [name: string]: Role } = {
         name: "Janitor",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            setTimeout(() => {
-                secret.send("<@" + member.id + ">, You are a Janitor, number " + player.number + ".");
-            }, 2000);
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                setTimeout(() => {
+                    secret.send(`<@${member.id}>, You are a Janitor, number ${player.number}.`);
+                }, 2000);
+            });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
-            if (overwrites) {
-                overwrites.delete();
-            }
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+                secret.permissionOverwrites.delete(member);
+            });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            if (player.janitorCleaned) {
-                secret.send("<@" + member.id + "> You already cleaned someone. You can't clean anymore.");
-                player.actionDone = true;
-                return;
-            }
-            secret.send("<@" + member.id + "> Use `;clean <number>` to clean someone, or just `;clean` to not clean tonight. **You can only do this successfully once.**");
-            let collector = secret.createMessageCollector((message: Discord.Message) =>
-                message.content.match(/^;clean( [0-9]+)?$/) && message.author.id === member.id
-            );
-            collector.on("collect", (message, collector) => {
-                let match = message.content.match(/^;clean ([0-9]+)$/);
-                if (match) {
-                    let n = parseInt(match[1]);
-                    for (let target of other.players) {
-                        if (target.number === n) {
-                            collector.stop();
-                            player.data = null;
-                            target.cleaned = true;
-                            message.reply("You decided to clean number " + target.number + ", " + target.name + ".");
-                            player.actionDone = true;
-                            updateNight();
-                        }
-                    }
-                } else if (message.content === ";clean") {
-                    collector.stop();
-                    player.data = null;
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> You decided to clean no one.");
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.edit(member, TALK_REACT_PERMS);
+                if (player.janitorCleaned) {
+                    secret.send(`<@${member.id}> You already cleaned someone. You can't clean anymore.`);
                     player.actionDone = true;
-                    updateNight();
+                    return;
                 }
+                secret.send(`<@${member.id}> Use \`;clean <number>\` to clean someone, or just \`;clean\` to not clean tonight. **You can only do this successfully once.**`);
+                let collector = secret.createMessageCollector({
+                    filter: (message: Discord.Message) =>
+                        message.content.match(/^;clean( [0-9]+)?$/) && message.author.id === member.id
+                });
+                collector.on("collect", (message: Discord.Message) => {
+                    let match = message.content.match(/^;clean ([0-9]+)$/);
+                    if (match) {
+                        let n = parseInt(match[1]);
+                        for (let target of other.players) {
+                            if (target.number === n) {
+                                collector.stop();
+                                player.data = null;
+                                target.cleaned = true;
+                                message.reply(`You decided to clean number ${target.number}, ${target.name}.`);
+                                player.actionDone = true;
+                                updateNight();
+                            }
+                        }
+                    } else if (message.content === ";clean") {
+                        collector.stop();
+                        player.data = null;
+                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
+                        secret.send(`<@${member.id}> You decided to clean no one.`);
+                        player.actionDone = true;
+                        updateNight();
+                    }
+                });
+                player.data = collector;
             });
-            player.data = collector;
         },
         endNight: (member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 if (!player.actionDone) {
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> Clean timed out. You clean no one.");
-                    player.actionDone = true;
+                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                        secret.send(`<@${member.id}> Clean timed out. You clean no one.`);
+                        player.actionDone = true;
+                    });
                 }
                 player.data.stop();
                 player.data = null;
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
+            });
         }
     },
 
@@ -1131,74 +1138,76 @@ export const roles: { [name: string]: Role } = {
         name: "Illusionist",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            setTimeout(() => {
-                secret.send("<@" + member.id + ">, You are an Illusionist, number " + player.number + ".");
-            }, 2000);
-            player.gun = true;
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
+                setTimeout(() => {
+                    secret.send(`<@${member.id}>, You are an Illusionist, number ${player.number}.`);
+                }, 2000);
+                player.gun = true;
+            });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
-            if (overwrites) {
-                overwrites.delete();
-            }
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+                secret.permissionOverwrites.delete(member);
+            });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
-            if (!player.gun) {
-                secret.send("<@" + member.id + "> You don't have a gun. You can't frame someone.");
-                player.actionDone = true;
-                return;
-            }
-            secret.send("<@" + member.id + "> Use `;frame <number>` to frame someone, or just `;frame` to not frame someone tonight. If you shoot someone tomorrow, that person will be shown as the shooter. If you don't frame someone, you will be revealed as the shooter.");
-            let collector = secret.createMessageCollector((message: Discord.Message) =>
-                message.content.match(/^;frame( [0-9]+)?$/) && message.author.id === member.id
-            );
-            collector.on("collect", (message, collector) => {
-                let match = message.content.match(/^;frame ([0-9]+)$/);
-                if (match) {
-                    let n = parseInt(match[1]);
-                    for (let target of other.players) {
-                        if (target.number === n) {
-                            collector.stop();
-                            player.data = null;
-                            player.frame = target.number;
-                            message.reply("You decided to frame number " + target.number + ", " + target.name + ".");
-                            player.actionDone = true;
-                            updateNight();
-                        }
-                    }
-                } else if (message.content === ";frame") {
-                    collector.stop();
-                    player.data = null;
-                    player.frame = 0;
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> You decided to frame no one.");
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.edit(member, TALK_REACT_PERMS);
+                if (!player.gun) {
+                    secret.send(`<@${member.id}> You don't have a gun. You can't frame someone.`);
                     player.actionDone = true;
-                    updateNight();
+                    return;
                 }
+                secret.send(`<@${member.id}> Use \`;frame <number>\` to frame someone, or just \`;frame\` to not frame someone tonight. If you shoot someone tomorrow, that person will be shown as the shooter. If you don't frame someone, you will be revealed as the shooter.`);
+                let collector = secret.createMessageCollector({
+                    filter: (message: Discord.Message) =>
+                        message.content.match(/^;frame( [0-9]+)?$/) && message.author.id === member.id
+                });
+                collector.on("collect", (message: Discord.Message) => {
+                    let match = message.content.match(/^;frame ([0-9]+)$/);
+                    if (match) {
+                        let n = parseInt(match[1]);
+                        for (let target of other.players) {
+                            if (target.number === n) {
+                                collector.stop();
+                                player.data = null;
+                                player.frame = target.number;
+                                message.reply("You decided to frame number " + target.number + ", " + target.name + ".");
+                                player.actionDone = true;
+                                updateNight();
+                            }
+                        }
+                    } else if (message.content === ";frame") {
+                        collector.stop();
+                        player.data = null;
+                        player.frame = 0;
+                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
+                        secret.send("<@" + member.id + "> You decided to frame no one.");
+                        player.actionDone = true;
+                        updateNight();
+                    }
+                });
+                player.data = collector;
             });
-            player.data = collector;
         },
         endNight: (member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 if (!player.actionDone) {
                     player.frame = 0;
-                    let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                    secret.send("<@" + member.id + "> Frame timed out. You frame no one.");
-                    player.actionDone = true;
+                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                        secret.send("<@" + member.id + "> Frame timed out. You frame no one.");
+                        player.actionDone = true;
+                    });
                 }
                 player.data.stop();
                 player.data = null;
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
-            secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
+            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
+            });
         }
     },
 
