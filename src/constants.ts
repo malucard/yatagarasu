@@ -35,53 +35,53 @@ export const roles: { [name: string]: Role } = {
     Blue: {
         name: "Blue",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Blue, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     VengefulBlue: {
         name: "Vengeful Blue",
         side: Side.VILLAGE,
         vengeful: true,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Vengeful Blue, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     Bomb: {
         name: "Bomb",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Bomb, number " + player.number + ". If you are killed by the mafia or shot, the killer will die as well.");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     Oracle: {
         name: "Oracle",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are an Oracle, number " + player.number + ". Select a player each night. If you die, the role of the last player visited will be revealed to everyone. Your action can't be blocked.");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -129,7 +129,7 @@ export const roles: { [name: string]: Role } = {
                 });
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (!player.actionDone) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -141,7 +141,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        die: (_member: Discord.GuildMember, player: Player, other) => {
             other.client.channels.fetch(other.mafiaChannel).then((channel: Discord.TextChannel) => {
                 if (player.oracleVisit) {
                     for (let p of other.players) {
@@ -166,10 +166,10 @@ export const roles: { [name: string]: Role } = {
     Doc: {
         name: "Doc",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Doc, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -223,7 +223,7 @@ export const roles: { [name: string]: Role } = {
                 });
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (!player.actionDone) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -234,17 +234,17 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     MachoDoc: {
         name: "Macho Doc",
         side: Side.VILLAGE,
         macho: true,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Macho Doc, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -306,7 +306,7 @@ export const roles: { [name: string]: Role } = {
                 });
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (!player.actionDone) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -317,7 +317,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        die: (member: Discord.GuildMember, _player: Player, other) => {
             for (let p of other.players) {
                 if (p.role.name === "Cop") {
                     p.role = roles.MachoCop;
@@ -331,10 +331,10 @@ export const roles: { [name: string]: Role } = {
     Cop: {
         name: "Cop",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Cop, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -391,7 +391,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -402,16 +402,16 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     TalentScout: {
         name: "Talent Scout",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Talent Scout, number " + player.number + ". Each night, you can check whether someone has a talent. The only roles without talents are Blue and Vanilla.");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -468,7 +468,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -479,17 +479,17 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     MachoCop: {
         name: "Macho Cop",
         side: Side.VILLAGE,
         macho: true,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Macho Cop, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -546,7 +546,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -557,17 +557,17 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     InsaneCop: {
         name: "Cop",
         realName: "Insane Cop",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Cop, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -624,7 +624,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -635,17 +635,17 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     ParanoidCop: {
         name: "Cop",
         realName: "Paranoid Cop",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Cop, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -702,7 +702,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -713,17 +713,17 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     NaiveCop: {
         name: "Cop",
         realName: "Naive Cop",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Cop, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -780,7 +780,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -791,16 +791,16 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     Gunsmith: {
         name: "Gunsmith",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Gunsmith, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
@@ -854,7 +854,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = [message, collector];
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
@@ -865,28 +865,28 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     Deputy: {
         name: "Deputy",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Deputy, number " + player.number + ". Your identity will not be revealed when shooting someone.");
             player.gun = true;
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     },
 
     Vanilla: {
         name: "Vanilla",
         side: Side.MAFIA,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true })
                 setTimeout(() => {
@@ -894,19 +894,19 @@ export const roles: { [name: string]: Role } = {
                 }, 2000);
             });
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        beginNight: (member: Discord.GuildMember, player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true })
                 player.actionDone = true;
             });
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false })
             });
@@ -917,14 +917,14 @@ export const roles: { [name: string]: Role } = {
         name: "Vengeful Vanilla",
         side: Side.MAFIA,
         vengeful: true,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             setTimeout(() => {
                 secret.send("<@" + member.id + ">, You are a Vanilla, number " + player.number + ".");
             }, 2000);
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
@@ -932,13 +932,13 @@ export const roles: { [name: string]: Role } = {
                 overwrites.delete();
             }
         },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        beginNight: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
         }
@@ -947,14 +947,14 @@ export const roles: { [name: string]: Role } = {
     Hooker: {
         name: "Hooker",
         side: Side.MAFIA,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             setTimeout(() => {
                 secret.send("<@" + member.id + ">, You are a Hooker, number " + player.number + ".");
             }, 2000);
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
@@ -1018,7 +1018,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
         }
@@ -1028,14 +1028,14 @@ export const roles: { [name: string]: Role } = {
         name: "Godfather",
         side: Side.MAFIA,
         fakeSide: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             setTimeout(() => {
                 secret.send("<@" + member.id + ">, You are a Godfather, number " + player.number + ".");
             }, 2000);
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
@@ -1043,13 +1043,13 @@ export const roles: { [name: string]: Role } = {
                 overwrites.delete();
             }
         },
-        beginNight: (member: Discord.GuildMember, player: Player, other) => {
+        beginNight: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             player.actionDone = true;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
         }
@@ -1058,14 +1058,14 @@ export const roles: { [name: string]: Role } = {
     Janitor: {
         name: "Janitor",
         side: Side.MAFIA,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             setTimeout(() => {
                 secret.send("<@" + member.id + ">, You are a Janitor, number " + player.number + ".");
             }, 2000);
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
@@ -1110,7 +1110,7 @@ export const roles: { [name: string]: Role } = {
             });
             player.data = collector;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 if (!player.actionDone) {
                     let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
@@ -1121,7 +1121,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
         }
@@ -1130,7 +1130,7 @@ export const roles: { [name: string]: Role } = {
     Illusionist: {
         name: "Illusionist",
         side: Side.MAFIA,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             setTimeout(() => {
@@ -1138,7 +1138,7 @@ export const roles: { [name: string]: Role } = {
             }, 2000);
             player.gun = true;
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => {
+        endGame: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true });
             let overwrites = secret.permissionOverwrites.find((overwrites) => overwrites.type === "member" && overwrites.id === member.id);
@@ -1184,7 +1184,7 @@ export const roles: { [name: string]: Role } = {
             });
             player.data = collector;
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => {
+        endNight: (member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 if (!player.actionDone) {
                     player.frame = 0;
@@ -1196,7 +1196,7 @@ export const roles: { [name: string]: Role } = {
                 player.data = null;
             }
         },
-        die: (member: Discord.GuildMember, player: Player, other) => {
+        die: (member: Discord.GuildMember, _player: Player, _other) => {
             let secret = member.guild.channels.find((x) => x.name === mafiaSecretChannel);
             secret.overwritePermissions(member, { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false });
         }
@@ -1205,10 +1205,10 @@ export const roles: { [name: string]: Role } = {
     Dreamer: {
         name: "Dreamer",
         side: Side.VILLAGE,
-        beginGame: (member: Discord.GuildMember, player: Player, other) => {
+        beginGame: (member: Discord.GuildMember, player: Player, _other) => {
             member.send("You are a Dreamer, number " + player.number + ".");
         },
-        endGame: (member: Discord.GuildMember, player: Player, other) => { },
+        endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let v = Math.floor(Math.random() * 2);
             let dream: string;
@@ -1269,8 +1269,8 @@ export const roles: { [name: string]: Role } = {
             }
             updateNight();
         },
-        endNight: (member: Discord.GuildMember, player: Player, other) => { },
-        die: (member: Discord.GuildMember, player: Player, other) => { }
+        endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
+        die: (_member: Discord.GuildMember, _player: Player, _other) => { }
     }
 };
 

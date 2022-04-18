@@ -1,8 +1,8 @@
-import * as http from 'http';
+import { createServer } from 'http';
 import * as Discord from 'discord.js';
 
 import { death_messages, kaismile, mafiaSecretChannel, roles, setups } from './constants';
-import { getSide, shuffleArray, countSides } from './Helpers';
+import { shuffleArray, countSides } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 
@@ -23,7 +23,7 @@ const client = new Discord.Client({
     intents: myIntents
 });
 
-const server = http.createServer((_req, res) => {
+const server = createServer((_req, res) => {
     res.end();
 });
 server.listen();
@@ -60,8 +60,8 @@ let nightTimeout: NodeJS.Timeout;
 
 function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     if (!gameRunning) return;
-    channel.overwritePermissions(mafiaPlayer, { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false });
-    channel.send("<@&" + mafiaPlayer.id + "> Night " + day + " has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.");
+    channel.permissionOverwrites.edit(mafiaPlayer, { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false });
+    channel.send(`<@&${mafiaPlayer.id}> Night ${day} has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.`);
 
     for (let player of players) {
         player.role.beginNight(channel.guild.members.find((x) => x.id === player.id), player);
