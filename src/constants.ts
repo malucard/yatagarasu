@@ -31,8 +31,10 @@ export const death_messages = [
     "%pr's body was found wearing a fancy red suit and sunglasses this morning."
 ];
 
-const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
-const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
+export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
+export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
+export const NO_SEND_PERMS = { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false };
+export const FULL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: false };
 
 export const roles: { [name: string]: Role } = {
     Blue: {
