@@ -6,13 +6,21 @@ import { getSide, shuffleArray, countSides } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 
+const IntentFlags = Discord.Intents.FLAGS;
+const myIntents = [
+    IntentFlags.GUILDS,
+    IntentFlags.GUILD_MESSAGES,
+    IntentFlags.GUILD_MESSAGE_REACTIONS,
+    IntentFlags.DIRECT_MESSAGES,
+    IntentFlags.DIRECT_MESSAGE_REACTIONS
+];
 // import * as Mongo from 'mongodb';
 
 // const mclient = new Mongo.MongoClient("mongodb://keebot:keebotdb9@ds035485.mlab.com:35485/keebot");
 // let collection: Mongo.Collection;
 
 const client = new Discord.Client({
-    intents: [Discord.Intents.FLAGS.GUILDS]
+    intents: myIntents
 });
 
 const server = http.createServer((_req, res) => {
