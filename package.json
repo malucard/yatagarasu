@@ -3,7 +3,7 @@
 	"scripts": {
 		"build-ts": "tsc",
 		"start": "npm run serve",
-		"serve": "node dist/bot.js",
+		"serve": "node dist/bot_v13.js",
 		"watch-node": "nodemon dist/bot.js",
 		"watch-ts": "tsc -w"
 	},
@@ -24,6 +24,6 @@
 		"ws": "^7.2.1"
 	},
 	"devDependencies": {
-		"@types/node": "^17.0.24"
+		"@types/node": "^17.0.25"
 	}
 }
