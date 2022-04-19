@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import * as Discord from 'discord.js';
 
 import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS, FULL_SEND_PERMS, mafiaPlayerId, mafiaChannelId } from './constants';
-import { shuffleArray, countSides, listLynch, calculateLynch } from './Helpers';
+import { shuffleArray, countSides, listLynch, calculateLynch, getCount } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 
@@ -538,7 +538,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         if (testGameEnd()) return;
         if (player && player.role.vengeful) {
             let msg = await channel.send(`<@${player.id}>, choose someone to kill in revenge. You have 2 minutes.`) as Discord.Message;
-            let collector = msg.createReactionCollector({filter: (_reaction, user) => user.id === member.id});
+            let collector = msg.createReactionCollector({ filter: (_reaction, user) => user.id === member.id });
             collector.on("collect", async reaction => {
                 if (reaction.emoji.name === "❌") {
                     channel.send("No one was killed in revenge.");
@@ -642,7 +642,7 @@ async function endGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) 
         .forEach(player => channel.members
             .filter(member => member.id === player.id && player.role.side === Side.MAFIA)
             .forEach(member => secret.permissionOverwrites.delete(member))
-            )
+        )
     players = [];
     deadPlayers = [];
     cantEndDay = false;
@@ -890,24 +890,30 @@ client.on("message", async (message) => {
         }
     } else if (message.guild && message.member) {
         if (message.author.id === "197436970052354049" && message.content.startsWith(";echo ")) {
-            message.channel.send(message.content.substr(6));
+            message.channel.send(message.content.substring(6));
             return;
         }
-        let channel: Discord.TextChannel = message.channel as Discord.TextChannel;
+        const channel: Discord.TextChannel = message.channel as Discord.TextChannel;
         mafiaPlayer = message.guild.roles.cache.find((x) => x.name === "Mafia Player");
-        if (mafiaPlayer && message.member.roles.cache.find((x) => x.name === "Mafia Manager") && !message.author.bot) {
-            if (!channel.permissionOverwrites.cache.find((overwrites) => overwrites.type === "role" && overwrites.id === mafiaPlayer.id)) {
-                if (mafiaChannelId) {
-                    channel = client.channels.cache.find((c) => c.id === mafiaChannelId) as Discord.TextChannel;
-                } else {
-                    return;
-                }
-            }
+        if (!mafiaPlayer) {
+            console.error(mafiaPlayer);
+            throw Error('Mafia Player Role not found');
+        }
+        const mafiaId = mafiaPlayer.id;
+        let hasMafiaManager = message.member.roles.cache.find((x) => x.name === "Mafia Manager");
+        if (mafiaPlayer && hasMafiaManager && !message.author.bot) {
+            // if (!channel.permissionOverwrites.cache.find((overwrites) => overwrites.type === "role" && overwrites.id === mafiaPlayer.id)) {
+            //     if (mafiaChannelId) {
+            //         channel = client.channels.cache.find((c) => c.id === mafiaChannelId) as Discord.TextChannel;
+            //     } else {
+            //         return;
+            //     }
+            // }
             if (message.content === ";startsignup") {
                 if (!signupCollector) {
                     channel.send("Signup for a new round of Mafia has started! If you want to join, type `;signup`.");
-                    signupCollector = channel.createMessageCollector({filter: (message) => !!message.content.match(/^;sign(up|out)$/)});
-                    signupCollector.on("collect", (message) => {
+                    signupCollector = channel.createMessageCollector({ filter: (message) => !!message.content.match(/^;sign(up|out)$/) });
+                    signupCollector.on("collect", async (message) => {
                         if (message.content === ";signup") {
                             message.member.roles.add(mafiaPlayer);
                             message.react(kaismile);
@@ -915,9 +921,9 @@ client.on("message", async (message) => {
                             message.member.roles.remove(mafiaPlayer);
                             message.react(kaismile);
                         } else if (message.content === ";players") {
-                            let count = message.guild.members.cache.filter((m) => m.roles.cache.find((r) => r.id === mafiaPlayer.id) !== null).map((v) => v).length;
+                            let count = await getCount(message, mafiaId);
                             if (count < 10) {
-                                message.react(count + "\u20e3");
+                                message.react(`${count}\u20e3`);
                             } else if (count === 10) {
                                 message.react("🔟");
                             } else if (count < 21) {
@@ -931,7 +937,7 @@ client.on("message", async (message) => {
                                             one = true;
                                         }
                                     } else {
-                                        await message.react(v + "\u20e3");
+                                        await message.react(`${v}\u20e3`);
                                     }
                                 });
                             } else {
@@ -970,16 +976,16 @@ client.on("message", async (message) => {
                 }
                 message.reply("Setups: " + text);
             } else if (message.content.startsWith(";setupinfo ")) {
-                let name = message.content.substr(11).toLowerCase();
+                let name = message.content.substring(11).toLowerCase();
                 if (name in setups) {
                     let setup = setups[name];
                     let text = "";
                     for (let role of setup.roles) {
                         if (role instanceof Array) {
-                            text += " [" + role.map((r) => Object.entries(roles).find((v) => v[1] === r)[0]).join("/") + "]";
+                            text += ` [${role.map((r) => Object.entries(roles).find((v) => v[1] === r)[0]).join("/")}]`;
                         } else {
                             let name = Object.entries(roles).find((v) => v[1] === role)[0];
-                            text += " [" + name + "]";
+                            text += ` [${name}]`;
                         }
                     }
                     if (setup.daystart) text += " -daystart";
@@ -987,7 +993,7 @@ client.on("message", async (message) => {
                     if (setup.daychat) text += " -daychat";
                     if (setup.vengeful) text += " -vengeful";
                     if (setup.dontRecord) text += " -dontRecord";
-                    message.reply(name + " (" + setup.roles.length + "): " + text);
+                    message.reply(`${name} (${setup.roles.length}): ${text}`);
                 } else {
                     message.reply("That setup doesn't exist");
                 }
@@ -1002,9 +1008,9 @@ client.on("message", async (message) => {
                     let count = 1;
                     let idx = m.indexOf("]");
                     if (m.length > idx + 1) {
-                        count = parseInt(m.substr(idx + 2));
+                        count = parseInt(m.substring(idx + 2));
                     }
-                    let role = m.substr(1, idx - 1);
+                    let role = m.substring(1, idx - 2);
                     let alts = (role.includes("/") ? role.split("/") : [role])
                         .map((v) => {
                             if (v in roles) {
@@ -1057,30 +1063,30 @@ client.on("message", async (message) => {
                     signupCollector = null;
                 }
 
-                let count = mafiaPlayer.members.map((v) => v).length;
-                if (count === setup.roles.length) {
+                const playerCount = await getCount(message, mafiaId);
+                if (playerCount === setup.roles.length) {
                     message.react(kaismile);
                     beginGame(channel, mafiaPlayer, setup);
-                } else if (count < setup.roles.length) {
-                    message.reply("Not enough players. You need " + setup.roles.length + ", but there are " + count + ".");
+                } else if (playerCount < setup.roles.length) {
+                    message.reply(`Not enough players. You need ${setup.roles.length}, but there are ${playerCount}.`);
                 } else {
-                    message.reply("Too many players. You need " + setup.roles.length + ", but there are " + count + ".");
+                    message.reply(`Too many players. You need ${setup.roles.length}, but there are ${playerCount}.`);
                 }
             } else if (message.content.startsWith(";setup ")) {
-                if (signupCollector) {
-                    signupCollector.stop();
-                    signupCollector = null;
-                }
-                let count = mafiaPlayer.members.map((v) => v).length;
-                let setup = setups[message.content.substr(7).toLowerCase()];
+                const playerCount = await getCount(message, mafiaId);
+                const setup = setups[message.content.substring(7).toLowerCase()];
                 if (setup) {
-                    if (count === setup.roles.length) {
+                    if (playerCount === setup.roles.length) {
+                        if (signupCollector) {
+                            signupCollector.stop();
+                            signupCollector = null;
+                        }
                         message.react(kaismile);
                         beginGame(channel, mafiaPlayer, setup);
-                    } else if (count < setup.roles.length) {
-                        message.reply("Not enough players. You need " + setup.roles.length + ", but there are " + count + ".");
+                    } else if (playerCount < setup.roles.length) {
+                        message.reply(`Not enough players. You need ${setup.roles.length}, but there are ${playerCount}.`);
                     } else {
-                        message.reply("Too many players. You need " + setup.roles.length + ", but there are " + count + ".");
+                        message.reply(`Too many players. You need ${setup.roles.length}, but there are ${playerCount}.`);
                     }
                 } else {
                     message.reply("That setup doesn't exist.");

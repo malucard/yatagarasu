@@ -1,3 +1,4 @@
+import { Message } from "discord.js";
 import { Player } from "./classes";
 import { Side } from "./enum";
 
@@ -91,4 +92,9 @@ export function calculateLynch(players: Player[]): string {
         }
     }
     return lynch === "nobody" ? null : lynch;
+}
+
+export async function getCount(message: Message, mafiaId: string): Promise<number> {
+    const mafiaPlayerLocal = await message.guild.roles.fetch(mafiaId);
+    return mafiaPlayerLocal.members.toJSON().length;
 }
