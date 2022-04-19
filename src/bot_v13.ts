@@ -893,7 +893,7 @@ client.on("message", async (message) => {
             message.channel.send(message.content.substr(6));
             return;
         }
-        let channel = message.channel as Discord.TextChannel;
+        let channel: Discord.TextChannel = message.channel as Discord.TextChannel;
         mafiaPlayer = message.guild.roles.cache.find((x) => x.name === "Mafia Player");
         if (mafiaPlayer && message.member.roles.cache.find((x) => x.name === "Mafia Manager") && !message.author.bot) {
             if (!channel.permissionOverwrites.cache.find((overwrites) => overwrites.type === "role" && overwrites.id === mafiaPlayer.id)) {
