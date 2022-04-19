@@ -1,8 +1,8 @@
 import { createServer } from 'http';
 import * as Discord from 'discord.js';
 
-import { death_messages, FULL_SEND_PERMS, kaismile, mafiaSecretChannel, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS } from './constants';
-import { shuffleArray, countSides } from './Helpers';
+import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS, FULL_SEND_PERMS, mafiaPlayerId, mafiaChannelId } from './constants';
+import { shuffleArray, countSides, listLynch, calculateLynch } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 
@@ -49,9 +49,9 @@ let vengefulGame = false;
 let nightlessGame = false;
 let daystartGame = false;
 let daychatGame = false;
-// let dontRecordGame = false;
+let dontRecordGame = false;
 let gameInfo: { [id: string]: any };
-let mafiaChannel: string;
+let mafiaPlayer: Discord.Role;
 
 let signupCollector: Discord.MessageCollector;
 let dayCollector: Discord.MessageCollector;
@@ -69,21 +69,21 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
             day: day,
             deadPlayers: deadPlayers,
             hookDecided: hookDecided,
-            mafiaChannel: mafiaChannel,
+            mafiaChannel: mafiaChannelId,
             players: players
         }));
     }
 
     let text = "";
     if (day === 1) {
-        text = " 1-" + players.length;
+        text = ` 1-${players.length}`;
     } else {
         for (let player of players) {
-            text += "\n" + player.number + "- " + player.name;
+            text += `\n${player.number}- ${player.name}`;
         }
     }
     mafiaKill = 0;
-    channel.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+    channel.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
         setTimeout(() => {
             secret.send(`<@&${mafiaPlayer.id}> Night ${day} has begun. Use \`;kill <number>\` to choose who to kill, or just \`;kill\` to not kill tonight. You cannot change your choice, so be careful.${text}`);
         }, 1000);
@@ -168,38 +168,41 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                                 let m = death_messages[Math.floor(Math.random() * death_messages.length)];
                                 channel.send(m.replace(/%pr/g, `<@${player.id}> (the ${player.role.name})`).replace(/%p/g, `<@${player.id}>`).replace(/%r/g, player.role.name));
                             }
-                            let member = channel.guild.members.find((x) => x.id === player.id);
-                            player.role.die(member, player);
-                            member.removeRole(mafiaPlayer);
-                            players.splice(i, 1);
-                            deadPlayers.push(player);
-                            if (player.role.name === "Bomb") {
-                                for (let [i, player] of players.entries()) {
-                                    if (player.number === mafiaKiller && (!player.saved || player.role.macho)) {
-                                        if (player.cleaned) {
-                                            channel.send("<@" + player.id + "> exploded.");
-                                        } else {
-                                            channel.send("<@" + player.id + ">, the " + player.role.name + ", exploded.");
+                            channel.guild.members.fetch(player.id).then(member => {
+                                player.role.die(member, player);
+                                member.roles.remove(mafiaPlayer);
+                                players.splice(i, 1);
+                                deadPlayers.push(player);
+                                if (player.role.name === "Bomb") {
+                                    for (let [i, player] of players.entries()) {
+                                        if (player.number === mafiaKiller && (!player.saved || player.role.macho)) {
+                                            if (player.cleaned) {
+                                                channel.send(`<@${player.id}> exploded.`);
+                                            } else {
+                                                channel.send(`<@${player.id}>, the ${player.role.name}, exploded.`);
+                                            }
+                                            channel.guild.members.fetch(player.id).then(member => {
+                                                player.role.die(member, player);
+                                                member.roles.remove(mafiaPlayer);
+                                                players.splice(i, 1);
+                                                deadPlayers.push(player);
+                                            });
+                                            break;
                                         }
-                                        let member = channel.guild.members.find((x) => x.id === player.id);
-                                        player.role.die(member, player);
-                                        member.removeRole(mafiaPlayer);
-                                        players.splice(i, 1);
-                                        deadPlayers.push(player);
-                                        break;
                                     }
                                 }
-                            }
+                            });
+
                             break;
                         }
                     }
-                    let [village, mafia, third] = countSides(players);
+                    let [village, mafia, _third] = countSides(players);
                     if (vengefulGame ? village === 0 && mafia > 0 : mafia >= village) {
                         let text = "";
                         for (let player of players) {
                             let won = player.role.side === Side.MAFIA;
                             if (won) {
-                                text += " <@" + player.id + ">";
+                                text += ` <@${player.id}>`;
                             }
                             gameInfo.players.push({
                                 id: player.id,
@@ -213,7 +216,7 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                         for (let player of deadPlayers) {
                             let won = player.role.side === Side.MAFIA;
                             if (won) {
-                                text += " <@" + player.id + ">";
+                                text += ` <@${player.id}>`;
                             }
                             gameInfo.players.push({
                                 id: player.id,
@@ -233,7 +236,7 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                         for (let player of players) {
                             let won = player.role.side === Side.VILLAGE;
                             if (won) {
-                                text += " <@" + player.id + ">";
+                                text += ` <@${player.id}>`;
                             }
                             gameInfo.players.push({
                                 id: player.id,
@@ -247,7 +250,7 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                         for (let player of deadPlayers) {
                             let won = player.role.side === Side.VILLAGE;
                             if (won) {
-                                text += " <@" + player.id + ">";
+                                text += ` <@${player.id}>`;
                             }
                             gameInfo.players.push({
                                 id: player.id,
@@ -292,7 +295,7 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     day: day,
                     deadPlayers: deadPlayers,
                     hookDecided: hookDecided,
-                    mafiaChannel: mafiaChannel,
+                    mafiaChannel: mafiaChannelId,
                     players: players
                 }));
             }
@@ -316,11 +319,11 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     }
     for (let player of players) {
         if (player.gun) {
-            channel.guild.members.fetch(player.id).send("You have a gun. DM me `;shoot <number>` at any time during the day to shoot someone." + numbers);
+            channel.guild.members.fetch(player.id).then(member => member.send(`You have a gun. DM me \`;shoot <number>\` at any time during the day to shoot someone.${numbers}`));
         }
     }
-    let [village, mafia, third] = countSides(players);
-    channel.send("<@&" + mafiaPlayer.id + "> Day " + day++ + " has begun. You have 10 minutes to vote who to lynch with `;lynch @usermention`." + numbers);
+    let [village, mafia, _third] = countSides(players);
+    channel.send(`<@&${mafiaPlayer.id}> Day ${day++} has begun. You have 10 minutes to vote who to lynch with \`;lynch @usermention\`.${numbers}`);
     if (!vengefulGame) {
         if (village === mafia + 2) {
             channel.send("**It is MYLO, so the village must either lynch correctly or not lynch, otherwise there will be a high chance of losing.**");
@@ -328,7 +331,7 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
             channel.send("**It is LYLO, so the village must lynch correctly, otherwise there will be a high chance of losing.**");
         }
     }
-    channel.overwritePermissions(mafiaPlayer, FULL_SEND_PERMS);
+    channel.permissionOverwrites.edit(mafiaPlayer, PARTIAL_SEND_PERMS);
     if (dayTimeout) {
         clearTimeout(dayTimeout);
     }
@@ -383,8 +386,8 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         dayCollector.stop();
         dayCollector = null;
     }
-    dayCollector = channel.createMessageCollector((message) => message.content.match(/^;((lynch|shoot)( <@!?([0-9]{17,18})>)?|listlynch|removelynch)$/));
-    dayCollector.on("collect", (message, collector) => {
+    dayCollector = channel.createMessageCollector({ filter: message => !!message.content.match(/^;((lynch|shoot)( <@!?([0-9]{17,18})>)?|listlynch|removelynch)$/) });
+    dayCollector.on("collect", message => {
         let allVoted = true;
         for (let player of players) {
             if (player.id === message.author.id) {
@@ -395,7 +398,7 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     player.lynchVote = null;
                     message.react(kaismile);
                 } else if (message.content === ";listlynch") {
-                    message.reply(listLynch());
+                    message.reply(listLynch(players));
                 } else if (message.content === ";lynch") {
                     dontRecordGame = true;
                     player.lynchVote = "nobody";
@@ -418,7 +421,7 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
             }
         }
         if (allVoted) {
-            collector.stop();
+            dayCollector.stop();
             dayCollector = null;
             clearTimeout(dayTimeout);
             endDay(channel, mafiaPlayer);
@@ -436,32 +439,32 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         dayCollector = null;
     }
     cantBeginDay = false;
-    channel.overwritePermissions(mafiaPlayer, NO_SEND_PERMS);
-    channel.send(listLynch());
-    let lynch = calculateLynch();
+    channel.permissionOverwrites.edit(mafiaPlayer, NO_SEND_PERMS);
+    channel.send(listLynch(players));
+    let lynch = calculateLynch(players);
     if (lynch) {
-        let player;
+        let player: Player;
         let member: Discord.GuildMember;
         for (let [i, p] of players.entries()) {
             if (p.id === lynch) {
-                channel.send("<@" + p.id + ">, the " + p.role.name + ", was lynched.");
-                member = channel.guild.members.find((x) => x.id === p.id);
+                channel.send(`<@${p.id}>, the ${p.role.name}, was lynched.`);
+                member = await channel.guild.members.fetch(p.id);
                 p.role.die(member, p);
                 player = p;
-                member.removeRole(mafiaPlayer);
+                member.roles.remove(mafiaPlayer);
                 players.splice(i, 1);
                 deadPlayers.push(p);
                 break;
             }
         }
         let testGameEnd = () => {
-            let [village, mafia, third] = countSides(players);
+            let [village, mafia, _third] = countSides(players);
             if (vengefulGame ? village === 0 && mafia > 0 : mafia >= village) {
                 let text = "";
                 for (let player of players) {
                     let won = player.role.side === Side.MAFIA;
                     if (won) {
-                        text += " <@" + player.id + ">";
+                        text += ` <@${player.id}>`;
                     }
                     gameInfo.players.push({
                         id: player.id,
@@ -475,7 +478,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                 for (let player of deadPlayers) {
                     let won = player.role.side === Side.MAFIA;
                     if (won) {
-                        text += " <@" + player.id + ">";
+                        text += ` <@${player.id}>`;
                     }
                     gameInfo.players.push({
                         id: player.id,
@@ -487,7 +490,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     });
                 }
                 gameInfo.winningSide = "mafia";
-                channel.send("<@&" + mafiaPlayer.id + "> The Mafia won!" + text);
+                channel.send(`<@&${mafiaPlayer.id}> The Mafia won!${text}`);
                 endGame(channel, mafiaPlayer);
                 return true;
             } else if (vengefulGame ? mafia === 0 && village > 0 : mafia === 0) {
@@ -495,7 +498,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                 for (let player of players) {
                     let won = player.role.side === Side.VILLAGE;
                     if (won) {
-                        text += " <@" + player.id + ">";
+                        text += ` <@${player.id}>`;
                     }
                     gameInfo.players.push({
                         id: player.id,
@@ -509,7 +512,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                 for (let player of deadPlayers) {
                     let won = player.role.side === Side.VILLAGE;
                     if (won) {
-                        text += " <@" + player.id + ">";
+                        text += ` <@${player.id}>`;
                     }
                     gameInfo.players.push({
                         id: player.id,
@@ -521,12 +524,12 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     });
                 }
                 gameInfo.winningSide = "village";
-                channel.send("<@&" + mafiaPlayer.id + "> The Village won!" + text);
+                channel.send(`<@&${mafiaPlayer.id}> The Village won!${text}`);
                 endGame(channel, mafiaPlayer);
                 return true;
             } else if (mafia === 0 && village === 0) {
                 gameInfo.winningSide = "tie";
-                channel.send("<@&" + mafiaPlayer.id + "> It was a tie!");
+                channel.send(`<@&${mafiaPlayer.id}> It was a tie!`);
                 endGame(channel, mafiaPlayer);
                 return true;
             }
@@ -534,9 +537,9 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         };
         if (testGameEnd()) return;
         if (player && player.role.vengeful) {
-            let msg = await channel.send("<@" + player.id + ">, choose someone to kill in revenge. You have 2 minutes.") as Discord.Message;
-            let collector = msg.createReactionCollector((_reaction, user) => user.id === member.id);
-            collector.on("collect", (reaction, collector) => {
+            let msg = await channel.send(`<@${player.id}>, choose someone to kill in revenge. You have 2 minutes.`) as Discord.Message;
+            let collector = msg.createReactionCollector({filter: (_reaction, user) => user.id === member.id});
+            collector.on("collect", async reaction => {
                 if (reaction.emoji.name === "❌") {
                     channel.send("No one was killed in revenge.");
                     clearTimeout(timeout);
@@ -550,11 +553,11 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     }
                 } else if (reaction.emoji.name.endsWith + "\u20e3") {
                     for (let [i, player] of players.entries()) {
-                        if (player.number === parseInt(reaction.emoji.name.substr(0, 1))) {
-                            channel.send("<@" + player.id + ">, the " + player.role.name + ", was killed in revenge.");
-                            let member = channel.guild.members.find((x) => x.id === player.id);
+                        if (player.number === parseInt(reaction.emoji.name.substring(0, 1))) {
+                            channel.send(`<@${player.id}>, the ${player.role.name}, was killed in revenge.`);
+                            let member = await channel.guild.members.fetch(player.id);
                             player.role.die(member, player);
-                            member.removeRole(mafiaPlayer);
+                            member.roles.remove(mafiaPlayer);
                             players.splice(i, 1);
                             deadPlayers.push(player);
                             clearTimeout(timeout);
@@ -596,7 +599,7 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     }
 }
 
-function endGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
+async function endGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     gameRunning = false;
     gameInfo.endTime = Date.now();
     for (let player of players) {
@@ -606,7 +609,7 @@ function endGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                 day: day,
                 deadPlayers: deadPlayers,
                 hookDecided: hookDecided,
-                mafiaChannel: mafiaChannel,
+                mafiaChannel: mafiaChannelId,
                 players: players
             });
             member.roles.remove(mafiaPlayer);
@@ -629,33 +632,32 @@ function endGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         players.push(player);
     }
     for (let player of players.sort((a, b) => a.number - b.number)) {
-        text += player.number + "- " + player.name + " (" + (player.role.realName || player.role.name) + ")\n";
+        text += `${player.number}- ${player.name} (${player.role.realName || player.role.name})\n`;
     }
     channel.send(text);
+    channel.permissionOverwrites.edit(channel.guild.roles.everyone, FULL_SEND_PERMS);
+    channel.permissionOverwrites.edit(mafiaPlayer, FULL_SEND_PERMS);
+    let secret = await channel.guild.channels.fetch(mafiaSecretChannelId);
+    [...players, ...deadPlayers]
+        .forEach(player => channel.members
+            .filter(member => member.id === player.id && player.role.side === Side.MAFIA)
+            .forEach(member => secret.permissionOverwrites.delete(member))
+            )
     players = [];
     deadPlayers = [];
-    channel.overwritePermissions(channel.guild.roles.find((x) => x.name === "@everyone"), { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
-    channel.overwritePermissions(mafiaPlayer, { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
-    let secret = channel.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-    for (let overwrites of secret.permissionOverwrites.values()) {
-        if (overwrites.type === "member") {
-            overwrites.delete();
-        }
-    }
     cantEndDay = false;
     cantBeginDay = false;
     vengefulGame = false;
     nightlessGame = false;
     daystartGame = false;
     daychatGame = false;
-    // if (!dontRecordGame) {
-    //     collection.findOne({}, (err, doc) => {
-    //         doc.games.push(gameInfo);
-    //         collection.updateOne({}, { $set: { games: doc.games } });
-    //     });
-    // }
-    // dontRecordGame = true;
-    mafiaChannel = null;
+    if (!dontRecordGame) {
+        //     collection.findOne({}, (err, doc) => {
+        //         doc.games.push(gameInfo);
+        //         collection.updateOne({}, { $set: { games: doc.games } });
+        //     });
+    }
+    dontRecordGame = true;
 }
 
 function beginGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role, setup: Setup) {
@@ -664,7 +666,6 @@ function beginGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role, setu
         signupCollector = null;
     }
     gameRunning = true;
-    mafiaChannel = channel.id;
     let setupName: any = Object.entries(setups).find(([name, s]) => s === setup);
     if (setupName) { setupName = setupName[0] };
     gameInfo = {
@@ -676,7 +677,7 @@ function beginGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role, setu
     vengefulGame = setup.vengeful;
     daystartGame = setup.daystart;
     daychatGame = setup.daychat;
-    // dontRecordGame = setup.dontRecord;
+    dontRecordGame = setup.dontRecord;
     let sroles = shuffleArray(setup.roles) as (Role | Role[])[];
     players = [];
     deadPlayers = [];
@@ -713,11 +714,11 @@ function beginGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role, setu
             day: day,
             deadPlayers: deadPlayers,
             hookDecided: hookDecided,
-            mafiaChannel: mafiaChannel,
+            mafiaChannel: mafiaChannelId,
             players: players
         }));
     }
-    channel.overwritePermissions(channel.guild.roles.find((x) => x.name === "@everyone"), NO_SEND_PERMS);
+    channel.permissionOverwrites.edit(channel.guild.roles.everyone, NO_SEND_PERMS);
     day = 1;
     if (daystartGame || nightlessGame) {
         beginDay(channel, mafiaPlayer);
@@ -747,11 +748,10 @@ client.on("error", (error) => {
     console.error(error.message);
 });
 
-client.on("message", (message) => {
+client.on("message", async (message) => {
     if (message.channel.type === "DM" && message.author && dayCollector && !message.author.bot) {
-        if (mafiaChannel) {
-            let channel = client.channels.find((c) => c.id === mafiaChannel) as Discord.TextChannel;
-            let mafiaPlayer = channel.guild.roles.find((role) => role.name === "Mafia Player");
+        if (mafiaChannelId) {
+            let channel = await client.channels.fetch(mafiaChannelId) as Discord.TextChannel;
             let match = message.content.match(/^;shoot ([0-9]+)$/);
             if (match) {
                 let player: Player;
@@ -783,35 +783,35 @@ client.on("message", (message) => {
                                     }
                                 }
                                 if (player.role.name === "Illusionist" || (player.role.name !== "Deputy" && Math.random() < 0.5)) {
-                                    channel.send("<@" + player2.id + ">, the " + player2.role.name + ", was shot by <@" + shooter + ">.");
+                                    channel.send(`<@${player2.id}>, the ${player2.role.name}, was shot by <@${shooter}>.`);
                                 } else {
-                                    channel.send("<@" + player2.id + ">, the " + player2.role.name + ", was shot.");
+                                    channel.send(`<@${player2.id}>, the ${player2.role.name}, was shot.`);
                                 }
-                                let member = channel.guild.members.find((x) => x.id === player2.id);
+                                let member = await channel.guild.members.fetch(player2.id);
                                 player2.role.die(member, player2);
-                                member.removeRole(mafiaPlayer);
+                                member.roles.remove(mafiaPlayer);
                                 players.splice(i, 1);
                                 deadPlayers.push(player2);
                                 if (player2.role.name === "Bomb") {
                                     for (let [i, p] of players.entries()) {
                                         if (p.id === player.id && (!player.saved || player.role.macho)) {
-                                            channel.send("<@" + player.id + ">, the " + player.role.name + ", exploded.");
-                                            let member = channel.guild.members.find((x) => x.id === player.id);
+                                            channel.send(`<@${player.id}>, the ${player.role.name}, exploded.`);
+                                            let member = await channel.guild.members.fetch(player.id);
                                             player.role.die(member, player);
-                                            member.removeRole(mafiaPlayer);
+                                            member.roles.remove(mafiaPlayer);
                                             players.splice(i, 1);
                                             deadPlayers.push(player);
                                             break;
                                         }
                                     }
                                 }
-                                let [village, mafia, third] = countSides(players);
+                                let [village, mafia, _third] = countSides(players);
                                 if (mafia > 0 && (vengefulGame ? village === 0 : mafia >= village)) {
                                     let text = "";
                                     for (let player of players) {
                                         let won = player.role.side === Side.MAFIA;
                                         if (won) {
-                                            text += " <@" + player.id + ">";
+                                            text += ` <@${player.id}>`;
                                         }
                                         gameInfo.players.push({
                                             id: player.id,
@@ -825,7 +825,7 @@ client.on("message", (message) => {
                                     for (let player of deadPlayers) {
                                         let won = player.role.side === Side.MAFIA;
                                         if (won) {
-                                            text += " <@" + player.id + ">";
+                                            text += ` <@${player.id}>`;
                                         }
                                         gameInfo.players.push({
                                             id: player.id,
@@ -837,7 +837,7 @@ client.on("message", (message) => {
                                         });
                                     }
                                     gameInfo.winningSide = "mafia";
-                                    channel.send("<@&" + mafiaPlayer.id + "> The Mafia won!" + text);
+                                    channel.send(`<@&${mafiaPlayer.id}> The Mafia won!${text}`);
                                     endGame(channel, mafiaPlayer);
                                     return;
                                 } else if (vengefulGame ? mafia === 0 && village > 0 : mafia === 0) {
@@ -845,7 +845,7 @@ client.on("message", (message) => {
                                     for (let player of players) {
                                         let won = player.role.side === Side.VILLAGE;
                                         if (won) {
-                                            text += " <@" + player.id + ">";
+                                            text += ` <@${player.id}>`;
                                         }
                                         gameInfo.players.push({
                                             id: player.id,
@@ -859,7 +859,7 @@ client.on("message", (message) => {
                                     for (let player of deadPlayers) {
                                         let won = player.role.side === Side.VILLAGE;
                                         if (won) {
-                                            text += " <@" + player.id + ">";
+                                            text += ` <@${player.id}>`;
                                         }
                                         gameInfo.players.push({
                                             id: player.id,
@@ -871,12 +871,12 @@ client.on("message", (message) => {
                                         });
                                     }
                                     gameInfo.winningSide = "village";
-                                    channel.send("<@&" + mafiaPlayer.id + "> The Village won!" + text);
+                                    channel.send(`<@&${mafiaPlayer.id}> The Village won!${text}`);
                                     endGame(channel, mafiaPlayer);
                                     return;
                                 } else if (mafia === 0 && village === 0) {
                                     gameInfo.winningSide = "tie";
-                                    channel.send("<@&" + mafiaPlayer.id + "> It was a tie!");
+                                    channel.send(`<@&${mafiaPlayer.id}> It was a tie!`);
                                     endGame(channel, mafiaPlayer);
                                     return;
                                 }
@@ -893,12 +893,12 @@ client.on("message", (message) => {
             message.channel.send(message.content.substr(6));
             return;
         }
-        let mafiaPlayer = message.guild.roles.find((x) => x.name === "Mafia Player");
         let channel = message.channel as Discord.TextChannel;
-        if (mafiaPlayer && message.member.roles.find((x) => x.name === "Mafia Manager") && !message.author.bot) {
-            if (!channel.permissionOverwrites.find((overwrites) => overwrites.type === "role" && overwrites.id === mafiaPlayer.id)) {
-                if (mafiaChannel) {
-                    channel = client.channels.find((c) => c.id === mafiaChannel) as Discord.TextChannel;
+        mafiaPlayer = message.guild.roles.cache.find((x) => x.name === "Mafia Player");
+        if (mafiaPlayer && message.member.roles.cache.find((x) => x.name === "Mafia Manager") && !message.author.bot) {
+            if (!channel.permissionOverwrites.cache.find((overwrites) => overwrites.type === "role" && overwrites.id === mafiaPlayer.id)) {
+                if (mafiaChannelId) {
+                    channel = client.channels.cache.find((c) => c.id === mafiaChannelId) as Discord.TextChannel;
                 } else {
                     return;
                 }
@@ -906,16 +906,16 @@ client.on("message", (message) => {
             if (message.content === ";startsignup") {
                 if (!signupCollector) {
                     channel.send("Signup for a new round of Mafia has started! If you want to join, type `;signup`.");
-                    signupCollector = channel.createMessageCollector((message) => message.content.match(/^;sign(up|out)$/));
+                    signupCollector = channel.createMessageCollector({filter: (message) => !!message.content.match(/^;sign(up|out)$/)});
                     signupCollector.on("collect", (message) => {
                         if (message.content === ";signup") {
-                            message.member.addRole(mafiaPlayer);
+                            message.member.roles.add(mafiaPlayer);
                             message.react(kaismile);
                         } else if (message.content === ";signout") {
-                            message.member.removeRole(mafiaPlayer);
+                            message.member.roles.remove(mafiaPlayer);
                             message.react(kaismile);
                         } else if (message.content === ";players") {
-                            let count = message.guild.members.filter((m) => m.roles.find((r) => r.id === mafiaPlayer.id) !== null).map((v) => v).length;
+                            let count = message.guild.members.cache.filter((m) => m.roles.cache.find((r) => r.id === mafiaPlayer.id) !== null).map((v) => v).length;
                             if (count < 10) {
                                 message.react(count + "\u20e3");
                             } else if (count === 10) {
@@ -935,7 +935,7 @@ client.on("message", (message) => {
                                     }
                                 });
                             } else {
-                                message.reply(count);
+                                message.reply(count.toString());
                             }
                         }
                     });
@@ -946,7 +946,7 @@ client.on("message", (message) => {
                     signupCollector = null;
                 }
                 for (let member of mafiaPlayer.members.values()) {
-                    member.removeRole(mafiaPlayer);
+                    member.roles.remove(mafiaPlayer);
                 }
                 message.react(kaismile);
             } else if (message.content === ";listroles") {
@@ -1102,7 +1102,7 @@ client.on("message", (message) => {
                             day: day,
                             deadPlayers: deadPlayers,
                             hookDecided: hookDecided,
-                            mafiaChannel: mafiaChannel,
+                            mafiaChannel: mafiaChannelId,
                             players: players
                         }));
                     }
@@ -1111,25 +1111,24 @@ client.on("message", (message) => {
                     }
                     updateNight();
                 }
-                channel.overwritePermissions(mafiaPlayer, { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
+                channel.permissionOverwrites.edit(mafiaPlayer, FULL_SEND_PERMS);
                 for (let member of mafiaPlayer.members.values()) {
-                    member.removeRole(mafiaPlayer);
+                    member.roles.remove(mafiaPlayer);
                 }
-                let secret = channel.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                for (let overwrites of secret.permissionOverwrites.values()) {
+                let secret = await channel.guild.channels.fetch(mafiaSecretChannelId) as Discord.TextChannel;
+                for (let overwrites of secret.permissionOverwrites.cache.values()) {
                     if (overwrites.type === "member") {
                         overwrites.delete();
                     }
                 }
-                channel.overwritePermissions(channel.guild.roles.find((x) => x.name === "@everyone"), { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
+                channel.permissionOverwrites.edit(channel.guild.roles.everyone, FULL_SEND_PERMS);
                 cantEndDay = false;
                 cantBeginDay = false;
                 vengefulGame = false;
                 nightlessGame = false;
                 daystartGame = false;
                 daychatGame = false;
-                // dontRecordGame = false;
-                mafiaChannel = null;
+                dontRecordGame = false;
             } else if (message.content === ";partialcleanup") {
                 gameRunning = false;
                 if (dayCollector) {
@@ -1147,7 +1146,7 @@ client.on("message", (message) => {
                             day: day,
                             deadPlayers: deadPlayers,
                             hookDecided: hookDecided,
-                            mafiaChannel: mafiaChannel,
+                            mafiaChannel: mafiaChannelId,
                             players: players
                         }));
                     }
@@ -1156,22 +1155,21 @@ client.on("message", (message) => {
                     }
                     updateNight();
                 }
-                channel.overwritePermissions(mafiaPlayer, { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
-                let secret = channel.guild.channels.find((x) => x.name === mafiaSecretChannel) as Discord.TextChannel;
-                for (let overwrites of secret.permissionOverwrites.values()) {
+                channel.permissionOverwrites.edit(mafiaPlayer, FULL_SEND_PERMS);
+                let secret = await channel.guild.channels.fetch(mafiaSecretChannelId) as Discord.TextChannel;
+                for (let overwrites of secret.permissionOverwrites.cache.values()) {
                     if (overwrites.type === "member") {
                         overwrites.delete();
                     }
                 }
-                channel.overwritePermissions(channel.guild.roles.find((x) => x.name === "@everyone"), { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true });
+                channel.permissionOverwrites.edit(channel.guild.roles.everyone, FULL_SEND_PERMS);
                 cantEndDay = false;
                 cantBeginDay = false;
                 vengefulGame = false;
                 nightlessGame = false;
                 daystartGame = false;
                 daychatGame = false;
-                // dontRecordGame = false;
-                mafiaChannel = null;
+                dontRecordGame = false;
             }
             //  else {
             //     let match = message.content.match(/^;stat((?:-[A-Za-z])*)(?:-([0-9]+))? ([A-Za-z_0-9\-]+)$/);

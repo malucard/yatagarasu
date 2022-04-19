@@ -4,7 +4,10 @@ import * as Discord from 'discord.js';
 import { getSide, isSide } from "./Helpers";
 import { updateNight } from "./bot_v13";
 
-export const mafiaSecretChannel: string = "509048097993654312"; // Hard coded Trinity Fiction mafia secret chat channel.
+export const mafiaChannelId: string = "509047312534994944"; // Hard coded Trinity Fiction mafia chat channel.
+export const mafiaSecretChannelId: string = "509048097993654312"; // Hard coded Trinity Fiction mafia secret chat channel.
+export const mafiaPlayerId: string = "509048454836912138"; // Hard Coded Trinity Fiction Mafia Role ID
+export const mafiaManagerId: string = "527847967512854529"; // Hard Coded Trinity Fiction Mafia Role ID
 
 export const kaismile = "497430068331544577";
 
@@ -34,14 +37,15 @@ export const death_messages = [
 export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
 export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
 export const NO_SEND_PERMS = { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false };
-export const FULL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: false };
+export const PARTIAL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: false };
+export const FULL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true };
 
 export const roles: { [name: string]: Role } = {
     Blue: {
         name: "Blue",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Blue, number " + player.number + ".");
+            member.send(`You are a Blue, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
@@ -56,7 +60,7 @@ export const roles: { [name: string]: Role } = {
         side: Side.VILLAGE,
         vengeful: true,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Vengeful Blue, number " + player.number + ".");
+            member.send(`You are a Vengeful Blue, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
@@ -70,7 +74,7 @@ export const roles: { [name: string]: Role } = {
         name: "Bomb",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Bomb, number " + player.number + ". If you are killed by the mafia or shot, the killer will die as well.");
+            member.send(`You are a Bomb, number ${player.number}. If you are killed by the mafia or shot, the killer will die as well.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (_member: Discord.GuildMember, player: Player, _other) => {
@@ -84,25 +88,25 @@ export const roles: { [name: string]: Role } = {
         name: "Oracle",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are an Oracle, number " + player.number + ". Select a player each night. If you die, the role of the last player visited will be revealed to everyone. Your action can't be blocked.");
+            member.send(`You are an Oracle, number ${player.number}. Select a player each night. If you die, the role of the last player visited will be revealed to everyone. Your action can't be blocked.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to visit." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to visit.${text}`).then(async (message: Discord.Message) => {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 let collector = message.createReactionCollector({
@@ -115,16 +119,16 @@ export const roles: { [name: string]: Role } = {
                         player.data = null;
                         player.actionDone = true;
                         player.oracleVisit = null;
-                        message.edit(message.content + "\nYou visited no one.");
+                        message.edit(`${message.content}\nYou visited no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 player.oracleVisit = target.id;
-                                message.edit(message.content + "\nYou chose to visit " + target.name + ".");
+                                message.edit(`${message.content}\nYou chose to visit ${target.name}.`);
                                 collector.stop();
                                 updateNight();
                                 break;
@@ -141,7 +145,7 @@ export const roles: { [name: string]: Role } = {
                     collector.stop();
                     player.actionDone = true;
                     player.oracleVisit = null;
-                    message.edit(message.content + "\nNight ended. You visited no one.");
+                    message.edit(`${message.content}\nNight ended. You visited no one.`);
                 }
                 player.data = null;
             }
@@ -151,13 +155,13 @@ export const roles: { [name: string]: Role } = {
                 if (player.oracleVisit) {
                     for (let p of other.players) {
                         if (p.id === player.oracleVisit) {
-                            channel.send("<@" + p.id + "> is a " + p.role.name + ".");
+                            channel.send(`<@${p.id}> is a ${p.role.name}.`);
                             return;
                         }
                     }
                     for (let p of other.deadPlayers) {
                         if (p.id === player.oracleVisit) {
-                            channel.send("<@" + p.id + "> is a " + p.role.name + ".");
+                            channel.send(`<@${p.id}> is a ${p.role.name}.`);
                             return;
                         }
                     }
@@ -172,25 +176,25 @@ export const roles: { [name: string]: Role } = {
         name: "Doc",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Doc, number " + player.number + ".");
+            member.send(`You are a Doc, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+                text = ` 1-${other.players.length}`;
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to save." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to save.${text}`).then(async (message: Discord.Message) => {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
@@ -199,15 +203,15 @@ export const roles: { [name: string]: Role } = {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou saved no one.");
+                        message.edit(`${message.content}\nYou saved no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
-                                message.edit(message.content + "\nYou chose to save " + target.name + ".");
+                                message.edit(`${message.content}\nYou chose to save ${target.name}.`);
                                 if (other.hookDecided) {
                                     other.hookDecided.push(() => {
                                         if (!player.hooked) {
@@ -233,7 +237,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight ended. You saved no one.");
+                    message.edit(`${message.content}\nNight ended. You saved no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -247,25 +251,25 @@ export const roles: { [name: string]: Role } = {
         side: Side.VILLAGE,
         macho: true,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Macho Doc, number " + player.number + ".");
+            member.send(`You are a Macho Doc, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+                text = ` 1-${other.players.length}`;
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to save." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to save.${text}`).then(async (message: Discord.Message) => {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
@@ -274,15 +278,15 @@ export const roles: { [name: string]: Role } = {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou saved no one.");
+                        message.edit(`${message.content}\nYou saved no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
-                                message.edit(message.content + "\nYou chose to save " + target.name + ".");
+                                message.edit(`${message.content}\nYou chose to save ${target.name}.`);
                                 if (other.hookDecided) {
                                     other.hookDecided.push(() => {
                                         if (!player.hooked) {
@@ -316,7 +320,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight ended. You saved no one.");
+                    message.edit(`${message.content}\nNight ended. You saved no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -337,32 +341,32 @@ export const roles: { [name: string]: Role } = {
         name: "Cop",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Cop, number " + player.number + ".");
+            member.send(`You are a Cop, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+                text = ` 1-${other.players.length}`;
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to investigate." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to investigate.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou investigated no one.");
+                        message.edit(`${message.content}\nYou investigated no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -370,14 +374,14 @@ export const roles: { [name: string]: Role } = {
                                         if (player.hooked) {
                                             member.send("You were hooked.");
                                         } else {
-                                            member.send(target.name + " is sided with the " + Side[getSide(target)].toLowerCase() + ".");
+                                            member.send(`${target.name} is sided with the ${Side[getSide(target)].toLowerCase()}.`);
                                         }
                                     });
                                 } else {
                                     if (player.hooked) {
                                         member.send("You were hooked.");
                                     } else {
-                                        member.send(target.name + " is sided with the " + Side[getSide(target)].toLowerCase() + ".");
+                                        member.send(`${target.name} is sided with the ${Side[getSide(target)].toLowerCase()}.`);
                                     }
                                 }
                                 collector.stop();
@@ -390,7 +394,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -401,7 +405,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You investigated no one.");
+                    message.edit(`${message.content}\nNight action timed out. You investigated no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -414,32 +418,32 @@ export const roles: { [name: string]: Role } = {
         name: "Talent Scout",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Talent Scout, number " + player.number + ". Each night, you can check whether someone has a talent. The only roles without talents are Blue and Vanilla.");
+            member.send(`You are a Talent Scout, number ${player.number}. Each night, you can check whether someone has a talent. The only roles without talents are Blue and Vanilla.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+                text = ` 1-${other.players.length}`;
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to scout." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to scout.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou scouted no one.");
+                        message.edit(`${message.content}\nYou scouted no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -467,7 +471,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -478,7 +482,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You scouted no one.");
+                    message.edit(`${message.content}\nNight action timed out. You scouted no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -492,32 +496,32 @@ export const roles: { [name: string]: Role } = {
         side: Side.VILLAGE,
         macho: true,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Macho Cop, number " + player.number + ".");
+            member.send(`You are a Macho Cop, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to investigate." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to investigate.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou investigated no one.");
+                        message.edit(`${message.content}\nYou investigated no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -525,14 +529,14 @@ export const roles: { [name: string]: Role } = {
                                         if (player.hooked) {
                                             member.send("You were hooked.");
                                         } else {
-                                            member.send(target.name + " is sided with the " + Side[getSide(target)].toLowerCase() + ".");
+                                            member.send(`${target.name} is sided with the ${Side[getSide(target)].toLowerCase()}.`);
                                         }
                                     });
                                 } else {
                                     if (player.hooked) {
                                         member.send("You were hooked.");
                                     } else {
-                                        member.send(target.name + " is sided with the " + Side[getSide(target)].toLowerCase() + ".");
+                                        member.send(`${target.name} is sided with the ${Side[getSide(target)].toLowerCase()}.`);
                                     }
                                 }
                                 collector.stop();
@@ -545,7 +549,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -556,7 +560,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You investigated no one.");
+                    message.edit(`${message.content}\nNight action timed out. You investigated no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -570,32 +574,32 @@ export const roles: { [name: string]: Role } = {
         realName: "Insane Cop",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Cop, number " + player.number + ".");
+            member.send(`You are a Cop, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to investigate." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to investigate.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou investigated no one.");
+                        message.edit(`${message.content}\nYou investigated no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -603,14 +607,14 @@ export const roles: { [name: string]: Role } = {
                                         if (player.hooked) {
                                             member.send("You were hooked.");
                                         } else {
-                                            member.send(target.name + " is sided with the " + (target.role.side === Side.MAFIA ? "village" : "mafia") + ".");
+                                            member.send(`${target.name} is sided with the ${target.role.side === Side.MAFIA ? "village" : "mafia"}.`);
                                         }
                                     });
                                 } else {
                                     if (player.hooked) {
                                         member.send("You were hooked.");
                                     } else {
-                                        member.send(target.name + " is sided with the " + (target.role.side === Side.MAFIA ? "village" : "mafia") + ".");
+                                        member.send(`${target.name} is sided with the ${target.role.side === Side.MAFIA ? "village" : "mafia"}.`);
                                     }
                                 }
                                 collector.stop();
@@ -623,7 +627,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -634,7 +638,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You investigated no one.");
+                    message.edit(`${message.content}\nNight action timed out. You investigated no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -648,32 +652,32 @@ export const roles: { [name: string]: Role } = {
         realName: "Paranoid Cop",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Cop, number " + player.number + ".");
+            member.send(`You are a Cop, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to investigate." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to investigate.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou investigated no one.");
+                        message.edit(`${message.content}\nYou investigated no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -681,14 +685,14 @@ export const roles: { [name: string]: Role } = {
                                         if (player.hooked) {
                                             member.send("You were hooked.");
                                         } else {
-                                            member.send(target.name + " is sided with the mafia.");
+                                            member.send(`${target.name} is sided with the mafia.`);
                                         }
                                     });
                                 } else {
                                     if (player.hooked) {
                                         member.send("You were hooked.");
                                     } else {
-                                        member.send(target.name + " is sided with the mafia.");
+                                        member.send(`${target.name} is sided with the mafia.`);
                                     }
                                 }
                                 collector.stop();
@@ -701,7 +705,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -712,7 +716,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You investigated no one.");
+                    message.edit(`${message.content}\nNight action timed out. You investigated no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -726,32 +730,32 @@ export const roles: { [name: string]: Role } = {
         realName: "Naive Cop",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Cop, number " + player.number + ".");
+            member.send(`You are a Cop, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to investigate." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to investigate.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou investigated no one.");
+                        message.edit(`${message.content}\nYou investigated no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
                                 if (other.hookDecided) {
@@ -759,14 +763,14 @@ export const roles: { [name: string]: Role } = {
                                         if (player.hooked) {
                                             member.send("You were hooked.");
                                         } else {
-                                            member.send(target.name + " is sided with the village.");
+                                            member.send(`${target.name} is sided with the village.`);
                                         }
                                     });
                                 } else {
                                     if (player.hooked) {
                                         member.send("You were hooked.");
                                     } else {
-                                        member.send(target.name + " is sided with the village.");
+                                        member.send(`${target.name} is sided with the village.`);
                                     }
                                 }
                                 collector.stop();
@@ -779,7 +783,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -790,7 +794,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You investigated no one.");
+                    message.edit(`${message.content}\nNight action timed out. You investigated no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -803,35 +807,35 @@ export const roles: { [name: string]: Role } = {
         name: "Gunsmith",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Gunsmith, number " + player.number + ".");
+            member.send(`You are a Gunsmith, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-                text = " 1-" + other.players.length;
+            text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        text += "\n" + player.number + "- " + player.name;
+                        text += `\n${player.number}- ${player.name}`;
                     }
                 }
             }
-            member.send("Night " + other.day + " has begun. React with the number of who you wish to give a gun to." + text).then(async (message: Discord.Message) => {
+            member.send(`Night ${other.day} has begun. React with the number of who you wish to give a gun to.${text}`).then(async (message: Discord.Message) => {
                 let collector = message.createReactionCollector({ filter: (_reaction, user: Discord.User) => user.id === member.id });
                 collector.on("collect", (reaction) => {
                     if (reaction.emoji.name === "❌") {
                         player.data = null;
                         player.actionDone = true;
-                        message.edit(message.content + "\nYou gave a gun to no one.");
+                        message.edit(`${message.content}\nYou gave a gun to no one.`);
                         collector.stop();
                         updateNight();
                     } else {
                         for (let target of other.players) {
-                            if (target.id !== member.id && reaction.emoji.name === target.number + "\u20e3") {
+                            if (target.id !== member.id && reaction.emoji.name === `${target.number}\u20e3`) {
                                 player.data = null;
                                 player.actionDone = true;
-                                message.edit(message.content + "\nYou decided to give a gun to " + target.name + ".");
+                                message.edit(`${message.content}\nYou decided to give a gun to ${target.name}.`);
                                 if (other.hookDecided) {
                                     other.hookDecided.push(() => {
                                         if (!player.hooked) {
@@ -853,7 +857,7 @@ export const roles: { [name: string]: Role } = {
                 await message.react("❌");
                 for (let player of other.players) {
                     if (player.id !== member.id) {
-                        await message.react(player.number + "\u20e3");
+                        await message.react(`${player.number}\u20e3`);
                     }
                 }
                 player.data = [message, collector];
@@ -864,7 +868,7 @@ export const roles: { [name: string]: Role } = {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
-                    message.edit(message.content + "\nNight action timed out. You gave a gun to no one.");
+                    message.edit(`${message.content}\nNight action timed out. You gave a gun to no one.`);
                     player.actionDone = true;
                 }
                 player.data = null;
@@ -877,7 +881,7 @@ export const roles: { [name: string]: Role } = {
         name: "Deputy",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Deputy, number " + player.number + ". Your identity will not be revealed when shooting someone.");
+            member.send(`You are a Deputy, number ${player.number}. Your identity will not be revealed when shooting someone.`);
             player.gun = true;
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
@@ -892,7 +896,7 @@ export const roles: { [name: string]: Role } = {
         name: "Vanilla",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Vanilla, number ${player.number}.`);
@@ -900,19 +904,19 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 player.actionDone = true;
             });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -923,7 +927,7 @@ export const roles: { [name: string]: Role } = {
         side: Side.MAFIA,
         vengeful: true,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Vengeful Vanilla, number ${player.number}.`);
@@ -931,19 +935,19 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 player.actionDone = true;
             });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -953,7 +957,7 @@ export const roles: { [name: string]: Role } = {
         name: "Hooker",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Hooker, number ${player.number}.`);
@@ -961,13 +965,13 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             other.hookDecided = [];
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS);
                 secret.send(`<@${member.id}> Use \`;hook <number>\` to hook someone, or just \`;hook\` to not hook tonight.`);
                 let collector = secret.createMessageCollector({
@@ -995,7 +999,7 @@ export const roles: { [name: string]: Role } = {
                     } else if (message.content === ";hook") {
                         collector.stop();
                         player.data = null;
-                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
+                        member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => { });
                         secret.send(`<@${member.id}> You decided to hook no one.`);
                         for (let cb of other.hookDecided) {
                             cb();
@@ -1011,7 +1015,7 @@ export const roles: { [name: string]: Role } = {
         endNight: (member: Discord.GuildMember, player: Player, other) => {
             if (player.data) {
                 if (!player.actionDone) {
-                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                    member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                         secret.send(`<@${member.id}> Hook timed out. You hook no one.`);
                         player.actionDone = true;
                         for (let cb of other.hookDecided) {
@@ -1025,7 +1029,7 @@ export const roles: { [name: string]: Role } = {
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -1036,7 +1040,7 @@ export const roles: { [name: string]: Role } = {
         side: Side.MAFIA,
         fakeSide: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Godfather, number ${player.number}.`);
@@ -1044,19 +1048,19 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 player.actionDone = true;
             });
         },
         endNight: (_member: Discord.GuildMember, _player: Player, _other) => { },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -1066,7 +1070,7 @@ export const roles: { [name: string]: Role } = {
         name: "Janitor",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are a Janitor, number ${player.number}.`);
@@ -1074,12 +1078,12 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.edit(member, TALK_REACT_PERMS);
                 if (player.janitorCleaned) {
                     secret.send(`<@${member.id}> You already cleaned someone. You can't clean anymore.`);
@@ -1108,7 +1112,7 @@ export const roles: { [name: string]: Role } = {
                     } else if (message.content === ";clean") {
                         collector.stop();
                         player.data = null;
-                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
+                        member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => { });
                         secret.send(`<@${member.id}> You decided to clean no one.`);
                         player.actionDone = true;
                         updateNight();
@@ -1120,7 +1124,7 @@ export const roles: { [name: string]: Role } = {
         endNight: (member: Discord.GuildMember, player: Player, _other) => {
             if (player.data) {
                 if (!player.actionDone) {
-                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+                    member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                         secret.send(`<@${member.id}> Clean timed out. You clean no one.`);
                         player.actionDone = true;
                     });
@@ -1130,7 +1134,7 @@ export const roles: { [name: string]: Role } = {
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -1140,7 +1144,7 @@ export const roles: { [name: string]: Role } = {
         name: "Illusionist",
         side: Side.MAFIA,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, TALK_REACT_PERMS)
                 setTimeout(() => {
                     secret.send(`<@${member.id}>, You are an Illusionist, number ${player.number}.`);
@@ -1149,12 +1153,12 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endGame: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret) => {
                 secret.permissionOverwrites.delete(member);
             });
         },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.edit(member, TALK_REACT_PERMS);
                 if (!player.gun) {
                     secret.send(`<@${member.id}> You don't have a gun. You can't frame someone.`);
@@ -1175,7 +1179,7 @@ export const roles: { [name: string]: Role } = {
                                 collector.stop();
                                 player.data = null;
                                 player.frame = target.number;
-                                message.reply("You decided to frame number " + target.number + ", " + target.name + ".");
+                                message.reply(`You decided to frame number ${target.number}, ${target.name}.`);
                                 player.actionDone = true;
                                 updateNight();
                             }
@@ -1184,8 +1188,8 @@ export const roles: { [name: string]: Role } = {
                         collector.stop();
                         player.data = null;
                         player.frame = 0;
-                        member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => { });
-                        secret.send("<@" + member.id + "> You decided to frame no one.");
+                        member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => { });
+                        secret.send(`<@${member.id}> You decided to frame no one.`);
                         player.actionDone = true;
                         updateNight();
                     }
@@ -1197,8 +1201,8 @@ export const roles: { [name: string]: Role } = {
             if (player.data) {
                 if (!player.actionDone) {
                     player.frame = 0;
-                    member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
-                        secret.send("<@" + member.id + "> Frame timed out. You frame no one.");
+                    member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
+                        secret.send(`<@${member.id}> Frame timed out. You frame no one.`);
                         player.actionDone = true;
                     });
                 }
@@ -1207,7 +1211,7 @@ export const roles: { [name: string]: Role } = {
             }
         },
         die: (member: Discord.GuildMember, _player: Player, _other) => {
-            member.guild.channels.fetch(mafiaSecretChannel).then((secret: Discord.TextChannel) => {
+            member.guild.channels.fetch(mafiaSecretChannelId).then((secret: Discord.TextChannel) => {
                 secret.permissionOverwrites.create(member, VIEW_ONLY_PERMS)
             });
         }
@@ -1217,7 +1221,7 @@ export const roles: { [name: string]: Role } = {
         name: "Dreamer",
         side: Side.VILLAGE,
         beginGame: (member: Discord.GuildMember, player: Player, _other) => {
-            member.send("You are a Dreamer, number " + player.number + ".");
+            member.send(`You are a Dreamer, number ${player.number}.`);
         },
         endGame: (_member: Discord.GuildMember, _player: Player, _other) => { },
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
@@ -1234,18 +1238,18 @@ export const roles: { [name: string]: Role } = {
                 if (innos.length == 0) {
                     dream = "You dreamt of an innocent person: yourself! Everybody else is guilty!";
                 } else {
-                    dream = "You dreamt of an innocent person: " + innos[Math.floor(Math.random() * innos.length)].name + "!";
+                    dream = `You dreamt of an innocent person: ${innos[Math.floor(Math.random() * innos.length)].name}!`;
                 }
 
             } else if (v == 1) {
                 // dream of three people, at least one of which is mafia
                 let others = other.players.filter((v) => v.id !== player.id);
                 if (others.length == 1) {
-                    dream = "You dreamt of a suspect: " + others[0].name + "! They're guilty!";
+                    dream = `You dreamt of a suspect: ${others[0].name}! They're guilty!`;
                 } else if (others.length == 2) {
-                    dream = "You dreamt of two suspects: " + others.map((v) => v.name).join(", ") + "! At least one of them is guilty.";
+                    dream = `You dreamt of two suspects: ${others.map((v) => v.name).join(", ")}! At least one of them is guilty.`;
                 } else if (others.length == 3) {
-                    dream = "You dreamt of three suspects: " + others.map((v) => v.name).join(", ") + "! At least one of them is guilty.";
+                    dream = `You dreamt of three suspects: ${others.map((v) => v.name).join(", ")}! At least one of them is guilty.`;
                 } else {
                     let p: number[];
                     do {
@@ -1256,10 +1260,10 @@ export const roles: { [name: string]: Role } = {
                         if (p[2] >= p[0]) p[2]++;
                         if (p[2] >= p[1]) p[2]++;
                     } while (!isSide(others[p[0]], Side.MAFIA) && !isSide(others[p[1]], Side.MAFIA) && !isSide(others[p[2]], Side.MAFIA));
-                    dream = "You dreamt of three suspects: " + p.map((v) => others[v].name).join(", ") + "! At least one of them is guilty.";
+                    dream = `You dreamt of three suspects: ${p.map((v) => others[v].name).join(", ")}! At least one of them is guilty.`;
                 }
             }
-            member.send("Night " + other.day + " has begun, and you went to sleep.");
+            member.send(`Night ${other.day} has begun, and you went to sleep.`);
             player.actionDone = true;
             if (other.hookDecided) {
                 other.hookDecided.push(() => {
