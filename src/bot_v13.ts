@@ -889,7 +889,9 @@ client.on("message", async (message) => {
             }
         }
     } else if (message.guild && message.member) {
-        if (message.author.id === "197436970052354049" && message.content.startsWith(";echo ")) {
+        if(!message.content.startsWith(";"))
+            return;
+        else if (message.author.id === "197436970052354049" && message.content.startsWith(";echo ")) {
             message.channel.send(message.content.substring(6));
             return;
         }
@@ -897,7 +899,11 @@ client.on("message", async (message) => {
         mafiaPlayer = message.guild.roles.cache.find((x) => x.name === "Mafia Player");
         if (!mafiaPlayer) {
             console.error(mafiaPlayer);
-            throw Error('Mafia Player Role not found');
+            mafiaPlayer = await message.guild.roles.fetch(mafiaPlayerId);
+            if (!mafiaPlayer) {
+                console.error(message);
+                throw Error('Mafia Player Role not found');
+            }
         }
         const mafiaId = mafiaPlayer.id;
         let hasMafiaManager = message.member.roles.cache.find((x) => x.name === "Mafia Manager");
@@ -912,7 +918,7 @@ client.on("message", async (message) => {
             if (message.content === ";startsignup") {
                 if (!signupCollector) {
                     channel.send("Signup for a new round of Mafia has started! If you want to join, type `;signup`.");
-                    signupCollector = channel.createMessageCollector({ filter: (message) => !!message.content.match(/^;sign(up|out)$/) });
+                    signupCollector = channel.createMessageCollector({ filter: (message) => !!message.content.match(/^;(sign(up|out)|players)$/) });
                     signupCollector.on("collect", async (message) => {
                         if (message.content === ";signup") {
                             message.member.roles.add(mafiaPlayer);
