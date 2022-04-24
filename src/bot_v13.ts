@@ -889,7 +889,7 @@ client.on("message", async (message) => {
             }
         }
     } else if (message.guild && message.member) {
-        if(!message.content.startsWith(";"))
+        if (!message.content.startsWith(";"))
             return;
         else if (message.author.id === "197436970052354049" && message.content.startsWith(";echo ")) {
             message.channel.send(message.content.substring(6));
@@ -957,9 +957,11 @@ client.on("message", async (message) => {
                     signupCollector.stop();
                     signupCollector = null;
                 }
-                for (let member of mafiaPlayer.members.values()) {
-                    member.roles.remove(mafiaPlayer);
-                }
+                message.guild.roles.fetch(mafiaId).then(role =>
+                    role.members.forEach(member =>
+                        member.roles.remove(role)
+                    )
+                );
                 message.react(kaismile);
             } else if (message.content === ";listroles") {
                 let text;
