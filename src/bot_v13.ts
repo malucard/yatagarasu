@@ -1,5 +1,5 @@
 import { createServer } from 'http';
-import * as Discord from 'discord.js';
+import Discord from 'discord.js';
 
 import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS, FULL_SEND_PERMS, mafiaPlayerId, mafiaChannelId } from './constants';
 import { shuffleArray, countSides, listLynch, calculateLynch, getCount } from './Helpers';

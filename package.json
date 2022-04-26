@@ -17,7 +17,6 @@
 		"discord.js": "^13.6.0",
 		"erlpack": "github:discordapp/erlpack",
 		"http": "0.0.0",
-		"mongodb": "^3.7.3",
 		"nodemon": "^2.0.15",
 		"typescript": "^3.7.4",
 		"uws": "^9.148.0",
