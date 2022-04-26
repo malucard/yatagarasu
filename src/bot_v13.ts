@@ -5,6 +5,7 @@ import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_
 import { shuffleArray, countSides, listLynch, calculateLynch, getCount } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
+import { botLoginAuth } from './auth';
 
 const IntentFlags = Discord.Intents.FLAGS;
 const myIntents = [
@@ -1410,4 +1411,4 @@ client.on("message", async (message) => {
     }
 });
 
-client.login("NTAyOTc0NzIwNTQzNjg2NjU2.DqvvVA.KobwnmoBdeqwPbp8dEgx79bQ_uc");
+client.login(botLoginAuth);
