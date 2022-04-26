@@ -139,7 +139,7 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endNight: (_member: Discord.GuildMember, player: Player, _other) => {
-            if (!player.actionDone) {
+            if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
@@ -233,7 +233,7 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endNight: (_member: Discord.GuildMember, player: Player, _other) => {
-            if (!player.actionDone) {
+            if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
@@ -316,7 +316,7 @@ export const roles: { [name: string]: Role } = {
             });
         },
         endNight: (_member: Discord.GuildMember, player: Player, _other) => {
-            if (!player.actionDone) {
+            if (player.data) {
                 let [message, collector] = player.data;
                 if (!player.actionDone) {
                     collector.stop();
