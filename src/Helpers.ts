@@ -42,11 +42,11 @@ export function listLynch(players: Player[]) {
     let text = "";
     for (let player of players) {
         if (player.lynchVote === "nobody") {
-            text += "\n" + player.name + " votes to lynch nobody";
+            text += `\n${player.name} votes to lynch nobody`;
         } else {
             for (let player2 of players) {
                 if (player.lynchVote === player2.id) {
-                    text += "\n" + player.name + " votes to lynch " + player2.name;
+                    text += `\n${player.name} votes to lynch ${player2.name}`;
                     break;
                 }
             }
@@ -64,10 +64,10 @@ export function listLynch(players: Player[]) {
             }
         }
         if (!found) {
-            lynch = "(no user found <:Oumwha:498525028782964746>, ID " + lynch + " of type " + typeof (lynch) + ")"
+            lynch = `(no user found <:Oumwha:498525028782964746>, ID ${lynch} of type ${typeof (lynch)})`
         }
     }
-    return text + "\n**The consensus is to lynch " + lynch + ".**";
+    return `${text}\n**The consensus is to lynch ${lynch}.**`;
 }
 
 export function calculateLynch(players: Player[]): string {
