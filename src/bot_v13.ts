@@ -229,7 +229,7 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                             });
                         }
                         gameInfo.winningSide = "mafia";
-                        channel.send("<@&" + mafiaPlayer.id + "> The Mafia won!" + text);
+                        channel.send(`<@&${mafiaPlayer.id}> The Mafia won!${text}`);
                         endGame(channel, mafiaPlayer);
                         return;
                     } else if (vengefulGame ? mafia === 0 && village > 0 : mafia === 0) {
@@ -263,12 +263,12 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                             });
                         }
                         gameInfo.winningSide = "village";
-                        channel.send("<@&" + mafiaPlayer.id + "> The Village won!" + text);
+                        channel.send(`<@&${mafiaPlayer.id}> The Village won!${text}`);
                         endGame(channel, mafiaPlayer);
                         return;
                     } else if (mafia === 0 && village === 0) {
                         gameInfo.winningSide = "tie";
-                        channel.send("<@&" + mafiaPlayer.id + "> It was a tie!");
+                        channel.send(`<@&${mafiaPlayer.id}> It was a tie!`);
                         endGame(channel, mafiaPlayer);
                         return;
                     }
@@ -316,7 +316,7 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     cantEndDay = false;
     let numbers = "";
     for (let player of players) {
-        numbers += "\n" + player.number + "- " + player.name;
+        numbers += `\n${player.number}- ${player.name}`;
     }
     for (let player of players) {
         if (player.gun) {
@@ -742,7 +742,7 @@ function beginGame(channel: Discord.TextChannel, mafiaPlayer: Discord.Role, setu
 // });
 
 client.on("ready", () => {
-    console.log("Connected as " + client.user.tag);
+    console.log(`Connected as ${client.user.tag}`);
 });
 
 client.on("error", (error) => {
@@ -968,22 +968,22 @@ client.on("message", async (message) => {
                 let text;
                 for (let [i] of Object.entries(roles)) {
                     if (text) {
-                        text += ", " + i;
+                        text += `, ${i}`;
                     } else {
                         text = i;
                     }
                 }
-                message.reply("Roles: " + text);
+                message.reply(`Roles: ${text}`);
             } else if (message.content === ";listsetups") {
                 let text;
                 for (let [i, v] of Object.entries(setups)) {
                     if (text) {
-                        text += ", " + i + " (" + v.roles.length + ")";
+                        text += `, ${i} (${v.roles.length})`;
                     } else {
-                        text = i + " (" + v.roles.length + ")";
+                        text = `${i} (${v.roles.length})`;
                     }
                 }
-                message.reply("Setups: " + text);
+                message.reply(`Setups: ${text}`);
             } else if (message.content.startsWith(";setupinfo ")) {
                 let name = message.content.substring(11).toLowerCase();
                 if (name in setups) {
@@ -1019,7 +1019,7 @@ client.on("message", async (message) => {
                     if (m.length > idx + 1) {
                         count = parseInt(m.substring(idx + 2));
                     }
-                    let role = m.substring(1, idx - 2);
+                    let role = m.substring(1, idx);
                     let alts = (role.includes("/") ? role.split("/") : [role])
                         .map((v) => {
                             if (v in roles) {
@@ -1058,10 +1058,10 @@ client.on("message", async (message) => {
                 if (error.length != 0 || oerror.length != 0) {
                     let text = "";
                     if (error.length != 0) {
-                        text += "Roles not found: " + error + "\n";
+                        text += `Roles not found: ${error}\n`;
                     }
                     if (oerror.length != 0) {
-                        text += "Options not found: " + oerror + "\n";
+                        text += `Options not found: ${oerror}\n`;
                     }
                     message.reply(text);
                     return;
