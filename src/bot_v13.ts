@@ -10,6 +10,7 @@ import { botLoginAuth } from './auth';
 const IntentFlags = Discord.Intents.FLAGS;
 const myIntents = [
     IntentFlags.GUILDS,
+    // IntentFlags.GUILD_MEMBERS,
     IntentFlags.GUILD_MESSAGES,
     IntentFlags.GUILD_MESSAGE_REACTIONS,
     IntentFlags.DIRECT_MESSAGES,
