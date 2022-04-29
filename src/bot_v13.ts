@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import Discord from 'discord.js';
 
 import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS, FULL_SEND_PERMS, mafiaPlayerId, mafiaChannelId } from './constants';
-import { shuffleArray, countSides, listLynch, calculateLynch, getCount } from './Helpers';
+import { shuffleArray, countSides, listLynch, calculateLynch, getCount, getPlayers } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 import { botLoginAuth } from './auth';
@@ -920,7 +920,7 @@ client.on("message", async (message) => {
             if (message.content === ";startsignup") {
                 if (!signupCollector) {
                     channel.send("Signup for a new round of Mafia has started! If you want to join, type `;signup`.");
-                    signupCollector = channel.createMessageCollector({ filter: (message) => !!message.content.match(/^;(sign(up|out)|players)$/) });
+                    signupCollector = channel.createMessageCollector({ filter: (message) => !!message.content.match(/^;(sign(up|out)|player(s|list))$/) });
                     signupCollector.on("collect", async (message) => {
                         if (message.content === ";signup") {
                             message.member.roles.add(mafiaPlayer);
@@ -950,6 +950,24 @@ client.on("message", async (message) => {
                                 });
                             } else {
                                 message.reply(count.toString());
+                            }
+                        } else if (message.content === ";playerlist") {
+                            const players = await getPlayers(message, mafiaId);
+                            if (!players.size) {
+                                message.reply({
+                                    content: "There are no players currently signed up."
+                                })
+                            } else {
+                                let playerList = "";
+                                players.toJSON().forEach((player, index) => {
+                                    playerList += `${index + 1}: ${player.user.toString()}\n`;
+                                });
+                                message.reply({
+                                    embeds: [{
+                                        title: "Signed up players",
+                                        description: playerList
+                                    }]
+                                });
                             }
                         }
                     });
