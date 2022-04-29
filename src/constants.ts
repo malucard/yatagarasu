@@ -34,6 +34,23 @@ export const death_messages = [
     "%pr's body was found wearing a fancy red suit and sunglasses this morning."
 ];
 
+export const foods = [
+    "spaghetti",
+    "rice",
+    "burger",
+    "macaroni",
+    "chicken meat",
+    "steak",
+    "fish",
+    "instant noodles",
+    "chicken nuggets",
+    "strawberry",
+    "lemon pie",
+    "chocolate",
+    "mashed potatoes",
+    "fries"
+];
+
 export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
 export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
 export const NO_SEND_PERMS = { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false };
@@ -94,7 +111,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
@@ -502,7 +519,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
@@ -580,7 +597,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
@@ -658,7 +675,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
@@ -736,7 +753,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {
@@ -813,7 +830,7 @@ export const roles: { [name: string]: Role } = {
         beginNight: (member: Discord.GuildMember, player: Player, other) => {
             let text = "";
             if (other.day === 1) {
-            text = ` 1-${other.players.length}`
+                text = ` 1-${other.players.length}`
             } else {
                 for (let player of other.players) {
                     if (player.id !== member.id) {

@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import Discord from 'discord.js';
 
 import { death_messages, PARTIAL_SEND_PERMS, kaismile, mafiaSecretChannelId, NO_SEND_PERMS, roles, setups, VIEW_ONLY_PERMS, FULL_SEND_PERMS, mafiaPlayerId, mafiaChannelId } from './constants';
-import { shuffleArray, countSides, listLynch, calculateLynch, getCount, getPlayers } from './Helpers';
+import { shuffleArray, countSides, listLynch, calculateLynch, getCount, getPlayers, listLunch } from './Helpers';
 import { Side } from './enum';
 import { Player, Role, Setup } from './classes';
 import { botLoginAuth } from './auth';
@@ -388,7 +388,7 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
         dayCollector.stop();
         dayCollector = null;
     }
-    dayCollector = channel.createMessageCollector({ filter: message => !!message.content.match(/^;((lynch|shoot)( <@!?([0-9]{17,18})>)?|listlynch|removelynch)$/) });
+    dayCollector = channel.createMessageCollector({ filter: message => !!message.content.match(/^;((l(u|y)nch|shoot)( <@!?([0-9]{17,18})>)?|listl(u|y)nch|removelynch)$/) });
     dayCollector.on("collect", message => {
         let allVoted = true;
         for (let player of players) {
@@ -401,6 +401,15 @@ function beginDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                     message.react(kaismile);
                 } else if (message.content === ";listlynch") {
                     message.reply(listLynch(players));
+                } else if (message.content === ";listlunch") {
+                    message.reply(listLunch());
+                } else if (message.content === ";lunch") {
+                    message.reply("Don't stay hungry.");
+                } else if (message.content.startsWith(";lunch ")) {
+                    let match = message.content.match(/^;lunch <@!?([0-9]{17,18})>$/);
+                    if (match) {
+                        message.reply("Interesting lunch choice.");
+                    } else message.reply("Good lunch choice.");
                 } else if (message.content === ";lynch") {
                     dontRecordGame = true;
                     player.lynchVote = "nobody";

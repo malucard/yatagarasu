@@ -1,5 +1,6 @@
 import { Collection, GuildMember, Message } from "discord.js";
 import { Player } from "./classes";
+import { foods } from "./constants";
 import { Side } from "./enum";
 
 export function getSide(player: Player): Side {
@@ -92,6 +93,10 @@ export function calculateLynch(players: Player[]): string {
         }
     }
     return lynch === "nobody" ? null : lynch;
+}
+
+export function listLunch(): string {
+    return `Lunches available today are:\n${shuffleArray(foods).slice(0, 3).join('\n')}`;
 }
 
 export async function getPlayers(message:Message, mafiaId: string): Promise<Collection<string, GuildMember>> {
