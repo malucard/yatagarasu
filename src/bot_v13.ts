@@ -140,7 +140,14 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                         if (!daychatGame && player.role.side === Side.MAFIA) {
                             secret.permissionOverwrites.edit(member, VIEW_ONLY_PERMS);
                         }
-                        player.role.endNight(member, player);
+                        player.role.endNight(member, player, {
+                            client: client,
+                            day: day,
+                            deadPlayers: deadPlayers,
+                            hookDecided: hookDecided,
+                            mafiaChannel: mafiaChannelId,
+                            players: players
+                        });
                     });
                 }
                 if (mafiaKill === -2) {
@@ -171,7 +178,14 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                                 channel.send(m.replace(/%pr/g, `<@${player.id}> (the ${player.role.name})`).replace(/%p/g, `<@${player.id}>`).replace(/%r/g, player.role.name));
                             }
                             channel.guild.members.fetch(player.id).then(member => {
-                                player.role.die(member, player);
+                                player.role.die(member, player, {
+                                    client: client,
+                                    day: day,
+                                    deadPlayers: deadPlayers,
+                                    hookDecided: hookDecided,
+                                    mafiaChannel: mafiaChannelId,
+                                    players: players
+                                });
                                 member.roles.remove(mafiaPlayer);
                                 players.splice(i, 1);
                                 deadPlayers.push(player);
@@ -184,7 +198,14 @@ function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                                                 channel.send(`<@${player.id}>, the ${player.role.name}, exploded.`);
                                             }
                                             channel.guild.members.fetch(player.id).then(member => {
-                                                player.role.die(member, player);
+                                                player.role.die(member, player, {
+                                                    client: client,
+                                                    day: day,
+                                                    deadPlayers: deadPlayers,
+                                                    hookDecided: hookDecided,
+                                                    mafiaChannel: mafiaChannelId,
+                                                    players: players
+                                                });
                                                 member.roles.remove(mafiaPlayer);
                                                 players.splice(i, 1);
                                                 deadPlayers.push(player);
@@ -456,15 +477,22 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
     if (lynch) {
         let player: Player;
         let member: Discord.GuildMember;
-        for (let [i, p] of players.entries()) {
-            if (p.id === lynch) {
-                channel.send(`<@${p.id}>, the ${p.role.name}, was lynched.`);
-                member = await channel.guild.members.fetch(p.id);
-                p.role.die(member, p);
-                player = p;
+        for (let [i, player] of players.entries()) {
+            if (player.id === lynch) {
+                channel.send(`<@${player.id}>, the ${player.role.name}, was lynched.`);
+                member = await channel.guild.members.fetch(player.id);
+                player.role.die(member, player, {
+                    client: client,
+                    day: day,
+                    deadPlayers: deadPlayers,
+                    hookDecided: hookDecided,
+                    mafiaChannel: mafiaChannelId,
+                    players: players
+                });
+                player = player;
                 member.roles.remove(mafiaPlayer);
                 players.splice(i, 1);
-                deadPlayers.push(p);
+                deadPlayers.push(player);
                 break;
             }
         }
@@ -567,7 +595,14 @@ async function endDay(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
                         if (player.number === parseInt(reaction.emoji.name.substring(0, 1))) {
                             channel.send(`<@${player.id}>, the ${player.role.name}, was killed in revenge.`);
                             let member = await channel.guild.members.fetch(player.id);
-                            player.role.die(member, player);
+                            player.role.die(member, player, {
+                                client: client,
+                                day: day,
+                                deadPlayers: deadPlayers,
+                                hookDecided: hookDecided,
+                                mafiaChannel: mafiaChannelId,
+                                players: players
+                            });
                             member.roles.remove(mafiaPlayer);
                             players.splice(i, 1);
                             deadPlayers.push(player);
@@ -799,7 +834,14 @@ client.on("message", async (message) => {
                                     channel.send(`<@${player2.id}>, the ${player2.role.name}, was shot.`);
                                 }
                                 let member = await channel.guild.members.fetch(player2.id);
-                                player2.role.die(member, player2);
+                                player2.role.die(member, player2, {
+                                    client: client,
+                                    day: day,
+                                    deadPlayers: deadPlayers,
+                                    hookDecided: hookDecided,
+                                    mafiaChannel: mafiaChannelId,
+                                    players: players
+                                });
                                 member.roles.remove(mafiaPlayer);
                                 players.splice(i, 1);
                                 deadPlayers.push(player2);
@@ -808,7 +850,14 @@ client.on("message", async (message) => {
                                         if (p.id === player.id && (!player.saved || player.role.macho)) {
                                             channel.send(`<@${player.id}>, the ${player.role.name}, exploded.`);
                                             let member = await channel.guild.members.fetch(player.id);
-                                            player.role.die(member, player);
+                                            player.role.die(member, player, {
+                                                client: client,
+                                                day: day,
+                                                deadPlayers: deadPlayers,
+                                                hookDecided: hookDecided,
+                                                mafiaChannel: mafiaChannelId,
+                                                players: players
+                                            });
                                             member.roles.remove(mafiaPlayer);
                                             players.splice(i, 1);
                                             deadPlayers.push(player);
