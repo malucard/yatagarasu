@@ -38,26 +38,85 @@ export function updateNight() {
     }
 }
 
+/**
+ * Number of the player last killed by mafia
+ */
 let mafiaKill = 0;
+/**
+ * Number of the last killer from the mafia
+ */
 let mafiaKiller = 0;
+/**
+ * Callbacks of night actions when hooker is active
+ */
 let hookDecided: (() => void)[];
+/**
+ * List of Alive players
+ */
 let players: Player[] = [];
+/**
+ * List of Dead Players
+ */
 let deadPlayers: Player[] = [];
+/**
+ * Current day of the game
+ */
 let day = 0;
+/**
+ * Current state of the game does not allow beginning day
+ */
 let cantBeginDay = false;
+/**
+ * Current state of the game does not allow ending day
+ */
 let cantEndDay = false;
+/**
+ * Game is currently running
+ */
 let gameRunning = false;
+/**
+ * Game contains vengeful roles
+ */
 let vengefulGame = false;
+/**
+ * Game only has night phases
+ */
 let nightlessGame = false;
+/**
+ * Game starts on D1
+ */
 let daystartGame = false;
+/**
+ * Allows the mafia to talk in their channel during the day
+ */
 let daychatGame = false;
+/**
+ * Game is not recorded
+ */
 let dontRecordGame = false;
+/**
+ * Stores game info, mostly for recording.
+ */
 let gameInfo: { [id: string]: any };
+/**
+ * Mafia Player Role
+ */
 let mafiaPlayer: Discord.Role;
-
+/**
+ * Collector used during signup phase
+ */
 let signupCollector: Discord.MessageCollector;
+/**
+ * Collector used during day phase
+ */
 let dayCollector: Discord.MessageCollector;
+/**
+ * Timeout used during the day
+ */
 let dayTimeout: NodeJS.Timeout;
+/**
+ * Timeout used during the night
+ */
 let nightTimeout: NodeJS.Timeout;
 
 function beginNight(channel: Discord.TextChannel, mafiaPlayer: Discord.Role) {
@@ -1061,6 +1120,21 @@ client.on("message", async (message) => {
                     }
                 }
                 message.reply(`Setups: ${text}`);
+            } else if (message.content.startsWith(";listsetups ")) {
+                const number = parseInt(message.content.substring(12));
+                if (!isNaN(number)) {
+                    let text: string;
+                    for (let [i, v] of Object.entries(setups)) {
+                        if (v.roles.length === number) {
+                            if (text) {
+                                text += `, ${i} (${v.roles.length})`;
+                            } else {
+                                text = `${i} (${v.roles.length})`;
+                            }
+                        }
+                    }
+                    message.reply(text ? `Setups: ${text}` : `No Setups for ${number} player${number !== 1 ? 's' : ''}.`);
+                }
             } else if (message.content.startsWith(";setupinfo ")) {
                 let name = message.content.substring(11).toLowerCase();
                 if (name in setups) {
