@@ -1171,14 +1171,14 @@ client.on("message", async (message) => {
                         count = parseInt(m.substring(idx + 2));
                     }
                     let role = m.substring(1, idx);
-                    let alts = (role.includes("/") ? role.split("/") : [role])
-                        .map((v) => {
-                            if (v in roles) {
-                                return roles[v];
-                            } else {
-                                error.push(v);
-                            }
-                        });
+                    let alts = (role.includes("/") ? role.split("/") : [role]).map(roleName => {
+                        roleName = roleName[0].toUpperCase() + roleName.substring(1);
+                        if (roleName in roles) {
+                            return roles[roleName];
+                        } else {
+                            error.push(roleName);
+                        }
+                    });
                     for (let i = 0; i < count; i++) {
                         setup.roles.push(alts);
                     }
