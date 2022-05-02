@@ -1,0 +1,93 @@
+import {Game, Player} from "./game";
+
+export class Item {
+	name: string;
+	help: string;
+	no_target?: boolean;
+	night_use?: boolean;
+	/// if can cause owner's side to win even if they are at a loss, such as with guns
+	/// this changes the win condition for the mafia from "mafia >= village" to "village == 0"
+	can_turn_over?: boolean;
+	stays_after_use?: boolean;
+
+	use: (target: Player, player: Player, game: Game) => void;
+}
+
+export class Inventory {
+	items: Item[] = [];
+
+	add_item(it: Item) {
+		this.items.push(it);
+	}
+
+	print(player: Player, game: Game): string {
+		let res = "Inventory:";
+		let map: {[id: string]: number} = {};
+		for(let it of this.items) {
+			if(map.hasOwnProperty(it.name)) {
+				map[it.name]++;
+			} else {
+				map[it.name] = 1;
+			}
+		}
+		for(let [id, count] of Object.entries(map)) {
+			let it = items[id];
+			res += `\n- ${id} x${count} (${it.night_use? "use at day": "use at night"}, ${it.no_target? "does not require a target": "requires a target"})\n= ${it.help}`;
+		}
+		res += "\nUse an item by sending me `;use <item name> <target number>` at any time during the day or night depending on the item.";
+		if(!player.already_sent_player_list) {
+			player.already_sent_player_list = true;
+			res += " Targets:";
+			for(let p of Object.values(game.players)) {
+				if(p.number != player.number) {
+					res += `\n${p.number}- ${game.hiding_numbers? p.name: "<hidden>"}`;
+				}
+			}
+		}
+		return res;
+	}
+};
+
+export const items: {[name: string]: Item} = {
+	Gun: {
+		name: "Gun",
+		help: "Kill a target. Has a 50% chance of revealing who fired it.",
+		can_turn_over: true,
+		use: (target, player, game) => {
+			player.member.send(`You chose to shoot ${target.name}.`);
+			game.kill(target);
+			if(Math.random() < 0.5) {
+				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot by <@${player.member.id}>.`);
+			} else {
+				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
+			}
+		}
+	},
+	DeputyGun: {
+		name: "DeputyGun",
+		help: "Kill a target. Will not reveal who fired it.",
+		can_turn_over: true,
+		use: (target, player, game) => {
+			player.member.send(`You chose to shoot ${target.name}.`);
+			game.kill(target);
+			game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
+		}
+	},
+	Syringe: {
+		name: "Syringe",
+		help: "Prevent a target from dying tonight.",
+		night_use: true,
+		use: (target, player, game) => {
+			target.protected = true;
+			player.member.send(`You chose to protect ${target.name}.`);
+		}
+	},
+	Bread: {
+		name: "Bread",
+		help: "Nourish yourself.",
+		no_target: true,
+		use: (target, player, game) => {
+			player.member.send(`You ate Bread.`);
+		}
+	}
+}
