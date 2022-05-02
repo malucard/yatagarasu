@@ -1,4 +1,3 @@
-import { createServer } from "http";
 import Discord, { GuildMember, Message, MessageCollector, TextChannel } from "discord.js";
 import { botLoginAuth } from "./auth";
 import { FULL_SEND_PERMS, Game, Player } from "./game";
@@ -18,11 +17,6 @@ const client = new Discord.Client({
 	]
 });
 
-/*const server = createServer((_req, res) => {
-	res.end();
-});
-server.listen();*/
-
 let signups: {[channel: string]: MessageCollector} = {};
 
 function get_mafia_channel_data(ch: TextChannel): [Discord.Role, Discord.TextChannel] | undefined {
@@ -36,7 +30,7 @@ function get_mafia_channel_data(ch: TextChannel): [Discord.Role, Discord.TextCha
 let cmds = [{
 	name: "startsignup",
 	description: "startsignup",
-	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
+	action: async (member: GuildMember, channel: TextChannel, _message?: Message) => {
 		if(!member.roles.cache.find(x => x.name === "Mafia Manager")) {
 			return;
 		}
@@ -131,7 +125,7 @@ let cmds = [{
 }, {
 	name: "role",
 	description: "role",
-	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
+	action: async (_member: GuildMember, _channel: TextChannel, message?: Message) => {
 		let m = message.content.match("; *role +([a-zA-Z]+)");
 		if(m) {
 			if(roles[m[1]]) {
@@ -144,7 +138,7 @@ let cmds = [{
 }, {
 	name: "roles",
 	description: "roles",
-	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
+	action: async (_member: GuildMember, _channel: TextChannel, message?: Message) => {
 		let h = "";
 		for(let r of Object.values(roles)) {
 			h += "\n" + r.name + " (" + Side[r.side] + "): " + r.help;
