@@ -1,8 +1,7 @@
 import { createServer } from "http";
-import Discord, { ApplicationCommandData, GuildMember, Message, MessageCollector, TextChannel } from "discord.js";
+import Discord, { GuildMember, Message, MessageCollector, TextChannel } from "discord.js";
 import { botLoginAuth } from "./auth";
 import { FULL_SEND_PERMS, Game, Player } from "./game";
-import { Inventory } from "./item";
 import { Role, roles } from "./role";
 import { shuffle_array, State } from "./util";
 
@@ -46,7 +45,7 @@ let cmds = [{
 			channel.send("Invalid channel for Mafia.");
 			return;
 		}
-		let [role_mafia_player, mafia_secret_chat] = data;
+		let [role_mafia_player, _mafia_secret_chat] = data;
 		channel.send("Signup for a new round of Mafia has started! If you want to join, type `;signup`.");
 		if(!signups.hasOwnProperty(channel.id)) {
 			let col = channel.createMessageCollector();
