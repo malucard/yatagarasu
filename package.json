@@ -2,6 +2,7 @@
 	"main": "dist/bot.js",
 	"scripts": {
 		"build-ts": "tsc",
+		"prestart": "npm run build-ts",
 		"start": "npm run serve",
 		"serve": "node dist/bot.js",
 		"watch-node": "nodemon dist/bot.js",
