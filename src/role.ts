@@ -65,24 +65,17 @@ function request_action_targeted(verb: string, report: RoleActionReport, player:
 						player.member.send("You can't " + verb + " yourself.");
 						return;
 					}
-					for(let p of Object.values(game.players)) {
-						if(p.number === n) {
-							player.action_pending = false;
-							collector.stop();
-							player.data.collector = null;
-							msg.edit(msg.content + `\nYou chose to ${verb} ${p.name}.`);
-							if(game.night_report_passed) {
-								player.action_report_pending = false;
-								if(!player.hooked) {
-									report(p, player, game);
-								}
-							} else {
-								player.action_report_pending = true;
-								player.data.target = p;
-							}
-							game.update_night();
-							break;
-						}
+					let p = game.players[n];
+					if(p) {
+						collector.stop();
+						player.data.collector = null;
+						player.action_pending = false;
+						player.action_report_pending = true;
+						msg.edit(msg.content + `\nYou chose to ${verb} ${p.name}.`);
+						player.data.target = p;
+						game.update_night();
+					} else {
+						player.member.send("Invalid target.");
 					}
 				}
 			}
@@ -150,24 +143,17 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, p
 					let m = action_msg.content.match(new RegExp("^; *" + verb + " +([0-9]+)$", "i"));
 					if(m) {
 						let n = parseInt(m[1]);
-						for(let p of Object.values(game.players)) {
-							if(p.number === n) {
-								player.action_pending = false;
-								collector.stop();
-								player.data.collector = null;
-								action_msg.reply(`You chose to ${verb} ${p.name}.`);
-								if(game.mafia_night_report_passed) {
-									player.action_report_pending = false;
-									if(!player.hooked) {
-										report(p, player, game);
-									}
-								} else {
-									player.action_report_pending = true;
-									player.data.target = p;
-								}
-								game.update_night();
-								break;
-							}
+						let p = game.players[n];
+						if(p) {
+							collector.stop();
+							player.data.collector = null;
+							player.action_pending = false;
+							player.action_report_pending = true;
+							action_msg.reply(`You chose to ${verb} ${p.name}.`);
+							player.data.target = p;
+							game.update_night();
+						} else {
+							action_msg.reply("Invalid target.");
 						}
 					}
 				}
@@ -181,7 +167,7 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, p
  * @param hooked_report if hooked, calls this instead of report, or says "You were hooked." if this is true, or does nothing if null
  * @param cancel_report if the player cancelled the action, calls this instead of report
  */
-function template_targeted_mafia(verb: string, report: RoleActionReport, hooked_report?: RoleActionReport, cancel_report?: RoleAction): {[state: number]: RoleAction} {
+function template_targeted_mafia(verb: string, report: RoleActionReport, hooked_report?: RoleActionReport | boolean, cancel_report?: RoleAction): {[state: number]: RoleAction} {
 	return {
 		[State.NIGHT]: (player, game) => {
 			player.action_pending = true;
@@ -195,10 +181,10 @@ function template_targeted_mafia(verb: string, report: RoleActionReport, hooked_
 					cancel_report(player, game);
 				} else {
 					if(player.hooked) {
-						if(hooked_report) {
-							hooked_report(player.data.target, player, game);
-						} else {
+						if(hooked_report === true) {
 							game.mafia_secret_chat.send(`<@${player.member.id}> You were hooked.`);
+						} else if(hooked_report) {
+							hooked_report(player.data.target, player, game);
 						}
 					} else {
 						report(player.data.target, player, game);
@@ -230,7 +216,7 @@ export let roles: {[name: string]: Role} = {
 		help: "Every night, investigate a player to learn their role.",
 		side: Side.VILLAGE,
 		actions: template_targeted("investigate", (target, player, game) => {
-			player.member.send(`${target.name} is ${get_side(target.role)}.`);
+			player.member.send(`${target.name} is ${Side[get_side(target.role)]}.`);
 		}, true)
 	},
 	Gunsmith: {
