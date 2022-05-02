@@ -1,7 +1,7 @@
 import {GuildMember, GuildChannel, ReactionCollector, GuildTextBasedChannel, MessageCollector, TextChannel} from "discord.js"
 import Discord from "discord.js"
 import {Role, Side} from "./role";
-import {death_messages, list_lynch, shuffle_array, State} from "./util";
+import {calculate_lynch, death_messages, list_lynch, shuffle_array, State} from "./util";
 import { Inventory, Item, items } from "./item";
 import { kaismile } from "./bot";
 
@@ -25,6 +25,7 @@ export class Player {
 
 	// these are used at day and reset every day
 	dead?: boolean;
+	killed_by?: Player;
 	lynch_vote?: number;
 
 	// these are used at night and reset every night
@@ -38,11 +39,11 @@ export class Player {
 	action_pending: boolean = false;
 	/// if waiting to be able to send a report
 	action_report_pending: boolean = false;
-	/// temporary data used by the roles
-	data: any;
+	/// arbitrary data used by the roles
+	data: {[property: string]: any} = {};
 
 	do_state(state: State, game: Game) {
-		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
+//		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
 		let act = this.role.actions[state];
 		if(act) {
 			act(this, game);
@@ -96,6 +97,7 @@ export const foods = [
 ];
 
 export class Game {
+	running: boolean = true;
 	all_players: Player[];
 	/// only living, playing players
 	players: {[number: number]: Player};
@@ -119,8 +121,9 @@ export class Game {
 	role_mafia_player: Discord.Role;
 
 	post_win(side: Side, side2?: Side) {
+		this.running = false;
 		let list = "";
-		for(let player of Object.values(this.players)) {
+		for(let player of this.all_players) {
 			if(player.role.side == side || player.role.side == side2) {
 				list += ` <@${player.member.id}>`;
 			}
@@ -134,17 +137,13 @@ export class Game {
 	}
 
 	update_night() {
-		if(this.kill_pending) {
-			this.mafia_secret_chat.send("[debug] not end night because kill pending");
-			return;
-		}
 		if(this.cur_state != State.NIGHT || this.kill_pending) {
-			this.mafia_secret_chat.send("[debug] not end night because its not night (its actually " + State[this.cur_state] + ")");
+//			this.mafia_secret_chat.send("[debug] not end night because kill pending or its not night (its actually " + State[this.cur_state] + ")");
 			return;
 		}
 		for(let player of Object.values(this.players)) {
 			if(player.action_pending) {
-				this.mafia_secret_chat.send("[debug] not end night because action pending from " + player.name);
+//				this.mafia_secret_chat.send("[debug] not end night because action pending from " + player.name);
 				return;
 			}
 		}
@@ -153,7 +152,7 @@ export class Game {
 				if(this.mafia_night_report_passed) {
 					player.do_state(State.NIGHT_REPORT, this);
 				} else if(this.killing !== player.number) {
-					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
+//					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
 					return false;
 				}
 			}
@@ -163,20 +162,21 @@ export class Game {
 				if(this.night_report_passed) {
 					player.do_state(State.NIGHT_REPORT, this);
 				} else if(this.killing !== player.number) {
-					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
+//					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
 					return false;
 				}
 			}
 		}
 		if(this.cur_state != State.NIGHT) {
-			this.mafia_secret_chat.send("[debug] not end night because its not night (its actually " + State[this.cur_state] + ")");
+//			this.mafia_secret_chat.send("[debug] not end night because its not night (its actually " + State[this.cur_state] + ")");
 			return;
 		}
 		this.do_state(State.NIGHT_END);
 	}
 
 	update_win_condition() {
-		let sides = [0, 0, 0];
+		if(!this.running) return;
+		let sides = [0, 0, 0, 0];
 		let village_can_overturn = false;
 		for(let player of Object.values(this.players)) {
 			if(player.role.side == Side.VILLAGE && player.can_overturn()) village_can_overturn = true;
@@ -189,20 +189,24 @@ export class Game {
 		}
 	}
 
-	kill(player: Player) {
+	kill(player: Player, killer: Player) {
 		player.dead = true;
 		if(player.item_collector) {
 			player.item_collector.stop("dead");
 		}
 		player.member.roles.remove(this.role_mafia_player);
 		this.mafia_secret_chat.permissionOverwrites.delete(player.member);
+		player.killed_by = killer;
 		player.do_state(State.DEAD, this);
 		delete this.players[player.number];
 		this.update_win_condition();
 	}
 
 	async do_state(state: State): Promise<void> {
-		this.mafia_secret_chat.send("[debug] game do state " + State[state]);
+		if(!this.running && state !== State.GAME_END) {
+			return;
+		}
+//		this.mafia_secret_chat.send("[debug] game do state " + State[state]);
 		this.cur_state = state;
 		switch(state) {
 			case State.GAME:
@@ -269,6 +273,14 @@ export class Game {
 					player.item_collector.stop("game end");
 					player.do_state(state, this);
 				}
+				if(this.day_collector) {
+					this.day_collector.stop();
+					this.day_collector = null;
+				}
+				if(this.mafia_collector) {
+					this.mafia_collector.stop();
+					this.mafia_collector = null;
+				}
 				break;
 			case State.DAY: {
 				this.hiding_numbers = false;
@@ -326,7 +338,7 @@ export class Game {
 								}
 							}
 						}
-						if(player.lynch_vote === null) {
+						if(player.lynch_vote === null || (player.lynch_vote !== 0 && !this.players[player.lynch_vote])) {
 							all_voted = false;
 						}
 					}
@@ -394,8 +406,15 @@ export class Game {
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				for(let player of Object.values(this.players)) {
-					player.member
 					player.do_state(state, this);
+				}
+				let lynched = calculate_lynch(this.players);
+				if(lynched === 0) {
+					this.day_channel.send("Nobody was lynched.");
+				} else {
+					let target = this.players[lynched];
+					this.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was lynched.`);
+					this.kill(target, null);
 				}
 				if(this.day_collector) {
 					this.day_collector.stop("night end");
@@ -483,8 +502,12 @@ export class Game {
 				break;
 			}
 			case State.NIGHT_END:
+				this.hiding_numbers = false;
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
+				for(let player of Object.values(this.players)) {
+					player.do_state(state, this);
+				}
 				if(this.kill_pending) {
 					this.mafia_secret_chat.send("The night ended. You killed no one.");
 				} else if(this.killing && this.killing > 0) {
@@ -501,9 +524,6 @@ export class Game {
 				if(this.timeout) {
 					clearTimeout(this.timeout);
 					this.timeout = null;
-				}
-				for(let player of Object.values(this.players)) {
-					player.do_state(state, this);
 				}
 				if(this.options.includes("dayless")) {
 					this.day++;

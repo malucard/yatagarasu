@@ -60,7 +60,7 @@ export const items: {[name: string]: Item} = {
 			} else {
 				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
 			}
-			game.kill(target);
+			game.kill(target, player);
 		}
 	},
 	DeputyGun: {
@@ -70,7 +70,7 @@ export const items: {[name: string]: Item} = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
-			game.kill(target);
+			game.kill(target, player);
 		}
 	},
 	Syringe: {

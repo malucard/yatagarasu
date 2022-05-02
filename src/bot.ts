@@ -3,7 +3,7 @@ import Discord, { ApplicationCommandData, GuildMember, Message, MessageCollector
 import { botLoginAuth } from "./auth";
 import { FULL_SEND_PERMS, Game, Player } from "./game";
 import { Inventory } from "./item";
-import { Role, roles } from "./role";
+import { Role, roles, Side } from "./role";
 import { shuffle_array, State } from "./util";
 
 export const kaismile = "497430068331544577";
@@ -19,10 +19,10 @@ const client = new Discord.Client({
 	]
 });
 
-const server = createServer((_req, res) => {
+/*const server = createServer((_req, res) => {
 	res.end();
 });
-server.listen();
+server.listen();*/
 
 let signups: {[channel: string]: MessageCollector} = {};
 
@@ -130,6 +130,29 @@ let cmds = [{
 		message.react(kaismile);
 	},
 }, {
+	name: "role",
+	description: "role",
+	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
+		let m = message.content.match("; *role +([a-zA-Z]+)");
+		if(m) {
+			if(roles[m[1]]) {
+				message.reply(roles[m[1]].name + " (" + Side[roles[m[1]].side] + "): " + roles[m[1]].help);
+			} else {
+				message.reply("Invalid role name");
+			}
+		}
+	}
+}, {
+	name: "roles",
+	description: "roles",
+	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
+		let h = "";
+		for(let r of Object.values(roles)) {
+			h += "\n" + r.name + " (" + Side[r.side] + "): " + r.help;
+		}
+		message.reply(h);
+	}
+}, {
 	name: "setupcustom",
 	description: "setupcustom",
 	action: async (member: GuildMember, channel: TextChannel, message?: Message) => {
@@ -171,7 +194,7 @@ let cmds = [{
 			let options = [];
 			if(match) {
 				for(let opt of match) {
-					options.push(opt);
+					options.push(opt.substring(1));
 				}
 			}
 			if (error.length != 0 || oerror.length != 0) {
@@ -204,7 +227,7 @@ let cmds = [{
 					p.game = g;
 					p.role = setup_roles[i];
 					p.member = member;
-					p.name = member.user.username;
+					p.name = member.nickname;
 					all_players.push(p);
 					i++;
 				}

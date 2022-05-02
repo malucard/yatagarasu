@@ -47,7 +47,7 @@ export function shuffle_array(array: any[]) {
 export function calculate_lynch(players: {[num: number]: Player}): number {
     let votes: {[num: number]: number} = {};
     for(let player of Object.values(players)) {
-        if(player.lynch_vote) {
+		if(player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
             if(votes.hasOwnProperty(player.lynch_vote)) {
                 votes[player.lynch_vote]++;
             } else {
@@ -75,8 +75,10 @@ export function list_lynch(players: {[num: number]: Player}) {
 			text += `\n${player.name} votes to lynch nobody`;
 		} else if(!player.lynch_vote) {
 			text += `\n${player.name} has not voted`;
-		} else {
+		} else if(players[player.lynch_vote]) {
 			text += `\n${player.name} votes to lynch ${players[player.lynch_vote].name}`;
+		} else {
+			text += `\n${player.name} votes to lynch <invalid>`;
 		}
 	}
 	let lynch = calculate_lynch(players);
