@@ -55,8 +55,8 @@ export class Player {
 		}
 	}
 
-	can_turn_over(): boolean {
-		return this.role.can_turn_over || !!this.inventory.items.find(x => x.can_turn_over);
+	can_overturn(): boolean {
+		return this.role.can_overturn || !!this.inventory.items.find(x => x.can_overturn);
 	}
 
 	receive(item: Item) {
@@ -119,20 +119,18 @@ export class Game {
 	role_mafia_player: Discord.Role;
 
 	post_win(side: Side, side2?: Side) {
-		this.do_state(State.GAME_END);
 		let list = "";
 		for(let player of Object.values(this.players)) {
 			if(player.role.side == side || player.role.side == side2) {
 				list += ` <@${player.member.id}>`;
 			}
 		}
-		for(let player of Object.values(this.players)) {
+		for(let player of this.all_players) {
 			list += `\n${player.number}- ${player.name} (${player.role.name})`;
 			if(player.dead) list += " (dead)";
 		}
-		if(side2) {
-			this.day_channel.send(`<@&${this.role_mafia_player.id}> The ${side} wins!${list}`);
-		}
+		this.do_state(State.GAME_END);
+		this.day_channel.send(`<@&${this.role_mafia_player.id}> The ${Side[side]} won!${list}`);
 	}
 
 	update_night() {
@@ -151,8 +149,18 @@ export class Game {
 			}
 		}
 		for(let player of Object.values(this.players)) {
-			if(player.action_report_pending) {
-				if(player.role.side === Side.MAFIA? this.mafia_night_report_passed: this.night_report_passed) {
+			if(player.role.side === Side.MAFIA && player.action_report_pending) {
+				if(this.mafia_night_report_passed) {
+					player.do_state(State.NIGHT_REPORT, this);
+				} else if(this.killing !== player.number) {
+					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
+					return false;
+				}
+			}
+		}
+		for(let player of Object.values(this.players)) {
+			if(player.role.side === Side.VILLAGE && player.action_report_pending) {
+				if(this.night_report_passed) {
 					player.do_state(State.NIGHT_REPORT, this);
 				} else if(this.killing !== player.number) {
 					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
@@ -169,14 +177,14 @@ export class Game {
 
 	update_win_condition() {
 		let sides = [0, 0, 0];
-		let village_can_turn_over = false;
+		let village_can_overturn = false;
 		for(let player of Object.values(this.players)) {
-			if(player.role.side == Side.VILLAGE && player.can_turn_over()) village_can_turn_over = true;
-			sides[player.role.side]++;
+			if(player.role.side == Side.VILLAGE && player.can_overturn()) village_can_overturn = true;
+			sides[player.role.side.valueOf()]++;
 		}
-		if(village_can_turn_over? sides[Side.VILLAGE] == 0: sides[Side.VILLAGE] <= sides[Side.MAFIA]) {
+		if(village_can_overturn? sides[Side.VILLAGE.valueOf()] == 0: (sides[Side.VILLAGE.valueOf()] <= sides[Side.MAFIA.valueOf()])) {
 			this.post_win(Side.MAFIA);
-		} else if(sides[Side.MAFIA] == 0) {
+		} else if(sides[Side.MAFIA.valueOf()] == 0) {
 			this.post_win(Side.VILLAGE);
 		}
 	}
@@ -257,6 +265,7 @@ export class Game {
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				for(let player of Object.values(this.players)) {
 					this.mafia_secret_chat.permissionOverwrites.delete(player.member);
+					player.member.roles.remove(this.role_mafia_player);
 					player.item_collector.stop("game end");
 					player.do_state(state, this);
 				}
@@ -403,6 +412,7 @@ export class Game {
 					return this.do_state(State.NIGHT);
 				}
 			case State.NIGHT: {
+				this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, PARTIAL_SEND_PERMS);
 				if(this.timeout !== null) {
@@ -418,7 +428,7 @@ export class Game {
 						numbers += "\n" + p.number + "- " + (this.hiding_numbers? "<hidden>": p.name);
 					}
 				}
-				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The Mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
+				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
 				this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
 				this.mafia_collector.on("collect", msg => {
 					let m = msg.content.match(/^; *kill +([0-9]+)$/);

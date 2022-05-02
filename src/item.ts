@@ -7,7 +7,7 @@ export class Item {
 	night_use?: boolean;
 	/// if can cause owner's side to win even if they are at a loss, such as with guns
 	/// this changes the win condition for the mafia from "mafia >= village" to "village == 0"
-	can_turn_over?: boolean;
+	can_overturn?: boolean;
 	stays_after_use?: boolean;
 
 	use: (target: Player, player: Player, game: Game) => void;
@@ -32,7 +32,7 @@ export class Inventory {
 		}
 		for(let [id, count] of Object.entries(map)) {
 			let it = items[id];
-			res += `\n- ${id} x${count} (${it.night_use? "use at day": "use at night"}, ${it.no_target? "does not require a target": "requires a target"})\n= ${it.help}`;
+			res += `\n- ${id} x${count} (${it.night_use? "use at night": "use at day"}, ${it.no_target? "does not require a target": "requires a target"})\n= ${it.help}`;
 		}
 		res += "\nUse an item by sending me `;use <item name> <target number>` at any time during the day or night depending on the item.";
 		if(!player.already_sent_player_list) {
@@ -52,25 +52,25 @@ export const items: {[name: string]: Item} = {
 	Gun: {
 		name: "Gun",
 		help: "Kill a target. Has a 50% chance of revealing who fired it.",
-		can_turn_over: true,
+		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			game.kill(target);
 			if(Math.random() < 0.5) {
 				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot by <@${player.member.id}>.`);
 			} else {
 				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
 			}
+			game.kill(target);
 		}
 	},
 	DeputyGun: {
 		name: "DeputyGun",
 		help: "Kill a target. Will not reveal who fired it.",
-		can_turn_over: true,
+		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			game.kill(target);
 			game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
+			game.kill(target);
 		}
 	},
 	Syringe: {

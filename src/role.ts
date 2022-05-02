@@ -22,7 +22,7 @@ export class Role {
 	/// if can cause its side to win even if they are at a loss, such as with guns
 	/// this changes the win condition for the mafia from "mafia >= village" to "village == 0"
 	/// the gun item also does this by itself, so this is false for deputy, who can lose their gun
-	can_turn_over?: boolean = false;
+	can_overturn?: boolean = false;
 	/// if can't be saved
 	macho?: boolean = false;
 	actions: {[state: number]: RoleAction} = {};
@@ -124,7 +124,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 	}
 }
 
-function request_action_targeted_mafia(verb: string, report: RoleActionReport, player: Player, game: Game) {
+function request_action_targeted_mafia(verb: string, report: RoleActionReport, cancel_report: RoleAction | null, player: Player, game: Game) {
 	player.data = {collector: null, target: null};
 	game.mafia_secret_chat.send("<@" + player.member.id + "> Select a player to " + verb + " tonight with `;" + verb + " <number>`, or `;" + verb + "` to do nothing.").then(msg => {
 		let collector = game.mafia_secret_chat.createMessageCollector();
@@ -137,7 +137,10 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, p
 					player.data.collector = null;
 					player.data.target = null;
 					player.action_pending = false;
-					player.action_report_pending = true;
+					player.action_report_pending = false;
+					if(cancel_report) {
+						cancel_report(player, game);
+					}
 					game.update_night();
                 } else {
 					let m = action_msg.content.match(new RegExp("^; *" + verb + " +([0-9]+)$", "i"));
@@ -148,8 +151,9 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, p
 							collector.stop();
 							player.data.collector = null;
 							player.action_pending = false;
-							player.action_report_pending = true;
+							player.action_report_pending = false;
 							action_msg.reply(`You chose to ${verb} ${p.name}.`);
+							report(p, player, game);
 							player.data.target = p;
 							game.update_night();
 						} else {
@@ -172,7 +176,7 @@ function template_targeted_mafia(verb: string, report: RoleActionReport, hooked_
 		[State.NIGHT]: (player, game) => {
 			player.action_pending = true;
 			player.action_report_pending = false;
-			request_action_targeted_mafia(verb, report, player, game);
+			request_action_targeted_mafia(verb, report, cancel_report, player, game);
 		},
 		[State.NIGHT_REPORT]: (player, game) => {
 			if(!player.action_pending && player.action_report_pending) {
@@ -223,7 +227,7 @@ export let roles: {[name: string]: Role} = {
 		name: "Gunsmith",
 		help: "Every night, choose a player to give a gun to.",
 		side: Side.VILLAGE,
-		can_turn_over: true,
+		can_overturn: true,
 		actions: template_targeted("give a gun to", (target, player, game) => {
 			target.receive(items.Gun);
 		})
@@ -264,6 +268,7 @@ export let roles: {[name: string]: Role} = {
 			target.hooked = true;
 			game.night_report_passed = true;
 		}, null, (player, game) => {
+			game.mafia_secret_chat.send("[debug] hooker action registered");
 			game.night_report_passed = true;
 		}), {[State.PRE_NIGHT]: (player: Player, game: Game) => {
 			game.night_report_passed = false;
