@@ -249,7 +249,7 @@ export class Game {
 										msg.reply("This item requires a target.");
 									}
 								} else {
-									player.member.send(`You cannot use this item in the ${this.cur_state}.`);
+									player.member.send(`You cannot use this item in the ${State[this.cur_state]}.`);
 								}
 							}
 						});
@@ -495,6 +495,10 @@ export class Game {
 					if(this.day_collector) {
 						this.day_collector.stop();
 						this.day_collector = null;
+					}
+					if(this.mafia_collector) {
+						this.mafia_collector.stop();
+						this.mafia_collector = null;
 					}
 					this.do_state(State.NIGHT_END);
 				}, 420000);
