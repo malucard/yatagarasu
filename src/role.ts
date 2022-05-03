@@ -18,16 +18,6 @@ export enum Side {
 	THIRD
 }
 
-export enum JointWinType {
-	/** wins unless there is a winner with OVERRIDE_ALL */
-	NORMAL,
-	OVERRIDE_SIDES,
-	/** override any other wins unless they have OVERRIDE_ALL or MUST_JOINT */
-	OVERRIDE_ALL,
-	/** will not win unless another player also won */
-	MUST_JOINT
-}
-
 export class Role {
 	name: string;
 	/** will be called this before the game ends, even to themselves */
@@ -39,6 +29,7 @@ export class Role {
 	side: Side;
 	/** what will appear to investigative roles */
 	fake_side?: Side;
+	/** only Blue and Vanilla */
 	powerless?: boolean;
 	/** if can cause a side to win even if they are at a loss, such as with guns
 		this changes the win condition for the mafia from "mafia >= village" to "village == 0"
@@ -152,13 +143,16 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, c
 							player.action_pending = false;
 							player.action_report_pending = false;
 							action_msg.reply(`You chose to ${verb} ${p.name}.`);
-							report(p, player, game);
-							player.data.shots_done++;
-							if(max_shots !== -1 && player.data.shots_done >= max_shots) {
-								game.mafia_secret_chat.send(`<@${player.member.id}> This was your last use of this action.`);
+							p.data.night_targeted_by = player;
+							if(!p.do_state(State.NIGHT_TARGETED, game)) {
+								report(p, player, game);
+								player.data.shots_done++;
+								if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+									game.mafia_secret_chat.send(`<@${player.member.id}> This was your last use of this action.`);
+								}
+								player.data.target = p;
+								game.update_night();
 							}
-							player.data.target = p;
-							game.update_night();
 						} else {
 							action_msg.reply("Invalid target.");
 						}
@@ -210,7 +204,10 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 							hooked_report(player.data.target, player, game);
 						}
 					} else {
-						report(player.data.target, player, game);
+						player.data.target.night_targeted_by = player;
+						if(!player.data.target.do_state(State.NIGHT_TARGETED)) {
+							report(player.data.target, player, game);
+						}
 					}
 					player.data.shots_done++;
 					if(max_shots !== -1 && player.data.shots_done >= max_shots) {
@@ -358,6 +355,18 @@ export let roles: {[name: string]: Role} = {
 			}
 		}}
 	},
+	Granny: {
+		name: "Granny",
+		help: "If targeted by any action at night, you shoot them. This reveals you as the shooter.",
+		side: Side.VILLAGE,
+		actions: {[State.NIGHT_TARGETED]: (player, game) => {
+			if(player.data.night_targeted_by) {
+				game.kill(player.data.night_targeted_by, player, () => {
+					game.day_channel.send(`<@${player.data.night_targeted_by.member.id}>, the ${get_name(player.data.night_targeted_by.role)}, was shot by <@${player.member.id}>.`);
+				});
+			}
+		}}
+	},
 	Oracle: {
 		name: "Oracle",
 		help: "Every night, choose a player to prophesy about. When you die, the role of your last chosen will be revealed.",
@@ -417,6 +426,14 @@ export let roles: {[name: string]: Role} = {
 		actions: template_targeted("give armor to", (target, player, game) => {
 			target.receive(items.Armor);
 		})
+	},
+	Bulletproof: {
+		name: "Bulletproof",
+		help: "You start with a single armor that will absorb one attempt at your life.",
+		side: Side.VILLAGE,
+		actions: {[State.GAME]: (player, game) => {
+			player.receive(items.Armor);
+		}}
 	},
 	Vanilla: {
 		name: "Vanilla",

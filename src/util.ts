@@ -23,7 +23,7 @@ export const death_messages = [
     "%pr's body was found wearing a fancy red suit and sunglasses this morning."
 ];
 
-/** points of the game where things happen automatically and roles have callbacks to run */
+/** points of the game where things happen automatically and roles and items have callbacks to run */
 export enum State {
 	GAME,
 	GAME_END,
@@ -32,6 +32,8 @@ export enum State {
 	PRE_NIGHT,
 	NIGHT,
 	NIGHT_REPORT,
+    /** can return true to cancel the report for the targeted action */
+    NIGHT_TARGETED,
 	NIGHT_END,
 	DEAD
 }

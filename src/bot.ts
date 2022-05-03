@@ -394,7 +394,7 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.add(role_mafia_player).catch(() => interaction.reply("Could not add role"));
 			(interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
-		interaction.deferUpdate();
+		interaction.update({});
 	},
 	signout: async (interaction: ButtonInteraction) => {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
@@ -402,7 +402,7 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role"));
 			(interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
-		interaction.deferUpdate();
+		interaction.update({});
 	},
 	stopsignup: async (interaction: ButtonInteraction) => {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
@@ -414,7 +414,7 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 			}
 			(interaction.message as Message).edit({content: "Signup ended", components: [], embeds: []});
 		}
-		interaction.deferUpdate().catch(() => {});
+		interaction.update({}).catch(() => {});
 	}
 };
 
@@ -427,7 +427,7 @@ const select_menus: {[id: string]: (interaction: SelectMenuInteraction) => void}
 			}
 			await do_setup(interaction.member as GuildMember, interaction.channel as TextChannel, interaction, interaction.values[0]);
 		}
-		interaction.deferUpdate();
+		interaction.update({});
 	}
 };
 

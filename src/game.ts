@@ -1,9 +1,9 @@
 import {GuildMember, GuildChannel, ReactionCollector, GuildTextBasedChannel, MessageCollector, TextChannel} from "discord.js"
 import Discord from "discord.js"
-import {get_name, JointWinType, Role, Side} from "./role";
+import {get_name, Role, Side} from "./role";
 import {calculate_lynch, death_messages, list_lynch, shuffle_array, State} from "./util";
-import { Inventory, Item, items } from "./item";
-import { kaismile } from "./bot";
+import {Inventory, Item, items} from "./item";
+import {kaismile} from "./bot";
 
 export const TALK_REACT_PERMS = {VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true};
 export const VIEW_ONLY_PERMS = {VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false};
@@ -40,7 +40,7 @@ export class Player {
 	/** arbitrary data used by the roles */
 	data: {[property: string]: any} = {};
 
-	do_state(state: State, game: Game) {
+	do_state(state: State, game: Game): boolean {
 		if(state == State.GAME) {
 			if(this.role.side == Side.MAFIA) {
 				game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${get_name(this.role)}. ${this.role.help}`);
@@ -51,18 +51,19 @@ export class Player {
 //		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
 		for(let it of this.inventory.items) {
 			if(it.hook_actions && it.hook_actions[state] && it.hook_actions[state](this, game)) {
-				return; // item canceled callbacks for this state
+				return true; // item canceled callbacks for this state
 			}
 		}
 		let act = this.role.actions[state];
 		if(act && act(this, game)) {
-			return;
+			return true;
 		}
 		for(let it of this.inventory.items) {
 			if(it.post_actions && it.post_actions[state] && it.post_actions[state](this, game)) {
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
 
 	can_overturn(): boolean {
@@ -113,6 +114,7 @@ export class Game {
 	options: string[];
 	day_channel: TextChannel;
 	mafia_secret_chat: TextChannel;
+	role_mafia_player: Discord.Role;
 	/** hooker has already hooked or there is no hooker, used by action collectors in State.NIGHT */
 	night_report_passed: boolean;
 	/** same as above but for mafia. just in case there is a role that affects mafia actions in the future */
@@ -126,8 +128,6 @@ export class Game {
 	hiding_numbers: boolean = true;
 	kill_pending: boolean;
 	killing: number = 0;
-
-	role_mafia_player: Discord.Role;
 
 	post_win(side?: Side, thirds: Player[] = []) {
 		this.running = false;
