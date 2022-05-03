@@ -16,8 +16,13 @@ export enum Side {
 
 export class Role {
 	name: string;
+	/// will be called this before the game ends, even to themselves
+	fake_name?: string;
 	help: string;
+	/// will be appended in help commands, but not in the night DM to the player
+	hidden_help?: string;
 	side: Side;
+	/// what will appear to investigative roles
 	fake_side?: Side = undefined;
 	powerless?: boolean = false;
 	/// if can cause its side to win even if they are at a loss, such as with guns
@@ -27,6 +32,10 @@ export class Role {
 	/// if can't be saved
 	macho?: boolean = false;
 	actions: {[state: number]: RoleAction} = {};
+}
+
+export function get_name(role: Role): string {
+	return role.fake_name === undefined || role.fake_name === null? role.name: role.fake_name;
 }
 
 function get_side(role: Role): Side {
@@ -258,6 +267,36 @@ export let roles: {[name: string]: Role} = {
 			player.member.send(`${target.name} is sided with ${Side[get_side(target.role)]}.`);
 		}, true)
 	},
+	ParanoidCop: {
+		name: "ParanoidCop",
+		fake_name: "Cop",
+		help: "Every night, investigate a player to learn their side.",
+		hidden_help: "Sees everyone as mafia.",
+		side: Side.VILLAGE,
+		actions: template_targeted("investigate", (target, player, game) => {
+			player.member.send(`${target.name} is sided with ${Side[Side.MAFIA]}.`);
+		}, true)
+	},
+	NaiveCop: {
+		name: "NaiveCop",
+		fake_name: "Cop",
+		help: "Every night, investigate a player to learn their side.",
+		hidden_help: "Sees everyone as village.",
+		side: Side.VILLAGE,
+		actions: template_targeted("investigate", (target, player, game) => {
+			player.member.send(`${target.name} is sided with ${Side[Side.VILLAGE]}.`);
+		}, true)
+	},
+	InsaneCop: {
+		name: "InsaneCop",
+		fake_name: "Cop",
+		help: "Every night, investigate a player to learn their side.",
+		hidden_help: "Gets inverted reports.",
+		side: Side.VILLAGE,
+		actions: template_targeted("investigate", (target, player, game) => {
+			player.member.send(`${target.name} is sided with ${Side[get_side(target.role) === Side.MAFIA? Side.VILLAGE: Side.MAFIA]}.`);
+		}, true)
+	},
 	TalentScout: {
 		name: "TalentScout",
 		help: "Every night, investigate a player to learn whether they have a talent.",
@@ -289,20 +328,20 @@ export let roles: {[name: string]: Role} = {
 		side: Side.VILLAGE,
 		actions: {[State.DEAD]: (player, game) => {
 			if(player.killed_by instanceof Player && !player.killed_by.dead) {
-				game.day_channel.send(`<@${player.killed_by.member.id}>, the ${player.killed_by.role.name}, exploded.`);
+				game.day_channel.send(`<@${player.killed_by.member.id}>, the ${get_name(player.killed_by.role)}, exploded.`);
 				game.kill(player.killed_by, player);
 			}
 		}}
 	},
 	Oracle: {
 		name: "Oracle",
-		help: "Every night, choose a player, and when you die, that player's role will be revealed.",
+		help: "Every night, choose a player to prophesy about. When you die, the role of your last chosen will be revealed.",
 		side: Side.VILLAGE,
 		actions: Object.assign(template_targeted("prophesy about", (target, player, game) => {
 			player.data.oracle_target = target;
 		}), {[State.DEAD]: (player: Player, game: Game) => {
 			if(player.data.oracle_target) {
-				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${player.data.oracle_target.role.name}.`);
+				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${get_name(player.data.oracle_target.role)}.`);
 			} else {
 				game.day_channel.send(`Oracle's prophecy: none.`);
 			}
@@ -338,7 +377,9 @@ export let roles: {[name: string]: Role} = {
 		name: "Deputy",
 		help: "You start with a single gun that won't reveal that you shot it.",
 		side: Side.VILLAGE,
-		actions: {}
+		actions: {[State.GAME]: (player, game) => {
+			player.receive(items.DeputyGun);
+		}}
 	},
 	Vanilla: {
 		name: "Vanilla",
@@ -356,7 +397,7 @@ export let roles: {[name: string]: Role} = {
 	},
 	Janitor: {
 		name: "Janitor",
-		help: "Once per game, at night, choose a player to clean, and their role will only be revealed to the mafia.\nThis replaces `;kill`, so don't use that when you want to clean.",
+		help: "Once per game, at night, choose a player to clean, and their role will only be revealed to the mafia. When used, this replaces the mafia's night kill.",
 		side: Side.MAFIA,
 		actions: template_targeted("clean", (target, player, game) => {
 			if(game.kill_pending) {
@@ -365,7 +406,7 @@ export let roles: {[name: string]: Role} = {
 				game.mafia_collector.stop("janitor cleaned");
 				game.mafia_collector = null;
 				game.day_channel.send(`<@${target.member.id}> is missing!`);
-				game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${target.role.name}.`);
+				game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${get_name(target.role)}.`);
 				game.kill(target, player);
 			}
 		}, null, null, true, true, 1)
@@ -383,5 +424,20 @@ export let roles: {[name: string]: Role} = {
 		}, true), {[State.PRE_NIGHT]: (player: Player, game: Game) => {
 			game.night_report_passed = false;
 		}})
+	},
+	Illusionist: {
+		name: "Illusionist",
+		help: "You start with one gun. Every night, choose a player, and if you shoot it at day, your last choice will be framed as the killer.",
+		side: Side.MAFIA,
+		actions: (() => {
+			let actions = template_targeted("frame", (target, player, game) => {
+				player.data.framing = target;
+			}, null, null, true, false);
+			let o = actions[State.NIGHT];
+			actions[State.NIGHT] = (player, game) => { // only request the action if they still have the gun
+				if(!!player.inventory.items.find(x => x.name === "IllusionistGun")) o(player, game);
+			};
+			return actions;
+		})()
 	}
 };

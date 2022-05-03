@@ -1,6 +1,6 @@
 import {GuildMember, GuildChannel, ReactionCollector, GuildTextBasedChannel, MessageCollector, TextChannel} from "discord.js"
 import Discord from "discord.js"
-import {Role, Side} from "./role";
+import {get_name, Role, Side} from "./role";
 import {calculate_lynch, death_messages, list_lynch, shuffle_array, State} from "./util";
 import { Inventory, Item, items } from "./item";
 import { kaismile } from "./bot";
@@ -49,9 +49,9 @@ export class Player {
 			act(this, game);
 		} else if(state == State.GAME) {
 			if(this.role.side == Side.MAFIA) {
-				game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${this.role.name}. ${this.role.help}`);
+				game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${get_name(this.role)}. ${this.role.help}`);
 			} else {
-				this.member.send(`You are number ${this.number}, ${this.role.name}. ${this.role.help}`);
+				this.member.send(`You are number ${this.number}, ${get_name(this.role)}. ${this.role.help}`);
 			}
 		}
 	}
@@ -413,7 +413,7 @@ export class Game {
 					this.day_channel.send("Nobody was lynched.");
 				} else {
 					let target = this.players[lynched];
-					this.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was lynched.`);
+					this.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was lynched.`);
 					this.kill(target, null);
 				}
 				if(this.day_collector) {
@@ -518,7 +518,7 @@ export class Game {
 					let target = this.players[this.killing];
 					if(!target.protected) {
 						let d = death_messages[Math.floor(Math.random() * death_messages.length)];
-						this.day_channel.send(d.replace(/%pr/g, `<@${target.member.id}> (${target.role.name})`));
+						this.day_channel.send(d.replace(/%pr/g, `<@${target.member.id}> (${get_name(target.role)})`));
 					}
 				}
 				if(this.mafia_collector) {

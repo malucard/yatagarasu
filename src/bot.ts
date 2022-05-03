@@ -313,8 +313,9 @@ const cmds = [{
 		} else {
 			m = message.options.getString("name");
 		}
-		if(roles[m]) {
-			message.reply(roles[m].name + " (" + Side[roles[m].side] + "): " + roles[m].help);
+		let r = roles[m];
+		if(r) {
+			message.reply(r.name + " (" + Side[r.side] + "): " + r.help + (r.hidden_help? " " + r.hidden_help: ""));
 		} else {
 			message.reply("Invalid role name");
 		}
@@ -325,7 +326,7 @@ const cmds = [{
 	action: async (_member: GuildMember, _channel: TextChannel, message: Message | CommandInteraction) => {
 		let h = "";
 		for(let r of Object.values(roles)) {
-			h += "\n" + r.name + " (" + Side[r.side] + "): " + r.help;
+			h += "\n" + r.name + " (" + Side[r.side] + "): " + r.help + (r.hidden_help? " " + r.hidden_help: "");
 		}
 		message.reply(h);
 	}

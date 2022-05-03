@@ -1,4 +1,5 @@
 import {Game, Player} from "./game";
+import { get_name } from "./role";
 
 export class Item {
 	name: string;
@@ -56,9 +57,9 @@ export const items: {[name: string]: Item} = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			if(Math.random() < 0.5) {
-				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot by <@${player.member.id}>.`);
+				game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot by <@${player.member.id}>.`);
 			} else {
-				game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
+				game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot.`);
 			}
 			game.kill(target, player);
 		}
@@ -69,7 +70,18 @@ export const items: {[name: string]: Item} = {
 		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			game.day_channel.send(`<@${target.member.id}>, the ${target.role.name}, was shot.`);
+			game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot.`);
+			game.kill(target, player);
+		}
+	},
+	IllusionistGun: {
+		name: "IllusionistGun",
+		help: "Kill a target. Will reveal the killer as whoever you've last framed.",
+		can_overturn: true,
+		use: (target, player, game) => {
+			player.member.send(`You chose to shoot ${target.name}.`);
+			let framed = player.data.framing? player.data.framing: player;
+			game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot by <@${framed.member.id}>.`);
 			game.kill(target, player);
 		}
 	},
