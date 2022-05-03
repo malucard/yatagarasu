@@ -3,35 +3,58 @@ import {Player, Game} from "./game";
 import {items} from "./item";
 import {shuffle_array, State} from "./util";
 
-export type RoleAction = (player: Player, game: Game) => void;
-export type RoleActionReport = (target: Player, player: Player, game: Game) => void;
-export type RoleActionReportMsg = (msg: Discord.Message, target: Player, player: Player, game: Game) => void;
+/** if returning true, should cancel further callbacks to this state for this player */
+export type RoleAction = (player: Player, game: Game) => void | boolean;
+/** if returning true, should cancel further callbacks to this state for this player */
+export type RoleActionReport = (target: Player, player: Player, game: Game) => void | boolean;
+/** if returning true, should cancel further callbacks to this state for this player */
+export type RoleActionReportMsg = (msg: Discord.Message, target: Player, player: Player, game: Game) => void | boolean;
 
 export enum Side {
 	NONE,
 	VILLAGE,
 	MAFIA,
-	THE_JOKER
+	/** players that each have their own win condition */
+	THIRD
+}
+
+export enum JointWinType {
+	/** wins unless there is a winner with OVERRIDE_ALL */
+	NORMAL,
+	OVERRIDE_SIDES,
+	/** override any other wins unless they have OVERRIDE_ALL or MUST_JOINT */
+	OVERRIDE_ALL,
+	/** will not win unless another player also won */
+	MUST_JOINT
 }
 
 export class Role {
 	name: string;
-	/// will be called this before the game ends, even to themselves
+	/** will be called this before the game ends, even to themselves */
 	fake_name?: string;
+	/** will be in a DM to the player at the start of the game, and in help commands */
 	help: string;
-	/// will be appended in help commands, but not in the night DM to the player
+	/** will be appended in help commands, but not in the DM to the player */
 	hidden_help?: string;
 	side: Side;
-	/// what will appear to investigative roles
-	fake_side?: Side = undefined;
-	powerless?: boolean = false;
-	/// if can cause its side to win even if they are at a loss, such as with guns
-	/// this changes the win condition for the mafia from "mafia >= village" to "village == 0"
-	/// the gun item also does this by itself, so this is false for deputy, who can lose their gun
-	can_overturn?: boolean = false;
-	/// if can't be saved
-	macho?: boolean = false;
+	/** what will appear to investigative roles */
+	fake_side?: Side;
+	powerless?: boolean;
+	/** if can cause a side to win even if they are at a loss, such as with guns
+		this changes the win condition for the mafia from "mafia >= village" to "village == 0"
+		the gun item also does this by itself, so this is false for deputy, who can lose their gun */
+	can_overturn?: boolean;
+	/** if can't be saved */
+	macho?: boolean;
+	/** callbacks for states */
 	actions: {[state: number]: RoleAction} = {};
+
+	/** override village and mafia wins, but not other third parties */
+	override_sides_win?: boolean;
+	/** for third parties, if returns true, this will cause a win to be checked, and post_win for more players */
+	cause_win?: RoleAction;
+	/** to win even without causing a win, or to cancel a win */
+	ensure_win?: RoleAction;
 }
 
 export function get_name(role: Role): string {
@@ -324,12 +347,14 @@ export let roles: {[name: string]: Role} = {
 	},
 	Bomb: {
 		name: "Bomb",
-		help: "If shot or killed at night, your attacker dies too.",
+		help: "If killed, not counting lynches, your attacker dies too.",
 		side: Side.VILLAGE,
 		actions: {[State.DEAD]: (player, game) => {
 			if(player.killed_by instanceof Player && !player.killed_by.dead) {
-				game.day_channel.send(`<@${player.killed_by.member.id}>, the ${get_name(player.killed_by.role)}, exploded.`);
-				game.kill(player.killed_by, player);
+				let killer = player.killed_by;
+				game.kill(player.killed_by, player, () => {
+					game.day_channel.send(`<@${killer.member.id}>, the ${get_name(killer.role)}, exploded.`);
+				});
 			}
 		}}
 	},
@@ -339,6 +364,9 @@ export let roles: {[name: string]: Role} = {
 		side: Side.VILLAGE,
 		actions: Object.assign(template_targeted("prophesy about", (target, player, game) => {
 			player.data.oracle_target = target;
+		}, null, (player, game) => {
+			player.data.oracle_target = null;
+			player.member.send("No prophecy will be revealed today.")
 		}), {[State.DEAD]: (player: Player, game: Game) => {
 			if(player.data.oracle_target) {
 				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${get_name(player.data.oracle_target.role)}.`);
@@ -381,6 +409,15 @@ export let roles: {[name: string]: Role} = {
 			player.receive(items.DeputyGun);
 		}}
 	},
+	Blacksmith: {
+		name: "Blacksmith",
+		help: "Every night, choose a player to give armor to. Each armor will absorb one attempt at their life.",
+		side: Side.VILLAGE,
+		can_overturn: true,
+		actions: template_targeted("give armor to", (target, player, game) => {
+			target.receive(items.Armor);
+		})
+	},
 	Vanilla: {
 		name: "Vanilla",
 		help: "No powers.",
@@ -397,7 +434,7 @@ export let roles: {[name: string]: Role} = {
 	},
 	Janitor: {
 		name: "Janitor",
-		help: "Once per game, at night, choose a player to clean, and their role will only be revealed to the mafia. When used, this replaces the mafia's night kill.",
+		help: "Once per game, choose a player to clean, and their role will only be revealed to the mafia. When used, this replaces the mafia's night kill.",
 		side: Side.MAFIA,
 		actions: template_targeted("clean", (target, player, game) => {
 			if(game.kill_pending) {
@@ -405,9 +442,10 @@ export let roles: {[name: string]: Role} = {
 				game.killing = -1;
 				game.mafia_collector.stop("janitor cleaned");
 				game.mafia_collector = null;
-				game.day_channel.send(`<@${target.member.id}> is missing!`);
-				game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${get_name(target.role)}.`);
-				game.kill(target, player);
+				game.kill(target, player, () => {
+					game.day_channel.send(`<@${target.member.id}> is missing!`);
+					game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${get_name(target.role)}.`);
+				});
 			}
 		}, null, null, true, true, 1)
 	},
@@ -439,5 +477,32 @@ export let roles: {[name: string]: Role} = {
 			};
 			return actions;
 		})()
+	},
+	Kirby: {
+		name: "Kirby",
+		help: "You deflect attacks and absorb the attacker's role if they die. If lynched, will absorb a random voter.",
+		side: Side.THIRD,
+		can_overturn: true,
+		actions: {[State.DEAD]: (player, game) => {
+			if(!player.killed_by) return;
+			let target = Array.isArray(player.killed_by)?
+				player.killed_by[Math.floor(Math.random() * player.killed_by.length)]:
+				player.killed_by;
+			game.kill(target, player, () => {
+				player.role = target.role;
+				if(player.role.side == Side.MAFIA) {
+					game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name}. You are now number ${player.number}, ${get_name(player.role)}. ${player.role.help}`);
+				} else {
+					player.member.send(`You ate ${target.name}. You are now number ${player.number}, ${get_name(player.role)}. ${player.role.help}`);
+				}
+			});
+		}}
+	},
+	Survivor: {
+		name: "Survivor",
+		help: "If you survive until the game ends, you win.",
+		side: Side.THIRD,
+		actions: {},
+		ensure_win: (player, game) => !player.dead
 	}
 };

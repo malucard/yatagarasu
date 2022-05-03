@@ -1,6 +1,6 @@
 import {GuildMember, GuildChannel, ReactionCollector, GuildTextBasedChannel, MessageCollector, TextChannel} from "discord.js"
 import Discord from "discord.js"
-import {get_name, Role, Side} from "./role";
+import {get_name, JointWinType, Role, Side} from "./role";
 import {calculate_lynch, death_messages, list_lynch, shuffle_array, State} from "./util";
 import { Inventory, Item, items } from "./item";
 import { kaismile } from "./bot";
@@ -19,39 +19,48 @@ export class Player {
 	member: GuildMember;
 	inventory: Inventory = new Inventory();
 
-	/// collector for ;use DMs
+	/** collector for ;use and ;inv DMs */
 	item_collector?: MessageCollector;
 	already_sent_player_list?: boolean;
 
 	// these are used at day and reset every day
 	dead?: boolean;
-	killed_by?: Player;
+	killed_by?: Player | Player[];
 	lynch_vote?: number;
 
 	// these are used at night and reset every night
-	/// should not die tonight. set by Doc
+	/** should not die tonight. set by Doc */
 	protected: boolean = false;
-	/// should not get a report tonight. set by Hooker
+	/** should not get a report tonight. set by Hooker */
 	hooked: boolean = false;
-
-	// these are internal
-	/// if waiting for the player to select an action
+	/** if waiting for the player to select an action */
 	action_pending: boolean = false;
-	/// if waiting to be able to send a report
+	/** if waiting to be able to send a report */
 	action_report_pending: boolean = false;
-	/// arbitrary data used by the roles
+	/** arbitrary data used by the roles */
 	data: {[property: string]: any} = {};
 
 	do_state(state: State, game: Game) {
-//		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
-		let act = this.role.actions[state];
-		if(act) {
-			act(this, game);
-		} else if(state == State.GAME) {
+		if(state == State.GAME) {
 			if(this.role.side == Side.MAFIA) {
 				game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${get_name(this.role)}. ${this.role.help}`);
 			} else {
 				this.member.send(`You are number ${this.number}, ${get_name(this.role)}. ${this.role.help}`);
+			}
+		}
+//		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
+		for(let it of this.inventory.items) {
+			if(it.hook_actions && it.hook_actions[state] && it.hook_actions[state](this, game)) {
+				return; // item canceled callbacks for this state
+			}
+		}
+		let act = this.role.actions[state];
+		if(act && act(this, game)) {
+			return;
+		}
+		for(let it of this.inventory.items) {
+			if(it.post_actions && it.post_actions[state] && it.post_actions[state](this, game)) {
+				return;
 			}
 		}
 	}
@@ -99,14 +108,14 @@ export const foods = [
 export class Game {
 	running: boolean = true;
 	all_players: Player[];
-	/// only living, playing players
+	/** only living, playing players */
 	players: {[number: number]: Player};
 	options: string[];
 	day_channel: TextChannel;
 	mafia_secret_chat: TextChannel;
-	/// hooker has already hooked or there is no hooker, used by action collectors in State.NIGHT
+	/** hooker has already hooked or there is no hooker, used by action collectors in State.NIGHT */
 	night_report_passed: boolean;
-	/// same as above but for mafia. just in case there is a role that affects mafia actions in the future
+	/** same as above but for mafia. just in case there is a role that affects mafia actions in the future */
 	mafia_night_report_passed: boolean;
 	cur_state: State = State.GAME;
 	timeout?: NodeJS.Timeout = null;
@@ -120,20 +129,27 @@ export class Game {
 
 	role_mafia_player: Discord.Role;
 
-	post_win(side: Side, side2?: Side) {
+	post_win(side?: Side, thirds: Player[] = []) {
 		this.running = false;
-		let list = "";
-		for(let player of this.all_players) {
-			if(player.role.side == side || player.role.side == side2) {
-				list += ` <@${player.member.id}>`;
-			}
+		let list = `<@&${this.role_mafia_player.id}> `;
+		if(side) {
+			list += "The " + Side[side] + " ("
+				+ this.all_players.filter(p => p.role.side === side).map(p => "<@" + p.member.id + ">").join(", ")
+				+ (thirds.length > 0? "), ": ")");
 		}
+		if(thirds.length > 0) {
+			list += thirds.map(p => "<@" + p.member.id + ">").join(", ");
+		}
+		list += " won!";
 		for(let player of this.all_players) {
 			list += `\n${player.number}- ${player.name} (${player.role.name})`;
 			if(player.dead) list += " (dead)";
+			if(player.role.side === side || thirds.find(p => p.number === player.number)) list += " (won)";
 		}
 		this.do_state(State.GAME_END);
-		this.day_channel.send(`<@&${this.role_mafia_player.id}> The ${Side[side]} won!${list}`);
+		if(side) {
+			this.day_channel.send(list);
+		}
 	}
 
 	update_night() {
@@ -176,28 +192,66 @@ export class Game {
 
 	update_win_condition() {
 		if(!this.running) return;
-		let sides = [0, 0, 0, 0];
+		let non_maf = 0;
+		let maf = 0;
 		let village_can_overturn = false;
+		let thirds_win = [];
+		let thirds_other = [];
 		for(let player of Object.values(this.players)) {
-			if(player.role.side == Side.VILLAGE && player.can_overturn()) village_can_overturn = true;
-			sides[player.role.side.valueOf()]++;
+			if(player.role.side !== Side.MAFIA && player.can_overturn()) village_can_overturn = true;
+			if(player.role.side === Side.MAFIA) {
+				maf++;
+			} else {
+				non_maf++;
+			}
 		}
-		if(village_can_overturn? sides[Side.VILLAGE.valueOf()] == 0: (sides[Side.VILLAGE.valueOf()] <= sides[Side.MAFIA.valueOf()])) {
-			this.post_win(Side.MAFIA);
-		} else if(sides[Side.MAFIA.valueOf()] == 0) {
-			this.post_win(Side.VILLAGE);
+		for(let p of this.all_players) {
+			if(p.role.side === Side.THIRD) {
+				if(p.role.cause_win && p.role.cause_win(p, this)) {
+					thirds_win.push(p);
+				} else {
+					thirds_other.push(p);
+				}
+			}
+		}
+		let winning_side = null;
+		if(village_can_overturn? non_maf == 0: (non_maf <= maf)) {
+			winning_side = Side.MAFIA;
+		} else if(maf == 0) {
+			winning_side = Side.VILLAGE;
+		}
+		if(winning_side || thirds_win.length) {
+			thirds_win = thirds_win.filter(p => !p.role.ensure_win || p.role.ensure_win(p, this)); // check for canceled wins
+			for(let p of thirds_other) { // check for third parties winning without having caused the win
+				if(p.role.ensure_win && p.role.ensure_win(p, this)) {
+					thirds_win.push(p);
+				}
+			}
+			if(thirds_win.find(p => p.role.override_sides_win)) {
+				winning_side = null;
+			}
+		}
+		if(winning_side || thirds_win.length) {
+			this.post_win(winning_side, thirds_win);
 		}
 	}
 
-	kill(player: Player, killer: Player) {
+	/**
+	 * @param killer who to register as the killer; array if lynched
+	 * @param on_death to call if the player actually dies, before wins are registered
+	 */
+	kill(player: Player, killer: Player | Player[], on_death: () => void) {
 		player.dead = true;
+		player.killed_by = killer;
+		player.do_state(State.DEAD, this);
+		if(!player.dead) return;
+		on_death();
+		if(!player.dead) return;
 		if(player.item_collector) {
 			player.item_collector.stop("dead");
 		}
 		player.member.roles.remove(this.role_mafia_player);
 		this.mafia_secret_chat.permissionOverwrites.delete(player.member);
-		player.killed_by = killer;
-		player.do_state(State.DEAD, this);
 		delete this.players[player.number];
 		this.update_win_condition();
 	}
@@ -222,14 +276,18 @@ export class Game {
 					player.member.createDM().then(ch => {
 						player.item_collector = ch.createMessageCollector();
 						player.item_collector.on("collect", msg => {
+							if(msg.content.match(/^; *inv$/)) {
+								msg.reply(player.inventory.print(player, this));
+								return;
+							}
 							let m = msg.content.match(/^; *use +([a-zA-Z0-9]+)( +([0-9]+))?$/);
 							if(m) {
 								let it = player.inventory.items.find(it => it.name.toLowerCase() == m[1].toLowerCase());
 								if(!it) {
 									player.member.send("You don't have this item.");
-									return;
-								}
-								if(it.night_use? this.cur_state === State.NIGHT: this.cur_state === State.DAY) {
+								} else if(!it.use) {
+									player.member.send(`You can't use this item, it's passive.`);
+								} else if(it.night_use? this.cur_state === State.NIGHT: this.cur_state === State.DAY) {
 									if(it.no_target) {
 										it.use(player, player, player.game);
 										if(!it.stays_after_use) {
@@ -249,7 +307,7 @@ export class Game {
 										msg.reply("This item requires a target.");
 									}
 								} else {
-									player.member.send(`You cannot use this item in the ${State[this.cur_state]}.`);
+									player.member.send(`You can't use this item in the ${State[this.cur_state]}.`);
 								}
 							}
 						});
@@ -408,13 +466,13 @@ export class Game {
 				for(let player of Object.values(this.players)) {
 					player.do_state(state, this);
 				}
-				let lynched = calculate_lynch(this.players);
+				let [lynched, lynchers] = calculate_lynch(this.players);
 				if(lynched === 0) {
 					this.day_channel.send("Nobody was lynched.");
 				} else {
 					let target = this.players[lynched];
 					this.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was lynched.`);
-					this.kill(target, null);
+					this.kill(target, lynchers, null);
 				}
 				if(this.day_collector) {
 					this.day_collector.stop("night end");

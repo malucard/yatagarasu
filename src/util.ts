@@ -23,7 +23,7 @@ export const death_messages = [
     "%pr's body was found wearing a fancy red suit and sunglasses this morning."
 ];
 
-/// points of the game where things happen automatically and roles have callbacks to run
+/** points of the game where things happen automatically and roles have callbacks to run */
 export enum State {
 	GAME,
 	GAME_END,
@@ -44,28 +44,31 @@ export function shuffle_array(array: any[]) {
 	return array;
 }
 
-export function calculate_lynch(players: {[num: number]: Player}): number {
-    let votes: {[num: number]: number} = {};
+export function calculate_lynch(players: {[num: number]: Player}): [number, Player[]] {
+    let votes: {[num: number]: Player[]} = {};
     for(let player of Object.values(players)) {
 		if(player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
             if(votes.hasOwnProperty(player.lynch_vote)) {
-                votes[player.lynch_vote]++;
+                votes[player.lynch_vote].push(player);
             } else {
-                votes[player.lynch_vote] = 1;
+                votes[player.lynch_vote] = [player];
             }
         }
     }
     let lynch = 0;
+    let biggest_voters: Player[] = [];
     let biggest = 0;
-    for(let [id, num] of Object.entries(votes)) {
-        if(num > biggest) {
+    for(let [id, voters] of Object.entries(votes)) {
+        if(voters.length > biggest) {
             lynch = parseInt(id);
-            biggest = num;
-        } else if(num === biggest) {
+            biggest = voters.length;
+            biggest_voters = voters;
+        } else if(voters.length === biggest) {
             lynch = 0;
+            biggest_voters = votes[0] || [];
         }
     }
-    return lynch;
+    return [lynch, biggest_voters];
 }
 
 export function list_lynch(players: {[num: number]: Player}) {
@@ -81,7 +84,7 @@ export function list_lynch(players: {[num: number]: Player}) {
 			text += `\n${player.name} votes to lynch <invalid>`;
 		}
 	}
-	let lynch = calculate_lynch(players);
+	let [lynch, lynchers] = calculate_lynch(players);
 	if(lynch === 0) {
 		return `${text}\n**The consensus is to lynch nobody.**`;
 	} else {
