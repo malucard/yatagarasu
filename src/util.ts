@@ -88,3 +88,7 @@ export function list_lynch(players: {[num: number]: Player}) {
 		return `${text}\n**The consensus is to lynch ${players[lynch].name}.**`;
 	}
 }
+
+export function everyone_prevent(txt: string): string {
+    return txt.replace(/@(everyone|here)/g, ":/");
+}

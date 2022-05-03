@@ -3,7 +3,7 @@ import { ApplicationCommandOptionTypes } from "discord.js/typings/enums";
 import { botLoginAuth } from "./auth";
 import { FULL_SEND_PERMS, Game, Player, valid_options } from "./game";
 import { Role, roles, Side } from "./role";
-import { shuffle_array, State } from "./util";
+import { everyone_prevent, shuffle_array, State } from "./util";
 
 export const kaismile = "497430068331544577";
 
@@ -176,7 +176,7 @@ async function do_setup(member: GuildMember, channel: TextChannel, message: Mess
 			p.game = g;
 			p.role = setup_roles[i];
 			p.member = member;
-			p.name = member.nickname;
+			p.name = everyone_prevent(member.nickname);
 			all_players.push(p);
 			i++;
 		}
@@ -381,7 +381,7 @@ const cmds = [{
 	type: 3,
 	action: async (member: GuildMember, channel: TextChannel, message: Message | CommandInteraction) => {
 		if(message instanceof Interaction && message.isMessageContextMenu()) {
-			message.reply(`You ate the message '${message.targetMessage.content}' from ${message.targetMessage.author.username} for lunch.`);
+			message.reply(`You ate the message '${everyone_prevent(message.targetMessage.content)}' from ${message.targetMessage.author.username} for lunch.`);
 		}
 	}
 }];

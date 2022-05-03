@@ -153,7 +153,7 @@ export class Game {
 					player.do_state(State.NIGHT_REPORT, this);
 				} else if(this.killing !== player.number) {
 //					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
-					return false;
+					return;
 				}
 			}
 		}
@@ -163,7 +163,7 @@ export class Game {
 					player.do_state(State.NIGHT_REPORT, this);
 				} else if(this.killing !== player.number) {
 //					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
-					return false;
+					return;
 				}
 			}
 		}

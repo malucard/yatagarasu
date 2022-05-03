@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 import {Player, Game} from "./game";
 import {items} from "./item";
-import {State} from "./util";
+import {shuffle_array, State} from "./util";
 
 export type RoleAction = (player: Player, game: Game) => void;
 export type RoleActionReport = (target: Player, player: Player, game: Game) => void;
@@ -205,6 +205,34 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 	}
 }
 
+/**
+ * template for actions that happen automatically and only need a report
+ * @param report callback to execute the action
+ * @param hooked_report if hooked, calls this instead of report, or says "You were hooked." if this is true, or does nothing if null
+ */
+function template_report(report: RoleAction, hooked_report?: RoleAction | boolean): {[state: number]: RoleAction} {
+	return {
+		[State.NIGHT]: (player, game) => {
+			player.action_report_pending = true;
+		},
+		[State.NIGHT_REPORT]: (player, game) => {
+			if(player.action_report_pending) {
+				if(player.hooked) {
+					if(hooked_report === true) {
+						player.member.send("You were hooked.");
+					} else if(hooked_report) {
+						hooked_report(player, game);
+					}
+				} else {
+					report(player, game);
+				}
+				player.action_report_pending = false;
+				game.update_night();
+			}
+		}
+	}
+}
+
 export let roles: {[name: string]: Role} = {
 	Blue: {
 		name: "Blue",
@@ -265,6 +293,37 @@ export let roles: {[name: string]: Role} = {
 				game.kill(player.killed_by, player);
 			}
 		}}
+	},
+	Oracle: {
+		name: "Oracle",
+		help: "Every night, choose a player, and when you die, that player's role will be revealed.",
+		side: Side.VILLAGE,
+		actions: Object.assign(template_targeted("prophesy about", (target, player, game) => {
+			player.data.oracle_target = target;
+		}), {[State.DEAD]: (player: Player, game: Game) => {
+			if(player.data.oracle_target) {
+				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${player.data.oracle_target.role.name}.`);
+			} else {
+				game.day_channel.send(`Oracle's prophecy: none.`);
+			}
+		}})
+	},
+	Dreamer: {
+		name: "Dreamer",
+		help: "Every night, you receive a dream of either 1 innocent person, or 3 people, at least 1 of which is mafia-aligned.",
+		side: Side.VILLAGE,
+		actions: template_report((player, game) => {
+			if(Math.random() < 0.5) {
+				let vil: Player[] = Object.values(game.players).filter(x => get_side(x.role) === Side.VILLAGE && x.number !== player.number);
+				player.member.send(vil[Math.floor(Math.random() * vil.length)] + " is sided with the VILLAGE.");
+			} else {
+				let list: Player[] = shuffle_array(Object.values(game.players));
+				let maf = list.find(x => get_side(x.role) === Side.MAFIA);
+				list = list.filter(x => x.number !== player.number && x.number !== maf.number).slice(0, 2);
+				list.push(maf);
+				player.member.send(shuffle_array(list).join(", ") + ". At least one of them is sided with the MAFIA.");
+			}
+		}, true)
 	},
 	Gunsmith: {
 		name: "Gunsmith",
