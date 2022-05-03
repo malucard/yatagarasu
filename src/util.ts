@@ -1,4 +1,4 @@
-import {Player} from "./game";
+import { Player } from "./game";
 
 export const death_messages = [
     "%pr's body was found in the river this morning.",
@@ -25,30 +25,30 @@ export const death_messages = [
 
 /// points of the game where things happen automatically and roles have callbacks to run
 export enum State {
-	GAME,
-	GAME_END,
-	DAY,
-	DAY_END,
-	PRE_NIGHT,
-	NIGHT,
-	NIGHT_REPORT,
-	NIGHT_END,
-	DEAD
+    GAME,
+    GAME_END,
+    DAY,
+    DAY_END,
+    PRE_NIGHT,
+    NIGHT,
+    NIGHT_REPORT,
+    NIGHT_END,
+    DEAD
 }
 
 export function shuffle_array(array: any[]) {
-	for(let i = array.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[array[i], array[j]] = [array[j], array[i]];
-	}
-	return array;
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
-export function calculate_lynch(players: {[num: number]: Player}): number {
-    let votes: {[num: number]: number} = {};
-    for(let player of Object.values(players)) {
-		if(player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
-            if(votes.hasOwnProperty(player.lynch_vote)) {
+export function calculate_lynch(players: { [num: number]: Player }): number {
+    let votes: { [num: number]: number } = {};
+    for (let player of Object.values(players)) {
+        if (player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
+            if (votes.hasOwnProperty(player.lynch_vote)) {
                 votes[player.lynch_vote]++;
             } else {
                 votes[player.lynch_vote] = 1;
@@ -57,36 +57,36 @@ export function calculate_lynch(players: {[num: number]: Player}): number {
     }
     let lynch = 0;
     let biggest = 0;
-    for(let [id, num] of Object.entries(votes)) {
-        if(num > biggest) {
+    for (let [id, num] of Object.entries(votes)) {
+        if (num > biggest) {
             lynch = parseInt(id);
             biggest = num;
-        } else if(num === biggest) {
+        } else if (num === biggest) {
             lynch = 0;
         }
     }
     return lynch;
 }
 
-export function list_lynch(players: {[num: number]: Player}) {
-	let text = "";
-	for(let player of Object.values(players)) {
-		if(player.lynch_vote === 0) {
-			text += `\n${player.name} votes to lynch nobody`;
-		} else if(!player.lynch_vote) {
-			text += `\n${player.name} has not voted`;
-		} else if(players[player.lynch_vote]) {
-			text += `\n${player.name} votes to lynch ${players[player.lynch_vote].name}`;
-		} else {
-			text += `\n${player.name} votes to lynch <invalid>`;
-		}
-	}
-	let lynch = calculate_lynch(players);
-	if(lynch === 0) {
-		return `${text}\n**The consensus is to lynch nobody.**`;
-	} else {
-		return `${text}\n**The consensus is to lynch ${players[lynch].name}.**`;
-	}
+export function list_lynch(players: { [num: number]: Player }) {
+    let text = "";
+    for (let player of Object.values(players)) {
+        if (player.lynch_vote === 0) {
+            text += `\n${player.name} votes to lynch nobody`;
+        } else if (!player.lynch_vote) {
+            text += `\n${player.name} has not voted`;
+        } else if (players[player.lynch_vote]) {
+            text += `\n${player.name} votes to lynch ${players[player.lynch_vote].name}`;
+        } else {
+            text += `\n${player.name} votes to lynch <invalid>`;
+        }
+    }
+    let lynch = calculate_lynch(players);
+    if (lynch === 0) {
+        return `${text}\n**The consensus is to lynch nobody.**`;
+    } else {
+        return `${text}\n**The consensus is to lynch ${players[lynch].name}.**`;
+    }
 }
 
 export function everyone_prevent(txt: string): string {
