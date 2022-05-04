@@ -325,10 +325,24 @@ const cmds = [{
 	description: "roles",
 	action: async (_member: GuildMember, _channel: TextChannel, message: Message | CommandInteraction) => {
 		let h = "";
+		let replied;
 		for(let r of Object.values(roles)) {
-			h += "\n" + r.name + " (" + Side[r.side] + "): " + r.help + (r.hidden_help? " " + r.hidden_help: "");
+			let line = "\n" + Side[r.side][0] + "/" + r.name + ": " + r.help + (r.hidden_help? " " + r.hidden_help: "");
+			let h2 = h + line;
+			if(h2.length > 2000) {
+				if(message instanceof CommandInteraction && message.replied) {
+					await message.followUp(h);
+				} else {
+					await message.reply(h);
+				}
+				h = line;
+			} else h = h2;
 		}
-		message.reply(h);
+		if(message instanceof CommandInteraction && message.replied) {
+			message.followUp(h);
+		} else {
+			message.reply(h);
+		}
 	}
 }, {
 	name: "setup",

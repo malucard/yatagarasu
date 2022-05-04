@@ -22,6 +22,8 @@ export class Role {
 	name: string;
 	/** will be called this before the game ends, even to themselves */
 	fake_name?: string;
+	/** whether the real role should be revealed on death, and not just at the end of the game */
+	death_reveal?: boolean;
 	/** will be in a DM to the player at the start of the game, and in help commands */
 	help: string;
 	/** will be appended in help commands, but not in the DM to the player */
@@ -48,15 +50,20 @@ export class Role {
 	ensure_win?: RoleAction;
 }
 
-export function get_name(role: Role): string {
-	return role.fake_name === undefined || role.fake_name === null? role.name: role.fake_name;
+export function role_name(player: Player): string {
+	let role = player.role;
+	return role.fake_name === undefined || role.fake_name === null? role.name: (role.death_reveal && player.dead? role.name: role.fake_name);
 }
 
 function get_side(role: Role): Side {
 	return role.fake_side === undefined || role.fake_side === null? role.side: role.fake_side;
 }
 
-function request_action_targeted(verb: string, report: RoleActionReport, player: Player, game: Game, dont_wait: boolean, max_shots: number) {
+/**
+ * @param immediate request an answer now, cannot be hooked, will still cause pending, and can be either day or night
+ * @param dont_wait this action will not have a cancel and will not be waited for; usually for optional secondary actions
+ */
+function request_action_targeted(verb: string, report: RoleActionReport, player: Player, game: Game, immediate: boolean = false, dont_wait: boolean = false, max_shots: number = -1) {
 	player.data = {collector: null, target: null};
 	let numbers = "";
 	for(let p of Object.values(game.players)) {
@@ -65,21 +72,21 @@ function request_action_targeted(verb: string, report: RoleActionReport, player:
 		}
 	}
 	let left = max_shots !== -1? max_shots - player.data.shots_done: null;
-	player.member.send((dont_wait?
+	player.member.send((immediate? "Select a player to " + verb + ".": (dont_wait?
 		"Optionally, before anything else, select a player to " + verb + " tonight. Targets:":
-		"Select a player to " + verb + " tonight, or ❌ to do nothing. Targets:") + numbers
+		"Select a player to " + verb + " tonight, or ❌ to do nothing. Targets:")) + numbers
 		+ (left? ` You have ${left} use${left !== 1? "s": ""} of this action left.`: "")).then(msg => {
 		for(let p of Object.values(game.players)) {
 			if(p.number != player.number) {
 				msg.react(p.number + "\u20E3");
 			}
 		}
-		msg.react("❌");
+		if(!dont_wait && !immediate) msg.react("❌");
 		let collector = msg.createReactionCollector();
 		player.data.collector = collector;
 		collector.on("collect", (reaction, user) => {
 			if(!user.bot) {
-				if(reaction.emoji.name === "❌") {
+				if(reaction.emoji.name === "❌" && !dont_wait && !immediate) {
                     msg.channel.send("Action cancelled.");
                     collector.stop();
 					player.data.collector = null;
@@ -98,9 +105,14 @@ function request_action_targeted(verb: string, report: RoleActionReport, player:
 						collector.stop();
 						player.data.collector = null;
 						player.action_pending = false;
-						player.action_report_pending = true;
 						msg.edit(msg.content + `\nYou chose to ${verb} ${p.name}.`);
-						player.data.target = p;
+						if(immediate) {
+							player.action_report_pending = false;
+							report(p, player, game);
+						} else {
+							player.action_report_pending = true;
+							player.data.target = p;
+						}
 						game.update_night();
 					} else {
 						player.member.send("Invalid target.");
@@ -123,7 +135,7 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, c
 		player.data.collector = collector;
 		collector.on("collect", action_msg => {
 			if(!action_msg.member.user.bot && action_msg.member.id === player.member.id) {
-				if(action_msg.content.match(new RegExp("^; *" + verb + "$", "i"))) {
+				if(action_msg.content.match(new RegExp("^; *" + verb + "$", "i")) && !dont_wait) {
                     action_msg.reply("Action cancelled.");
                     collector.stop();
 					player.data.collector = null;
@@ -184,7 +196,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 			if(mafia) {
 				request_action_targeted_mafia(verb, report, cancel_report, player, game, dont_wait, max_shots);
 			} else {
-				request_action_targeted(verb, report, player, game, dont_wait, max_shots);
+				request_action_targeted(verb, report, player, game, false, dont_wait, max_shots);
 			}
 		},
 		[State.NIGHT_REPORT]: (player, game) => {
@@ -270,6 +282,17 @@ export let roles: {[name: string]: Role} = {
 		powerless: true,
 		actions: {}
 	},
+	Suspect: {
+		name: "Suspect",
+		fake_name: "Blue",
+		death_reveal: true,
+		help: "No powers.",
+		hidden_help: "You appear as mafia-aligned to investigative roles.",
+		side: Side.VILLAGE,
+		fake_side: Side.MAFIA,
+		powerless: true,
+		actions: {}
+	},
 	Cop: {
 		name: "Cop",
 		help: "Every night, investigate a player to learn their side.",
@@ -350,7 +373,7 @@ export let roles: {[name: string]: Role} = {
 			if(player.killed_by instanceof Player && !player.killed_by.dead) {
 				let killer = player.killed_by;
 				game.kill(player.killed_by, player, () => {
-					game.day_channel.send(`<@${killer.member.id}>, the ${get_name(killer.role)}, exploded.`);
+					game.day_channel.send(`<@${killer.member.id}>, the ${role_name(killer)}, exploded.`);
 				});
 			}
 		}}
@@ -362,7 +385,7 @@ export let roles: {[name: string]: Role} = {
 		actions: {[State.NIGHT_TARGETED]: (player, game) => {
 			if(player.data.night_targeted_by) {
 				game.kill(player.data.night_targeted_by, player, () => {
-					game.day_channel.send(`<@${player.data.night_targeted_by.member.id}>, the ${get_name(player.data.night_targeted_by.role)}, was shot by <@${player.member.id}>.`);
+					game.day_channel.send(`<@${player.data.night_targeted_by.member.id}>, the ${role_name(player.data.night_targeted_by)}, was shot by <@${player.member.id}>.`);
 				});
 			}
 		}}
@@ -378,7 +401,7 @@ export let roles: {[name: string]: Role} = {
 			player.member.send("No prophecy will be revealed today.")
 		}), {[State.DEAD]: (player: Player, game: Game) => {
 			if(player.data.oracle_target) {
-				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${get_name(player.data.oracle_target.role)}.`);
+				game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${role_name(player.data.oracle_target)}.`);
 			} else {
 				game.day_channel.send(`Oracle's prophecy: none.`);
 			}
@@ -461,7 +484,7 @@ export let roles: {[name: string]: Role} = {
 				game.mafia_collector = null;
 				game.kill(target, player, () => {
 					game.day_channel.send(`<@${target.member.id}> is missing!`);
-					game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${get_name(target.role)}.`);
+					game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${role_name(target)}.`);
 				});
 			}
 		}, null, null, true, true, 1)
@@ -508,18 +531,30 @@ export let roles: {[name: string]: Role} = {
 			game.kill(target, player, () => {
 				player.role = target.role;
 				if(player.role.side == Side.MAFIA) {
-					game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name}. You are now number ${player.number}, ${get_name(player.role)}. ${player.role.help}`);
+					game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name} and became their role.`);
 				} else {
-					player.member.send(`You ate ${target.name}. You are now number ${player.number}, ${get_name(player.role)}. ${player.role.help}`);
+					player.member.send(`You ate ${target.name} and became their role.`);
 				}
+				player.do_state(State.GAME, game); // send them help and do whatever that role does when starting
 			});
 		}}
 	},
 	Survivor: {
 		name: "Survivor",
-		help: "If you survive until the game ends, you win.",
+		help: "If you are alive when the game ends, you win.",
 		side: Side.THIRD,
 		actions: {},
 		ensure_win: (player, game) => !player.dead
+	},
+	Angel: {
+		name: "Angel",
+		help: "Choose a player once. If they are alive when the game ends, you win.",
+		side: Side.THIRD,
+		actions: {[State.GAME]: (player, game) => {
+			request_action_targeted("be the angel of", (target, player, game) => {
+				player.data.angel_of = target;
+			}, player, game, true);
+		}},
+		ensure_win: (player, game) => player.data.angel_of && !player.data.angel_of.dead
 	}
 };

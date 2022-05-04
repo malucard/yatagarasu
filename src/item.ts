@@ -1,5 +1,5 @@
 import {Game, Player} from "./game";
-import { get_name, RoleAction } from "./role";
+import { role_name, RoleAction } from "./role";
 import { State } from "./util";
 
 export class Item {
@@ -70,9 +70,9 @@ export const items: {[name: string]: Item} = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
 				if(Math.random() < 0.5) {
-					game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot by <@${player.member.id}>.`);
+					game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${player.member.id}>.`);
 				} else {
-					game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot.`);
+					game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot.`);
 				}
 			});
 		}
@@ -84,7 +84,7 @@ export const items: {[name: string]: Item} = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
-				game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot.`);
+				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot.`);
 			});
 		}
 	},
@@ -96,7 +96,7 @@ export const items: {[name: string]: Item} = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			let framed = player.data.framing? player.data.framing: player;
 			game.kill(target, player, () => {
-				game.day_channel.send(`<@${target.member.id}>, the ${get_name(target.role)}, was shot by <@${framed.member.id}>.`);
+				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${framed.member.id}>.`);
 			});
 		}
 	},
