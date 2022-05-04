@@ -15,7 +15,8 @@ export enum Side {
 	VILLAGE,
 	MAFIA,
 	/** players that each have their own win condition */
-	THIRD
+	THIRD,
+	TIE
 }
 
 export class Role {
@@ -39,6 +40,8 @@ export class Role {
 	can_overturn?: boolean;
 	/** if can't be saved */
 	macho?: boolean;
+	/** if can't be hooked; will also cause its report to come earlier than for other roles */
+	unhookable?: boolean;
 	/** callbacks for states */
 	actions: {[state: number]: RoleAction} = {};
 
@@ -52,7 +55,7 @@ export class Role {
 
 export function role_name(player: Player): string {
 	let role = player.role;
-	return role.fake_name === undefined || role.fake_name === null? role.name: (role.death_reveal && player.dead? role.name: role.fake_name);
+	return role.fake_name === undefined || role.fake_name === null || (role.death_reveal && player.dead)? role.name: role.fake_name;
 }
 
 function get_side(role: Role): Side {
@@ -62,8 +65,9 @@ function get_side(role: Role): Side {
 /**
  * @param immediate request an answer now, cannot be hooked, will still cause pending, and can be either day or night
  * @param dont_wait this action will not have a cancel and will not be waited for; usually for optional secondary actions
+ * @param yes_no this action will have a single check instead of targets
  */
-function request_action_targeted(verb: string, report: RoleActionReport, player: Player, game: Game, immediate: boolean = false, dont_wait: boolean = false, max_shots: number = -1) {
+function request_action(verb: string, report: RoleActionReport, cancel_report: RoleAction, player: Player, game: Game, dont_wait: boolean = false, immediate: boolean = false, yes_no: boolean = false, max_shots: number = -1) {
 	player.data = {collector: null, target: null};
 	let numbers = "";
 	for(let p of Object.values(game.players)) {
@@ -72,54 +76,81 @@ function request_action_targeted(verb: string, report: RoleActionReport, player:
 		}
 	}
 	let left = max_shots !== -1? max_shots - player.data.shots_done: null;
-	player.member.send((immediate? "Select a player to " + verb + ".": (dont_wait?
-		"Optionally, before anything else, select a player to " + verb + " tonight. Targets:":
+	player.member.send(
+		(yes_no? "Select whether to " + verb + ".":
+		(immediate? "Select a player to " + verb + ".":
+		(dont_wait? "Optionally, before anything else, select a player to " + verb + " tonight. Targets:":
 		"Select a player to " + verb + " tonight, or ❌ to do nothing. Targets:")) + numbers
-		+ (left? ` You have ${left} use${left !== 1? "s": ""} of this action left.`: "")).then(msg => {
-		for(let p of Object.values(game.players)) {
-			if(p.number != player.number) {
-				msg.react(p.number + "\u20E3");
-			}
-		}
-		if(!dont_wait && !immediate) msg.react("❌");
-		let collector = msg.createReactionCollector();
-		player.data.collector = collector;
-		collector.on("collect", (reaction, user) => {
-			if(!user.bot) {
-				if(reaction.emoji.name === "❌" && !dont_wait && !immediate) {
-                    msg.channel.send("Action cancelled.");
-                    collector.stop();
-					player.data.collector = null;
-					player.data.target = null;
-					player.action_pending = false;
-					player.action_report_pending = true;
-					game.update_night();
-                } else if(parseInt(reaction.emoji.name.substring(0, 1)) !== NaN) {
-					let n = parseInt(reaction.emoji.name.substring(0, 1));
-					if(n === player.number) {
-						player.member.send("You can't " + verb + " yourself.");
-						return;
-					}
-					let p = game.players[n];
-					if(p) {
-						collector.stop();
-						player.data.collector = null;
-						player.action_pending = false;
-						msg.edit(msg.content + `\nYou chose to ${verb} ${p.name}.`);
-						if(immediate) {
-							player.action_report_pending = false;
-							report(p, player, game);
-						} else {
-							player.action_report_pending = true;
-							player.data.target = p;
-						}
-						game.update_night();
-					} else {
-						player.member.send("Invalid target.");
+		+ (left? ` You have ${left} use${left !== 1? "s": ""} of this action left.`: ""))).then(msg => {
+			if(yes_no) {
+				msg.react("✅");
+			} else {
+				for(let p of Object.values(game.players)) {
+					if(p.number != player.number) {
+						msg.react(p.number + "\u20E3");
 					}
 				}
 			}
-		});
+			if(!dont_wait && !immediate) msg.react("❌");
+			let collector = msg.createReactionCollector();
+			player.data.collector = collector;
+			collector.on("collect", (reaction, user) => {
+				if(!user.bot) {
+					if(reaction.emoji.name === "❌" && !dont_wait && !immediate) {
+        	            collector.stop();
+						player.data.collector = null;
+        	            msg.channel.send("Action cancelled.");
+						player.data.target = null;
+						player.action_pending = false;
+						if(immediate) {
+							player.action_report_pending = false;
+							if(cancel_report) cancel_report(player, game);
+						} else {
+							player.action_report_pending = true;
+						}
+						game.update_night();
+        	        } else if(yes_no && reaction.emoji.name === "✅") {
+						collector.stop();
+						player.data.collector = null;
+						player.action_pending = false;
+						msg.edit(msg.content + `\nYou chose to ${verb}.`);
+						if(immediate) {
+							player.action_report_pending = false;
+							report(null, player, game);
+						} else {
+							player.action_report_pending = true;
+							player.data.target = null;
+						}
+						game.update_night();
+					} else if(!yes_no && parseInt(reaction.emoji.name.substring(0, 1)) !== NaN) {
+						let n = parseInt(reaction.emoji.name.substring(0, 1));
+						if(n === player.number) {
+							player.member.send("You can't " + verb + " yourself.");
+							return;
+						}
+						let p = game.players[n];
+						if(p) {
+							collector.stop();
+							player.data.collector = null;
+							player.action_pending = false;
+							msg.edit(msg.content + `\nYou chose to ${verb} ${p.name}.`);
+							p.data.night_targeted_by = player;
+							if(immediate) {
+								if(!p.do_state(State.NIGHT_TARGETED, game)) {
+									report(p, player, game);
+								}
+								player.action_report_pending = false;
+							} else {
+								player.data.target = p;
+								player.action_report_pending = true;
+							}
+							game.update_night();
+						} else {
+							player.member.send("Invalid target.");
+						}
+					}
+				}
+			});
 	});
 }
 
@@ -163,8 +194,8 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, c
 									game.mafia_secret_chat.send(`<@${player.member.id}> This was your last use of this action.`);
 								}
 								player.data.target = p;
-								game.update_night();
 							}
+							game.update_night();
 						} else {
 							action_msg.reply("Invalid target.");
 						}
@@ -184,7 +215,7 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, c
  * @param dont_wait this action will not have a cancel and will not be waited for; usually for optional secondary actions
  * @param max_shots limit how many times the action can be done
  */
-function template_targeted(verb: string, report: RoleActionReport, hooked_report?: RoleActionReport | boolean, cancel_report?: RoleAction, mafia: boolean = false, dont_wait: boolean = false, max_shots: number = -1): {[state: number]: RoleAction} {
+function template_targeted(verb: string, report: RoleActionReport, hooked_report?: RoleActionReport | boolean, cancel_report?: RoleAction, mafia: boolean = false, dont_wait: boolean = false, immediate: boolean = false, max_shots: number = -1): {[state: number]: RoleAction} {
 	return {
 		[State.NIGHT]: (player, game) => {
 			if(!player.data.shots_done) player.data.shots_done = 0;
@@ -196,7 +227,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 			if(mafia) {
 				request_action_targeted_mafia(verb, report, cancel_report, player, game, dont_wait, max_shots);
 			} else {
-				request_action_targeted(verb, report, player, game, false, dont_wait, max_shots);
+				request_action(verb, report, cancel_report, player, game, dont_wait, immediate, false, max_shots);
 			}
 		},
 		[State.NIGHT_REPORT]: (player, game) => {
@@ -217,7 +248,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 						}
 					} else {
 						player.data.target.night_targeted_by = player;
-						if(!player.data.target.do_state(State.NIGHT_TARGETED)) {
+						if(!player.data.target.do_state(State.NIGHT_TARGETED, game)) {
 							report(player.data.target, player, game);
 						}
 					}
@@ -237,6 +268,63 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 				} else {
 					if(!dont_wait) player.member.send("The night is over. Action cancelled.");
 				}
+			}
+			if(player.data.collector) {
+				player.data.collector.stop("night end");
+				player.data.collector = null;
+			}
+		}
+	}
+}
+
+/**
+ * template for yes/no actions
+ * @param report callback to execute the action if confirmed
+ * @param hooked_report if hooked, calls this instead of report, or says "You were hooked." if this is true, or does nothing if null
+ * @param cancel_report if the player cancelled the action, calls this instead of report
+ * @param dont_wait this action will not have a cancel and will not be waited for; usually for optional secondary actions
+ * @param max_shots limit how many times the action can be done
+ */
+function template_yes_no(verb: string, report: RoleActionReport, hooked_report?: RoleActionReport | boolean, cancel_report?: RoleAction, dont_wait: boolean = false, immediate: boolean = false, max_shots: number = -1): {[state: number]: RoleAction} {
+	return {
+		[State.NIGHT]: (player, game) => {
+			if(!player.data.shots_done) player.data.shots_done = 0;
+			if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+				return;
+			}
+			player.action_pending = !dont_wait;
+			player.action_report_pending = dont_wait;
+			request_action(verb, report, cancel_report, player, game, dont_wait, immediate, true, max_shots);
+		},
+		[State.NIGHT_REPORT]: (player, game) => {
+			if(!player.action_pending && player.action_report_pending) {
+				player.action_report_pending = false;
+				if(!player.data.target) {
+					if(cancel_report) cancel_report(player, game);
+				} else {
+					if(player.hooked) {
+						if(hooked_report === true) {
+							player.member.send("You were hooked.");
+						} else if(hooked_report) {
+							hooked_report(player.data.target, player, game);
+						}
+					} else {
+						player.data.target.night_targeted_by = player;
+						if(!player.data.target.do_state(State.NIGHT_TARGETED, game)) {
+							report(player.data.target, player, game);
+						}
+					}
+					player.data.shots_done++;
+					if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+						player.member.send(`<@${player.member.id}> This was your last use of this action.`);
+					}
+				}
+				game.update_night();
+			}
+		},
+		[State.NIGHT_END]: (player, game) => {
+			if(player.action_pending) {
+				if(!dont_wait) player.member.send("The night is over. Action cancelled.");
 			}
 			if(player.data.collector) {
 				player.data.collector.stop("night end");
@@ -369,6 +457,7 @@ export let roles: {[name: string]: Role} = {
 		name: "Bomb",
 		help: "If killed, not counting lynches, your attacker dies too.",
 		side: Side.VILLAGE,
+		can_overturn: true,
 		actions: {[State.DEAD]: (player, game) => {
 			if(player.killed_by instanceof Player && !player.killed_by.dead) {
 				let killer = player.killed_by;
@@ -380,15 +469,25 @@ export let roles: {[name: string]: Role} = {
 	},
 	Granny: {
 		name: "Granny",
-		help: "If targeted by any action at night, you shoot them. This reveals you as the shooter.",
+		help: "3 nights per game, choose whether to use your gun. If targeted by any action or kill that night, they die. This is reported together with the mafia kill in a random order. You can still die. ",
 		side: Side.VILLAGE,
-		actions: {[State.NIGHT_TARGETED]: (player, game) => {
-			if(player.data.night_targeted_by) {
-				game.kill(player.data.night_targeted_by, player, () => {
-					game.day_channel.send(`<@${player.data.night_targeted_by.member.id}>, the ${role_name(player.data.night_targeted_by)}, was shot by <@${player.member.id}>.`);
-				});
+		can_overturn: true,
+		unhookable: true,
+		actions: Object.assign(template_yes_no("use your gun tonight", (player, game) => {
+			player.data.granny_use_gun = true;
+		}, (player, game) => {
+			player.data.granny_use_gun = true;
+		}, (player, game) => {
+			player.data.granny_use_gun = false;
+		}, false, true, 3), {[State.NIGHT_TARGETED]: (player: Player, game: Game) => {
+			if(player.data.granny_use_gun && player.data.night_targeted_by) {
+				game.extra_kills.push([player.data.night_targeted_by, player]);
 			}
-		}}
+		}, [State.DEAD]: (player: Player, game: Game) => {
+			if(player.data.granny_use_gun && (game.cur_state === State.NIGHT || game.cur_state === State.NIGHT_END)) {
+				game.extra_kills.push([player.data.night_targeted_by, player]);
+			}
+		}})
 	},
 	Oracle: {
 		name: "Oracle",
@@ -414,13 +513,13 @@ export let roles: {[name: string]: Role} = {
 		actions: template_report((player, game) => {
 			if(Math.random() < 0.5) {
 				let vil: Player[] = Object.values(game.players).filter(x => get_side(x.role) === Side.VILLAGE && x.number !== player.number);
-				player.member.send(vil[Math.floor(Math.random() * vil.length)] + " is sided with the VILLAGE.");
+				player.member.send(vil[Math.floor(Math.random() * vil.length)]?.name + " is sided with the VILLAGE.");
 			} else {
 				let list: Player[] = shuffle_array(Object.values(game.players));
 				let maf = list.find(x => get_side(x.role) === Side.MAFIA);
 				list = list.filter(x => x.number !== player.number && x.number !== maf.number).slice(0, 2);
 				list.push(maf);
-				player.member.send(shuffle_array(list).join(", ") + ". At least one of them is sided with the MAFIA.");
+				player.member.send(shuffle_array(list.map(p => p.name)).join(", ") + ". At least one of them is sided with the MAFIA.");
 			}
 		}, true)
 	},
@@ -480,6 +579,7 @@ export let roles: {[name: string]: Role} = {
 			if(game.kill_pending) {
 				game.kill_pending = false;
 				game.killing = -1;
+				game.mafia_killer = player;
 				game.mafia_collector.stop("janitor cleaned");
 				game.mafia_collector = null;
 				game.kill(target, player, () => {
@@ -487,14 +587,16 @@ export let roles: {[name: string]: Role} = {
 					game.mafia_secret_chat.send(`<@&${game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${role_name(target)}.`);
 				});
 			}
-		}, null, null, true, true, 1)
+		}, null, null, true, true, false, 1)
 	},
 	Hooker: {
 		name: "Hooker",
 		help: "Every night, choose a village-aligned player, and their action will be prevented that night.",
 		side: Side.MAFIA,
 		actions: Object.assign(template_targeted("hook", (target, player, game) => {
-			target.hooked = true;
+			if(!target.role.unhookable) {
+				target.hooked = true;
+			}
 			game.night_report_passed = true;
 		}, null, (player, game) => {
 //			game.mafia_secret_chat.send("[debug] hooker action registered");
@@ -511,9 +613,12 @@ export let roles: {[name: string]: Role} = {
 			let actions = template_targeted("frame", (target, player, game) => {
 				player.data.framing = target;
 			}, null, null, true, false);
-			let o = actions[State.NIGHT];
+			let onight = actions[State.NIGHT];
+			actions[State.GAME] = (player, game) => {
+				player.receive(items.IllusionistGun);
+			};
 			actions[State.NIGHT] = (player, game) => { // only request the action if they still have the gun
-				if(!!player.inventory.items.find(x => x.name === "IllusionistGun")) o(player, game);
+				if(!!player.inventory.items.find(x => x.name === "IllusionistGun")) onight(player, game);
 			};
 			return actions;
 		})()
@@ -528,15 +633,20 @@ export let roles: {[name: string]: Role} = {
 			let target = Array.isArray(player.killed_by)?
 				player.killed_by[Math.floor(Math.random() * player.killed_by.length)]:
 				player.killed_by;
+			player.dead = false;
 			game.kill(target, player, () => {
-				player.role = target.role;
+				player.role = Object.assign({}, target.role);
+				if(!player.role.fake_name) player.role.fake_name = player.role.name;
+				player.role.name += " (Kirby)";
 				if(player.role.side == Side.MAFIA) {
 					game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name} and became their role.`);
 				} else {
 					player.member.send(`You ate ${target.name} and became their role.`);
 				}
+				game.day_channel.send(`${target.name} was eaten.`);
 				player.do_state(State.GAME, game); // send them help and do whatever that role does when starting
 			});
+			return true;
 		}}
 	},
 	Survivor: {
@@ -548,12 +658,21 @@ export let roles: {[name: string]: Role} = {
 	},
 	Angel: {
 		name: "Angel",
-		help: "Choose a player once. If they are alive when the game ends, you win.",
+		help: "You protect a random player. If they are killed, you will die in their place. If they are alive when the game ends, you win.",
 		side: Side.THIRD,
 		actions: {[State.GAME]: (player, game) => {
-			request_action_targeted("be the angel of", (target, player, game) => {
-				player.data.angel_of = target;
-			}, player, game, true);
+			let others = Object.values(game.players).filter(p => p.number !== player.number);
+			player.data.angel_of = others[Math.floor(Math.random() * others.length)];
+			player.data.angel_of.hook_action(State.DEAD, (angel_of: Player, game: Game) => {
+				if(!player.dead) {
+					angel_of.dead = false;
+					game.kill(player, angel_of.killed_by, () => {
+						player.member.send(`You sacrificed yourself to save ${angel_of.name}.`);
+					});
+					return true;
+				}
+			});
+			player.member.send(`You are the angel of ${player.data.angel_of.name}.`);
 		}},
 		ensure_win: (player, game) => player.data.angel_of && !player.data.angel_of.dead
 	}

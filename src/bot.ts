@@ -176,7 +176,7 @@ async function do_setup(member: GuildMember, channel: TextChannel, message: Mess
 			p.game = g;
 			p.role = setup_roles[i];
 			p.member = member;
-			p.name = everyone_prevent(member.nickname);
+			p.name = everyone_prevent(member.nickname !== undefined && member.nickname !== null? member.nickname: member.user.username);
 			all_players.push(p);
 			i++;
 		}
@@ -313,7 +313,7 @@ const cmds = [{
 		} else {
 			m = message.options.getString("name");
 		}
-		let r = roles[m];
+		let r = Object.values(roles).find(r => r.name.toLowerCase() === m.toLowerCase());
 		if(r) {
 			message.reply(r.name + " (" + Side[r.side] + "): " + r.help + (r.hidden_help? " " + r.hidden_help: ""));
 		} else {
@@ -406,7 +406,7 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
 			let role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.add(role_mafia_player).catch(() => interaction.reply("Could not add role"));
-			(interaction.message as Message).edit(await signup_message(role_mafia_player));
+			await (interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
 		interaction.update({});
 	},
@@ -414,7 +414,7 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
 			let role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role"));
-			(interaction.message as Message).edit(await signup_message(role_mafia_player));
+			await (interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
 		interaction.update({});
 	},
