@@ -46,6 +46,7 @@ const setups: {[name: string]: [number, string]} = {
 	"solo hooker": [5, "[Blue] [Blue] [Blue] [Cop] [Hooker]"],
 	"standoff": [5, "[MachoDoc]x2 [Gunsmith] [Oracle] [Illusionist]"],
 	"standoff 6": [6, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] -daystart"],
+	"standoff 7": [7, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] [Angel]"],
 	"hookers into dreams": [5, "[Blue]x2 [Doc] [Dreamer] [Hooker]"],
     "hookers into dreams 6": [6, "[Blue]x2 [Doc] [Dreamer] [Vanilla] [Hooker]"],
 	"classic": [7, "[Blue]x3 [Doc] [Cop] [Vanilla]x2"],
@@ -55,9 +56,9 @@ const setups: {[name: string]: [number, string]} = {
     "sinister sundown": [7, "[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]"],
     "cold stone": [7, "[Blue]x3 [Cop] [TalentScout] [Vanilla] [Godfather]"],
     "team cops": [7, "[Blue]x3 [Doc] [Cop]x3 [Vanilla]x2 [Hooker]"],
-	"revengeful 5": [5, "[VengefulBlue]x3 [VengefulVanilla]x2 -nightless -daychat"],
-	"revengeful 7": [7, "[VengefulBlue]x5 [VengefulVanilla]x2 -nightless -daychat"],
-	"revengeful": [11, "[VengefulBlue]x7 [VengefulVanilla]x4 -nightless -daychat"],
+	//"revengeful 5": [5, "[VengefulBlue]x3 [VengefulVanilla]x2 -nightless -daychat"],
+	//"revengeful 7": [7, "[VengefulBlue]x5 [VengefulVanilla]x2 -nightless -daychat"],
+	//"revengeful": [11, "[VengefulBlue]x7 [VengefulVanilla]x4 -nightless -daychat"],
 	"purgatory": [5, "[Gunsmith] [Cop] [Dreamer] [TalentScout] [Godfather] -nightless"],
 	"hope plus one": [14, "[Blue]x7 [MachoDoc]x2 [Cop]x2 [Vanilla]x3 -daystart"]
 };
@@ -359,6 +360,7 @@ const cmds = [{
 	}],
 	type: 1,
 	action: async (member: GuildMember, channel: TextChannel, message: Message | CommandInteraction) => {
+		if(happening[channel.id] instanceof Game) return;
 		let m;
 		if(message instanceof Message) {
 			let m2 = message.content.match(/^;\s*setup\s+(.*)$/);
@@ -385,6 +387,7 @@ const cmds = [{
 	}],
 	type: 1,
 	action: async (member: GuildMember, channel: TextChannel, message: Message | CommandInteraction) => {
+		if(happening[channel.id] instanceof Game) return;
 		let m;
 		if(message instanceof Message) {
 			let m2 = message.content.match(/^;\s*setupcustom\s+(.*)$/);

@@ -124,8 +124,7 @@ export const items: {[name: string]: Item} = {
 	Armor: {
 		name: "Armor",
 		help: "Will absorb one attempt at your life and break.",
-		can_overturn: true,
-		hook_actions: {[State.DEAD]: (player, game) => {
+		hook_actions: {[State.DEAD]: player => {
 			player.remove(items.Armor);
 			player.dead = false;
 			return true;
