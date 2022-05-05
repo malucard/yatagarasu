@@ -48,14 +48,14 @@ const setups: {[name: string]: [number, string]} = {
 	"standoff 6": [6, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] -daystart"],
 	"standoff 7": [7, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] [Angel]"],
 	"hookers into dreams": [5, "[Blue]x2 [Doc] [Dreamer] [Hooker]"],
-    "hookers into dreams 6": [6, "[Blue]x2 [Doc] [Dreamer] [Vanilla] [Hooker]"],
+	"hookers into dreams 6": [6, "[Blue]x2 [Doc] [Dreamer] [Vanilla] [Hooker]"],
 	"classic": [7, "[Blue]x3 [Doc] [Cop] [Vanilla]x2"],
 	"guns and hookers": [7, "[Blue]x3 [Cop] [Gunsmith] [Vanilla] [Hooker]"],
-    "fancy pants": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Janitor]"],
-    "fancy hookers": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Hooker]"],
-    "sinister sundown": [7, "[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]"],
-    "cold stone": [7, "[Blue]x3 [Cop] [TalentScout] [Vanilla] [Godfather]"],
-    "team cops": [7, "[Blue]x3 [Doc] [Cop]x3 [Vanilla]x2 [Hooker]"],
+	"fancy pants": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Janitor]"],
+	"fancy hookers": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Hooker]"],
+	"sinister sundown": [7, "[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]"],
+	"cold stone": [7, "[Blue]x3 [Cop] [TalentScout] [Vanilla] [Godfather]"],
+	"team cops": [7, "[Blue]x3 [Doc] [Cop]x3 [Vanilla]x2 [Hooker]"],
 	//"revengeful 5": [5, "[VengefulBlue]x3 [VengefulVanilla]x2 -nightless -daychat"],
 	//"revengeful 7": [7, "[VengefulBlue]x5 [VengefulVanilla]x2 -nightless -daychat"],
 	//"revengeful": [11, "[VengefulBlue]x7 [VengefulVanilla]x4 -nightless -daychat"],
@@ -453,7 +453,7 @@ const select_menus: {[id: string]: (interaction: SelectMenuInteraction) => void}
 };
 
 client.on("ready", async () => {
-    console.log(`Connected as ${client.user.tag}`);
+	console.log(`Connected as ${client.user.tag}`);
 	let appcmds = await client.application.commands.fetch();
 	for(let c of cmds) {
 		let appcmd = appcmds.find(x => x.name === c.name);
@@ -464,7 +464,7 @@ client.on("ready", async () => {
 });
 
 client.on("error", error => {
-    console.error(error.message);
+	console.error(error.message);
 });
 
 client.on("messageCreate", async msg => {

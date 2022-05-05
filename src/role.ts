@@ -121,10 +121,10 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			}
 			if(user.id !== player.member.id) return;
 			if(can_cancel && (reaction? reaction === "❌": content.match(new RegExp("^; *" + verb + "$")))) {
-                collector.stop();
+				collector.stop();
 				player.data.collector = null;
 				player.action_pending = false;
-                action_follow_up(player, opt.mafia, recv, "Action cancelled.");
+				action_follow_up(player, opt.mafia, recv, "Action cancelled.");
 				player.data.target = null;
 				if(opt.mafia || opt.immediate) {
 					player.action_report_pending = false;
@@ -133,7 +133,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					player.action_report_pending = true;
 				}
 				player.game.update_night();
-            } else if(opt.yes_no && reaction === "✅") {
+			} else if(opt.yes_no && reaction === "✅") {
 				collector.stop();
 				player.data.collector = null;
 				player.action_pending = false;
