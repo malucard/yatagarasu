@@ -79,7 +79,7 @@ export function list_lynch(players: {[num: number]: Player}) {
 		if(player.lynch_vote === 0) {
 			text += `\n${player.name} votes to lynch nobody`;
 		} else if(!player.lynch_vote) {
-			text += `\n${player.name} has not voted`;
+			text += `\n*${player.name} has not voted*`;
 		} else if(players[player.lynch_vote]) {
 			text += `\n${player.name} votes to lynch ${players[player.lynch_vote].name}`;
 		} else {

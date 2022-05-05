@@ -143,7 +143,7 @@ export class Game {
 	mafia_collector?: MessageCollector = null;
 	lunches: string[] = [];
 	day: number = 1;
-	hiding_numbers: boolean = true;
+	hiding_names: boolean = true;
 	kill_pending: boolean;
 	killing: number = 0;
 	mafia_killer?: Player | Player[];
@@ -165,7 +165,7 @@ export class Game {
 		if(thirds.length > 0) {
 			list += thirds.map(p => "<@" + p.member.id + ">").join(", ");
 		}
-		list += " won!";
+		if(side !== Side.TIE || thirds.length > 0) list += " won!";
 		for(let player of this.all_players) {
 			list += `\n${player.number}- ${player.name} (${player.role.name})`;
 			if(player.dead) list += " (dead)";
@@ -272,10 +272,11 @@ export class Game {
 	 * @param prevent_win this kill will not update the win condition
 	 */
 	kill(player: Player, killer: Player | Player[], on_death: () => void, prevent_win?: boolean) {
+		if(player.dead || player.protected) return;
 		let prev_prevent_win = this.prevent_win; // just be careful
-		if(prevent_win) this.prevent_win = true;
 		player.dead = true;
 		player.killed_by = killer;
+		if(prevent_win) this.prevent_win = true;
 		if(player.do_state(State.DEAD, this)) {
 			this.prevent_win = prev_prevent_win;
 			return;
@@ -303,9 +304,7 @@ export class Game {
 	}
 
 	async do_state(state: State): Promise<void> {
-		if(!this.running && state !== State.GAME_END) {
-			return;
-		}
+		if(!this.running && state !== State.GAME_END) return;
 //		this.mafia_secret_chat.send("[debug] game do state " + State[state]);
 		this.cur_state = state;
 		switch(state) {
@@ -361,13 +360,14 @@ export class Game {
 					player.do_state(state, this);
 				}
 				this.day = 1;
-				this.hiding_numbers = true;
+				this.hiding_names = true;
 				if(this.options.includes("daystart") || this.options.includes("nightless")) {
 					return this.do_state(State.DAY);
 				} else {
 					return this.do_state(State.NIGHT);
 				}
 			case State.GAME_END:
+				this.running = false;
 				this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, FULL_SEND_PERMS);
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, FULL_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
@@ -385,9 +385,13 @@ export class Game {
 					this.mafia_collector.stop();
 					this.mafia_collector = null;
 				}
+				if(this.timeout) {
+					clearTimeout(this.timeout);
+					this.timeout = null;
+				}
 				break;
 			case State.DAY: {
-				this.hiding_numbers = false;
+				this.hiding_names = false;
 				this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, PARTIAL_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
@@ -548,7 +552,7 @@ export class Game {
 				let numbers = "";
 				for(let p of Object.values(this.players)) {
 					if(p.role.side !== Side.MAFIA) {
-						numbers += "\n" + p.number + "- " + (this.hiding_numbers? "<hidden>": p.name);
+						numbers += "\n" + p.number + "- " + (this.hiding_names? "<hidden>": p.name);
 					}
 				}
 				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
@@ -557,13 +561,18 @@ export class Game {
 					let m = msg.content.match(/^; *kill +([0-9]+)$/);
 					if(this.kill_pending && m) {
 						let n = parseInt(m[1]);
-						if(this.players.hasOwnProperty(n)) {
-							if(this.players[n].role.side === Side.MAFIA) {
-								msg.reply(`${m[1]}- ${this.players[n].name} is mafia-aligned.`);
+						let target = this.players[n];
+						if(target) {
+							if(target.role.side === Side.MAFIA) {
+								msg.reply(`${m[1]}- ${target.name} is mafia-aligned.`);
 							} else {
-								this.kill_pending = false;
-								this.killing = n;
-								this.mafia_killer = Object.values(this.players).find(p => p.member.id === msg.member.id);
+								let killer = Object.values(this.players).find(p => p.member.id === msg.member.id);
+								target.data.night_targeted_by = killer;
+								if(!target.do_state(State.NIGHT_TARGETED, this)) {
+									this.kill_pending = false;
+									this.killing = n;
+									this.mafia_killer = killer;
+								}
 								msg.reply(`You chose to kill number ${m[1]}, ${this.players[n].name}.`);
 								this.mafia_collector.stop("kill chosen");
 								this.mafia_collector = null;
@@ -612,7 +621,7 @@ export class Game {
 				break;
 			}
 			case State.NIGHT_END:
-				this.hiding_numbers = false;
+				this.hiding_names = false;
 				this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 				if(this.mafia_collector) {
@@ -630,7 +639,6 @@ export class Game {
 					this.mafia_secret_chat.send("The night ended. You killed no one.");
 				}
 				let targets = this.extra_kills || [];
-				this.extra_kills = [];
 				if(this.killing && this.killing > 0) {
 					targets.push([this.players[this.killing], this.mafia_killer])
 				}
@@ -639,7 +647,7 @@ export class Game {
 					let t = targets[i][0];
 					for(let i2 = i + 1; i2 < targets.length; i2++) {
 						if(t.number === targets[i2][0].number) {
-							targets = targets.splice(i2, 1);
+							targets.splice(i2, 1);
 							i2--;
 						}
 					}
@@ -650,6 +658,7 @@ export class Game {
 						this.day_channel.send(d.replace(/%pr/g, `<@${target.member.id}> (${role_name(target)})`));
 					}, true);
 				}
+				this.extra_kills = [];
 				this.update_win_condition();
 				if(this.options.includes("dayless")) {
 					this.day++;

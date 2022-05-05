@@ -68,20 +68,21 @@ function get_side(role: Role): Side {
  * @param yes_no this action will have a single check instead of targets
  */
 function request_action(verb: string, report: RoleActionReport, cancel_report: RoleAction, player: Player, game: Game, dont_wait: boolean = false, immediate: boolean = false, yes_no: boolean = false, max_shots: number = -1) {
-	player.data = {collector: null, target: null};
+	player.data.collector = null;
+	player.data.target = null;
 	let numbers = "";
 	for(let p of Object.values(game.players)) {
 		if(p.number != player.number) {
-			numbers += "\n" + p.number + "- " + (game.hiding_numbers? "<hidden>": p.name);
+			numbers += "\n" + p.number + "- " + (game.hiding_names? "<hidden>": p.name);
 		}
 	}
-	let left = max_shots !== -1? max_shots - player.data.shots_done: null;
+	let left = max_shots !== -1? max_shots - (player.data.shots_done || 0): null;
 	player.member.send(
 		(yes_no? "Select whether to " + verb + ".":
-		(immediate? "Select a player to " + verb + ".":
+		(immediate? "Select a player to " + verb + ". Targets:":
 		(dont_wait? "Optionally, before anything else, select a player to " + verb + " tonight. Targets:":
-		"Select a player to " + verb + " tonight, or ❌ to do nothing. Targets:")) + numbers
-		+ (left? ` You have ${left} use${left !== 1? "s": ""} of this action left.`: ""))).then(msg => {
+		"Select a player to " + verb + " tonight, or ❌ to do nothing. Targets:")) + numbers)
+		+ (left !== null? ` You have ${left} use${left !== 1? "s": ""} of this action left.`: "")).then(msg => {
 			if(yes_no) {
 				msg.react("✅");
 			} else {
@@ -91,12 +92,12 @@ function request_action(verb: string, report: RoleActionReport, cancel_report: R
 					}
 				}
 			}
-			if(!dont_wait && !immediate) msg.react("❌");
+			if(!dont_wait && (yes_no || !immediate)) msg.react("❌");
 			let collector = msg.createReactionCollector();
 			player.data.collector = collector;
 			collector.on("collect", (reaction, user) => {
 				if(!user.bot) {
-					if(reaction.emoji.name === "❌" && !dont_wait && !immediate) {
+					if(reaction.emoji.name === "❌" && (!dont_wait && (yes_no || !immediate))) {
         	            collector.stop();
 						player.data.collector = null;
         	            msg.channel.send("Action cancelled.");
@@ -117,6 +118,10 @@ function request_action(verb: string, report: RoleActionReport, cancel_report: R
 						if(immediate) {
 							player.action_report_pending = false;
 							report(null, player, game);
+							player.data.shots_done++;
+							if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+								player.member.send("This was your last use of this action.");
+							}
 						} else {
 							player.action_report_pending = true;
 							player.data.target = null;
@@ -137,7 +142,12 @@ function request_action(verb: string, report: RoleActionReport, cancel_report: R
 							p.data.night_targeted_by = player;
 							if(immediate) {
 								if(!p.do_state(State.NIGHT_TARGETED, game)) {
+									player.data.target = p;
 									report(p, player, game);
+								}
+								player.data.shots_done++;
+								if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+									player.member.send("This was your last use of this action.");
 								}
 								player.action_report_pending = false;
 							} else {
@@ -188,12 +198,12 @@ function request_action_targeted_mafia(verb: string, report: RoleActionReport, c
 							action_msg.reply(`You chose to ${verb} ${p.name}.`);
 							p.data.night_targeted_by = player;
 							if(!p.do_state(State.NIGHT_TARGETED, game)) {
-								report(p, player, game);
-								player.data.shots_done++;
-								if(max_shots !== -1 && player.data.shots_done >= max_shots) {
-									game.mafia_secret_chat.send(`<@${player.member.id}> This was your last use of this action.`);
-								}
 								player.data.target = p;
+								report(p, player, game);
+							}
+							player.data.shots_done++;
+							if(max_shots !== -1 && player.data.shots_done >= max_shots) {
+								game.mafia_secret_chat.send(`<@${player.member.id}> This was your last use of this action.`);
 							}
 							game.update_night();
 						} else {
@@ -247,7 +257,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 							hooked_report(player.data.target, player, game);
 						}
 					} else {
-						player.data.target.night_targeted_by = player;
+						player.data.target.data.night_targeted_by = player;
 						if(!player.data.target.do_state(State.NIGHT_TARGETED, game)) {
 							report(player.data.target, player, game);
 						}
@@ -274,7 +284,7 @@ function template_targeted(verb: string, report: RoleActionReport, hooked_report
 				player.data.collector = null;
 			}
 		}
-	}
+	};
 }
 
 /**
@@ -309,7 +319,7 @@ function template_yes_no(verb: string, report: RoleActionReport, hooked_report?:
 							hooked_report(player.data.target, player, game);
 						}
 					} else {
-						player.data.target.night_targeted_by = player;
+						player.data.target.data.night_targeted_by = player;
 						if(!player.data.target.do_state(State.NIGHT_TARGETED, game)) {
 							report(player.data.target, player, game);
 						}
@@ -331,7 +341,7 @@ function template_yes_no(verb: string, report: RoleActionReport, hooked_report?:
 				player.data.collector = null;
 			}
 		}
-	}
+	};
 }
 
 /**
@@ -359,7 +369,23 @@ function template_report(report: RoleAction, hooked_report?: RoleAction | boolea
 				game.update_night();
 			}
 		}
+	};
+}
+
+function template_join(first: {[state: number]: RoleAction}, second: {[state: number]: RoleAction}) {
+	for(let [i_, v] of Object.entries(second)) {
+		let i = parseInt(i_);
+		let o = first[i];
+		if(o) {
+			first[i] = (player, game) => {
+				o(player, game);
+				v(player, game);
+			};
+		} else {
+			first[i] = v;
+		}
 	}
+	return first;
 }
 
 export let roles: {[name: string]: Role} = {
@@ -473,21 +499,27 @@ export let roles: {[name: string]: Role} = {
 		side: Side.VILLAGE,
 		can_overturn: true,
 		unhookable: true,
-		actions: Object.assign(template_yes_no("use your gun tonight", (player, game) => {
-			player.data.granny_use_gun = true;
-		}, (player, game) => {
-			player.data.granny_use_gun = true;
-		}, (player, game) => {
-			player.data.granny_use_gun = false;
-		}, false, true, 3), {[State.NIGHT_TARGETED]: (player: Player, game: Game) => {
-			if(player.data.granny_use_gun && player.data.night_targeted_by) {
-				game.extra_kills.push([player.data.night_targeted_by, player]);
+		actions: template_join({[State.NIGHT]: (player: Player, game: Game) => {
+			player.data.granny_kills = [];
+		}, [State.NIGHT_TARGETED]: (player: Player, game: Game) => {
+			if(player.data.night_targeted_by) {
+				player.data.granny_kills.push([player.data.night_targeted_by, player]);
+			}
+		}, [State.NIGHT_END]: (player: Player, game: Game) => {
+			if(player.data.granny_use_gun) {
+				for(let k of player.data.granny_kills) {
+					game.extra_kills.push(k);
+				}
 			}
 		}, [State.DEAD]: (player: Player, game: Game) => {
 			if(player.data.granny_use_gun && (game.cur_state === State.NIGHT || game.cur_state === State.NIGHT_END)) {
 				game.extra_kills.push([player.data.night_targeted_by, player]);
 			}
-		}})
+		}}, template_yes_no("use your gun tonight", (target, player, game) => {
+			player.data.granny_use_gun = true;
+		}, null, (player, game) => {
+			player.data.granny_use_gun = false;
+		}, false, true, 3))
 	},
 	Oracle: {
 		name: "Oracle",
@@ -668,11 +700,12 @@ export let roles: {[name: string]: Role} = {
 					angel_of.dead = false;
 					game.kill(player, angel_of.killed_by, () => {
 						player.member.send(`You sacrificed yourself to save ${angel_of.name}.`);
+						game.day_channel.send(`${player.name} sacrificed themselves.`);
 					});
 					return true;
 				}
 			});
-			player.member.send(`You are the angel of ${player.data.angel_of.name}.`);
+			player.member.send(`You are watching over ${player.data.angel_of.name}.`);
 		}},
 		ensure_win: (player, game) => player.data.angel_of && !player.data.angel_of.dead
 	}

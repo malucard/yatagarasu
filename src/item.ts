@@ -53,7 +53,7 @@ export class Inventory {
 			res += " Targets:";
 			for(let p of Object.values(game.players)) {
 				if(p.number != player.number) {
-					res += `\n${p.number}- ${game.hiding_numbers? p.name: "<hidden>"}`;
+					res += `\n${p.number}- ${game.hiding_names? "<hidden>": p.name}`;
 				}
 			}
 		}
@@ -124,6 +124,7 @@ export const items: {[name: string]: Item} = {
 	Armor: {
 		name: "Armor",
 		help: "Will absorb one attempt at your life and break.",
+		can_overturn: true,
 		hook_actions: {[State.DEAD]: (player, game) => {
 			player.remove(items.Armor);
 			player.dead = false;

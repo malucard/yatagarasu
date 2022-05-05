@@ -50,8 +50,8 @@ const setups: {[name: string]: [number, string]} = {
     "hookers into dreams 6": [6, "[Blue]x2 [Doc] [Dreamer] [Vanilla] [Hooker]"],
 	"classic": [7, "[Blue]x3 [Doc] [Cop] [Vanilla]x2"],
 	"guns and hookers": [7, "[Blue]x3 [Cop] [Gunsmith] [Vanilla] [Hooker]"],
-    "fancy pants": [7, "[Blue]x3 [Cop] [Bomb] [Gunsmith] [Oracle] [Doc] [Vanilla] [Janitor]"],
-    "fancy hookers": [7, "[Blue]x3 [Cop] [Bomb] [Gunsmith] [Oracle] [Doc] [Vanilla] [Hooker]"],
+    "fancy pants": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Janitor]"],
+    "fancy hookers": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Hooker]"],
     "sinister sundown": [7, "[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]"],
     "cold stone": [7, "[Blue]x3 [Cop] [TalentScout] [Vanilla] [Godfather]"],
     "team cops": [7, "[Blue]x3 [Doc] [Cop]x3 [Vanilla]x2 [Hooker]"],
@@ -279,6 +279,10 @@ const cmds = [{
 		if(!member.roles.cache.find(x => x.name === "Mafia Manager")) {
 			return;
 		}
+		if(happening[message.channel.id] instanceof Game) {
+			(happening[message.channel.id] as Game).do_state(State.GAME_END);
+			delete happening[message.channel.id];
+		}
 		let data = get_mafia_channel_data(channel);
 		if(!data) {
 			channel.send("Invalid channel for Mafia.");
@@ -404,22 +408,23 @@ const cmds = [{
 const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 	signup: async (interaction: ButtonInteraction) => {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
+			interaction.update({});
 			let role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.add(role_mafia_player).catch(() => interaction.reply("Could not add role"));
 			await (interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
-		interaction.update({});
 	},
 	signout: async (interaction: ButtonInteraction) => {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
+			interaction.update({});
 			let role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
 			await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role"));
 			await (interaction.message as Message).edit(await signup_message(role_mafia_player));
 		}
-		interaction.update({});
 	},
 	stopsignup: async (interaction: ButtonInteraction) => {
 		if(happening[interaction.channel.id] instanceof MessageCollector) {
+			interaction.update({}).catch(() => {});
 			(happening[interaction.channel.id] as MessageCollector).stop();
 			delete happening[interaction.channel.id];
 			let role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
@@ -428,7 +433,6 @@ const buttons: {[id: string]: (interaction: ButtonInteraction) => void} = {
 			}
 			(interaction.message as Message).edit({content: "Signup ended", components: [], embeds: []});
 		}
-		interaction.update({}).catch(() => {});
 	}
 };
 
