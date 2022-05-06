@@ -1,4 +1,4 @@
-import Discord, { Message, MessageCollector, MessageReaction, ReactionCollector, User } from "discord.js";
+import Discord from "discord.js";
 import { Player, Game } from "./game";
 import { Item, items } from "./item";
 import { shuffle_array, State } from "./util";
@@ -62,12 +62,12 @@ function get_side(role: Role): Side {
 	return role.fake_side === undefined || role.fake_side === null ? role.side : role.fake_side;
 }
 
-function action_follow_up(player: Player, mafia: boolean, to: Message | MessageReaction | null, content: string): Promise<Message> {
+function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | Discord.MessageReaction | null, content: string): Promise<Discord.Message> {
 	if (mafia) {
-		return to instanceof Message ? to.reply(content) :
+		return to instanceof Discord.Message ? to.reply(content) :
 			player.game.mafia_secret_chat.send("<@" + player.member.id + "> " + content);
 	} else {
-		return to instanceof MessageReaction && to.message.editable ? to.message.edit(to.message.content + "\n" + content) :
+		return to instanceof Discord.MessageReaction && to.message.editable ? to.message.edit(to.message.content + "\n" + content) :
 			player.member.send(content);
 	}
 }
@@ -96,7 +96,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 		}
 	}
 	action_follow_up(player, opt.mafia, null, msg_txt).then(req_msg => {
-		let collector: ReactionCollector | MessageCollector;
+		let collector: Discord.ReactionCollector | Discord.MessageCollector;
 		if (opt.mafia) {
 			collector = req_msg.channel.createMessageCollector();
 		} else {
@@ -111,9 +111,9 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			collector = req_msg.createReactionCollector();
 		}
 		player.data.collector = collector;
-		collector.on("collect" as any, (recv: Message | MessageReaction, user?: User) => {
+		collector.on("collect" as any, (recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
 			let reaction, content;
-			if (recv instanceof Message) {
+			if (recv instanceof Discord.Message) {
 				content = recv.content;
 				user = recv.member.user;
 			} else {
