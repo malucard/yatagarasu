@@ -1,8 +1,9 @@
 {
 	"main": "dist/bot.js",
 	"scripts": {
-		"build-ts": "tsc",
-		"prestart": "npm run build-ts",
+		"prebuild": "eslint .",
+		"build": "tsc",
+		"prestart": "npm run build",
 		"start": "npm run serve",
 		"serve": "node dist/bot.js",
 		"watch-node": "nodemon dist/bot.js",
@@ -23,6 +24,16 @@
 		"ws": "^7.2.1"
 	},
 	"devDependencies": {
-		"@types/node": "^17.0.25"
+		"@types/node": "^17.0.25",
+		"@typescript-eslint/eslint-plugin": "^5.22.0",
+		"@typescript-eslint/parser": "^5.22.0",
+		"eslint": "^8.14.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-config-standard": "^17.0.0",
+		"eslint-plugin-import": "^2.26.0",
+		"eslint-plugin-n": "^15.2.0",
+		"eslint-plugin-prettier": "^4.0.0",
+		"eslint-plugin-promise": "^6.0.0",
+		"prettier": "^2.6.2"
 	}
 }

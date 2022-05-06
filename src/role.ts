@@ -54,7 +54,7 @@ export class Role {
 }
 
 export function role_name(player: Player): string {
-	let role = player.role;
+	const role = player.role;
 	return role.fake_name === undefined || role.fake_name === null || (role.death_reveal && player.dead) ? role.name : role.fake_name;
 }
 
@@ -75,7 +75,7 @@ function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | 
 function request_action(verb: string, report: RoleActionReport, opt: ActionOptions, player: Player) {
 	player.data.collector = null;
 	player.data.target = null;
-	let can_cancel = opt.immediate || opt.dont_wait;
+	const can_cancel = opt.immediate || opt.dont_wait;
 	let msg_txt = opt.dont_wait ? "Optionally, before anything else, select " : "Select ";
 	msg_txt += opt.yes_no ? `whether to ${verb} tonight.` :
 		can_cancel ?
@@ -84,12 +84,12 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to do nothing.` :
 				`a player to ${verb} tonight, or ❌ to do nothing.`;
 	if (opt.max_shots !== undefined) {
-		let left = opt.max_shots - (player.data.shots_done || 0);
+		const left = opt.max_shots - (player.data.shots_done || 0);
 		msg_txt += ` You have ${left} use${left !== 1 ? "s" : ""} of this action left.`;
 	}
 	if (!opt.yes_no && !opt.mafia) { // night kill already has target list so don't duplicate it
 		msg_txt += " Targets:";
-		for (let p of Object.values(player.game.players)) {
+		for (const p of Object.values(player.game.players)) {
 			if (p.number !== player.number) {
 				msg_txt += "\n" + p.number + "- " + (player.game.hiding_names ? "<hidden>" : p.name);
 			}
@@ -103,7 +103,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			if (opt.yes_no) {
 				req_msg.react("✅");
 			} else {
-				for (let p of Object.values(player.game.players)) {
+				for (const p of Object.values(player.game.players)) {
 					if (p.number !== player.number) req_msg.react(p.number + "\u20E3");
 				}
 			}
@@ -111,7 +111,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			collector = req_msg.createReactionCollector();
 		}
 		player.data.collector = collector;
-		collector.on("collect" as any, (recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
+		collector.on("collect", (recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
 			let reaction, content;
 			if (recv instanceof Discord.Message) {
 				content = recv.content;
@@ -120,7 +120,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				reaction = recv.emoji.name;
 			}
 			if (user.id !== player.member.id) return;
-			if (can_cancel && (reaction ? reaction === "❌" : content.match(new RegExp("^; *" + verb + "$")))) {
+			if (can_cancel && (reaction ? reaction === "❌" : content.match(new RegExp(`^; *${verb}$`)))) {
 				collector.stop();
 				player.data.collector = null;
 				player.action_pending = false;
@@ -138,7 +138,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				player.data.collector = null;
 				player.action_pending = false;
 				player.data.shots_done++;
-				let last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
+				const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
 					" This was your last use of this action." : "";
 				action_follow_up(player, opt.mafia, recv, `You chose to ${verb}.${last_use_txt}`);
 				if (opt.immediate) {
@@ -149,24 +149,24 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				}
 				player.game.update_night();
 			} else if (!opt.yes_no) {
-				let n: number;
+				let targetNo: number;
 				if (reaction) {
-					n = parseInt(reaction.substring(0, 1));
+					targetNo = parseInt(reaction.substring(0, 1));
 				} else {
-					let m = content.match(new RegExp("^; *" + verb + " +([0-9]+)$", "i"));
-					n = m ? parseInt(m[1]) : NaN;
+					const match = content.match(new RegExp("^; *" + verb + " +([0-9]+)$", "i"));
+					targetNo = match ? parseInt(match[1]) : NaN;
 				}
-				if (n === NaN || !player.game.players[n]) {
+				if (isNaN(targetNo) || !player.game.players[targetNo]) {
 					action_follow_up(player, opt.mafia, recv, "Invalid target.");
-				} else if (n === player.number) {
+				} else if (targetNo === player.number) {
 					action_follow_up(player, opt.mafia, recv, "You can't " + verb + " yourself.");
 				} else {
-					let target = player.game.players[n];
+					const target = player.game.players[targetNo];
 					collector.stop();
 					player.data.collector = null;
 					player.action_pending = false;
 					player.data.shots_done++;
-					let last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
+					const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
 						" This was your last use of this action." : "";
 					action_follow_up(player, opt.mafia, recv, `You chose to ${verb} ${target.name}.${last_use_txt}`);
 					target.data.night_targeted_by = player;
@@ -202,7 +202,7 @@ class ActionOptions {
 	yes_no?: boolean;
 	/** uses deplete every time the player confirms, after they're over, will not request the action at all */
 	max_shots?: number;
-};
+}
 
 /**
  * template for night actions
@@ -282,9 +282,9 @@ function template_report(report: RoleAction, hooked_report?: RoleAction | boolea
 
 /** joins two templates so that each callback goes to the one in the first, then unless canceled, the one in the second. */
 function template_join(first: { [state: number]: RoleAction }, second: { [state: number]: RoleAction }) {
-	for (let [i_, v] of Object.entries(second)) {
-		let i = parseInt(i_);
-		let o = first[i];
+	for (const [i_, v] of Object.entries(second)) {
+		const i = parseInt(i_);
+		const o = first[i];
 		if (o) {
 			first[i] = player => o(player) ? true : v(player);
 		} else {
@@ -294,7 +294,7 @@ function template_join(first: { [state: number]: RoleAction }, second: { [state:
 	return first;
 }
 
-export let roles: { [name: string]: Role } = {
+export const roles: { [name: string]: Role } = {
 	Blue: {
 		name: "Blue",
 		help: "No powers.",
@@ -393,7 +393,7 @@ export let roles: { [name: string]: Role } = {
 		actions: {
 			[State.DEAD]: player => {
 				if (player.killed_by instanceof Player && !player.killed_by.dead) {
-					let killer = player.killed_by;
+					const killer = player.killed_by;
 					player.game.kill(player.killed_by, player, () => {
 						player.game.day_channel.send(`<@${killer.member.id}>, the ${role_name(killer)}, exploded.`);
 					});
@@ -417,7 +417,7 @@ export let roles: { [name: string]: Role } = {
 					}
 				}, [State.NIGHT_END]: player => {
 					if (player.data.granny_use_gun) {
-						for (let k of player.data.granny_kills) {
+						for (const k of player.data.granny_kills) {
 							player.game.extra_kills.push(k);
 						}
 					}
@@ -447,7 +447,7 @@ export let roles: { [name: string]: Role } = {
 			}, {
 				cancel_report: player => {
 					player.data.oracle_target = null;
-					player.member.send("No prophecy will be revealed today.")
+					player.member.send("No prophecy will be revealed today.");
 				}
 			}),
 
@@ -456,7 +456,7 @@ export let roles: { [name: string]: Role } = {
 					if (player.data.oracle_target) {
 						player.game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${role_name(player.data.oracle_target)}.`);
 					} else {
-						player.game.day_channel.send(`Oracle's prophecy: none.`);
+						player.game.day_channel.send("Oracle's prophecy: none.");
 					}
 				}
 			}
@@ -468,11 +468,11 @@ export let roles: { [name: string]: Role } = {
 		side: Side.VILLAGE,
 		actions: template_report(player => {
 			if (Math.random() < 0.5) {
-				let vil: Player[] = Object.values(player.game.players).filter(x => get_side(x.role) === Side.VILLAGE && x.number !== player.number);
+				const vil: Player[] = Object.values(player.game.players).filter(x => get_side(x.role) === Side.VILLAGE && x.number !== player.number);
 				player.member.send(vil[Math.floor(Math.random() * vil.length)]?.name + " is sided with the VILLAGE.");
 			} else {
 				let list: Player[] = shuffle_array(Object.values(player.game.players));
-				let maf = list.find(x => get_side(x.role) === Side.MAFIA);
+				const maf = list.find(x => get_side(x.role) === Side.MAFIA);
 				list = list.filter(x => x.number !== player.number && x.number !== maf.number).slice(0, 2);
 				list.push(maf);
 				player.member.send(shuffle_array(list.map(p => p.name)).join(", ") + ". At least one of them is sided with the MAFIA.");
@@ -598,7 +598,7 @@ export let roles: { [name: string]: Role } = {
 		actions: {
 			[State.DEAD]: (player: Player) => {
 				if (!player.killed_by) return;
-				let target = Array.isArray(player.killed_by) ?
+				const target = Array.isArray(player.killed_by) ?
 					player.killed_by[Math.floor(Math.random() * player.killed_by.length)] :
 					player.killed_by;
 				player.dead = false;
@@ -631,7 +631,7 @@ export let roles: { [name: string]: Role } = {
 		side: Side.THIRD,
 		actions: {
 			[State.GAME]: (player: Player) => {
-				let others = Object.values(player.game.players).filter(p => p.number !== player.number);
+				const others = Object.values(player.game.players).filter(p => p.number !== player.number);
 				player.data.angel_of = others[Math.floor(Math.random() * others.length)];
 				player.data.angel_of.hook_action(State.DEAD, (angel_of: Player, game: Game) => {
 					if (!player.dead) {

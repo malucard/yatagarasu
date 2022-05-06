@@ -28,16 +28,16 @@ export class Inventory {
 
 	print(player: Player, game: Game): string {
 		let res = "Inventory:";
-		let map: { [id: string]: number } = {};
-		for (let it of this.items) {
-			if (map.hasOwnProperty(it.name)) {
-				map[it.name]++;
+		const map: { [id: string]: number } = {};
+		for (const item of this.items) {
+			if (map[item.name]) {
+				map[item.name]++;
 			} else {
-				map[it.name] = 1;
+				map[item.name] = 1;
 			}
 		}
-		for (let [id, count] of Object.entries(map)) {
-			let it = items[id];
+		for (const [id, count] of Object.entries(map)) {
+			const it = items[id];
 			res += `\n- ${id} x${count} `;
 			if (it.use) {
 				res += it.night_use ? "(use at night" : "(use at day";
@@ -51,7 +51,7 @@ export class Inventory {
 		if (!player.already_sent_player_list) {
 			player.already_sent_player_list = true;
 			res += " Targets:";
-			for (let p of Object.values(game.players)) {
+			for (const p of Object.values(game.players)) {
 				if (p.number != player.number) {
 					res += `\n${p.number}- ${game.hiding_names ? "<hidden>" : p.name}`;
 				}
@@ -59,7 +59,7 @@ export class Inventory {
 		}
 		return res;
 	}
-};
+}
 
 export const items: { [name: string]: Item } = {
 	Gun: {
@@ -94,7 +94,7 @@ export const items: { [name: string]: Item } = {
 		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			let framed = player.data.framing ? player.data.framing : player;
+			const framed = player.data.framing ? player.data.framing : player;
 			game.kill(target, player, () => {
 				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${framed.member.id}>.`);
 			});
@@ -104,7 +104,7 @@ export const items: { [name: string]: Item } = {
 		name: "Syringe",
 		help: "Prevent a target from dying tonight.",
 		night_use: true,
-		use: (target, player, game) => {
+		use: (target, player, _game) => {
 			target.protected = true;
 			player.member.send(`You chose to protect ${target.name}.`);
 		}
@@ -113,8 +113,8 @@ export const items: { [name: string]: Item } = {
 		name: "Bread",
 		help: "Nourish yourself.",
 		no_target: true,
-		use: (target, player, game) => {
-			player.member.send(`You ate Bread.`);
+		use: (_target, player, _game) => {
+			player.member.send("You ate Bread.");
 		}
 	},
 	Money: {
@@ -132,4 +132,4 @@ export const items: { [name: string]: Item } = {
 			}
 		}
 	}
-}
+};

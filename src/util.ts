@@ -38,7 +38,7 @@ export enum State {
 	DEAD
 }
 
-export function shuffle_array(array: any[]) {
+export function shuffle_array<T>(array: Array<T>) {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
 		[array[i], array[j]] = [array[j], array[i]];
@@ -47,10 +47,10 @@ export function shuffle_array(array: any[]) {
 }
 
 export function calculate_lynch(players: { [num: number]: Player }): [number, Player[]] {
-	let votes: { [num: number]: Player[] } = {};
-	for (let player of Object.values(players)) {
+	const votes: { [num: number]: Player[] } = {};
+	for (const player of Object.values(players)) {
 		if (player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
-			if (votes.hasOwnProperty(player.lynch_vote)) {
+			if (votes[player.lynch_vote]) {
 				votes[player.lynch_vote].push(player);
 			} else {
 				votes[player.lynch_vote] = [player];
@@ -60,7 +60,7 @@ export function calculate_lynch(players: { [num: number]: Player }): [number, Pl
 	let lynch = 0;
 	let biggest_voters: Player[] = [];
 	let biggest = 0;
-	for (let [id, voters] of Object.entries(votes)) {
+	for (const [id, voters] of Object.entries(votes)) {
 		if (voters.length > biggest) {
 			lynch = parseInt(id);
 			biggest = voters.length;
@@ -75,7 +75,7 @@ export function calculate_lynch(players: { [num: number]: Player }): [number, Pl
 
 export function list_lynch(players: { [num: number]: Player }) {
 	let text = "";
-	for (let player of Object.values(players)) {
+	for (const player of Object.values(players)) {
 		if (player.lynch_vote === 0) {
 			text += `\n${player.name} votes to lynch nobody`;
 		} else if (!player.lynch_vote) {
@@ -86,7 +86,7 @@ export function list_lynch(players: { [num: number]: Player }) {
 			text += `\n${player.name} votes to lynch <invalid>`;
 		}
 	}
-	let [lynch, lynchers] = calculate_lynch(players);
+	const [lynch, lynchers] = calculate_lynch(players);
 	if (lynch === 0) {
 		return `${text}\n**The consensus is to lynch nobody.**`;
 	} else {
