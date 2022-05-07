@@ -433,7 +433,7 @@ export const roles: { [name: string]: Role } = {
 			}, {
 				cancel_report: player => {
 					player.data.granny_use_gun = false;
-				}, immediate: true, yes_no: true, max_shots: 3
+				}, immediate: true, yes_no: true, max_shots: 2
 			})
 		)
 	},
@@ -562,7 +562,8 @@ export const roles: { [name: string]: Role } = {
 			}, {
 				cancel_report: player => {
 					player.game.night_report_passed = true;
-				}, immediate: true
+				}, immediate: true,
+				mafia: true
 			}),
 
 			{
