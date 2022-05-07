@@ -65,9 +65,9 @@ function get_side(role: Role): Side {
 function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | Discord.MessageReaction | null, content: string): Promise<Discord.Message> {
 	if (mafia) {
 		return to instanceof Discord.Message ? to.reply(content) :
-			player.game.mafia_secret_chat.send("<@" + player.member.id + "> " + content);
+			player.game.mafia_secret_chat.send(`<@${player.member.id}> ${content}`);
 	} else {
-		return to instanceof Discord.MessageReaction && to.message.editable ? to.message.edit(to.message.content + "\n" + content) :
+		return to instanceof Discord.MessageReaction && to.message.editable ? to.message.edit(`${to.message.content}\n${content}`) :
 			player.member.send(content);
 	}
 }
@@ -91,7 +91,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 		msg_txt += " Targets:";
 		for (const p of Object.values(player.game.players)) {
 			if (p.number !== player.number) {
-				msg_txt += "\n" + p.number + "- " + (player.game.hiding_names ? "<hidden>" : p.name);
+				msg_txt += `\n${p.number}- ${player.game.hiding_names ? "<hidden>" : p.name}`;
 			}
 		}
 	}
@@ -153,13 +153,13 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				if (reaction) {
 					targetNo = parseInt(reaction.substring(0, 1));
 				} else {
-					const match = content.match(new RegExp("^; *" + verb + " +([0-9]+)$", "i"));
+					const match = content.match(new RegExp(`^; *${verb} +([0-9]+)$`, "i"));
 					targetNo = match ? parseInt(match[1]) : NaN;
 				}
 				if (isNaN(targetNo) || !player.game.players[targetNo]) {
 					action_follow_up(player, opt.mafia, recv, "Invalid target.");
 				} else if (targetNo === player.number) {
-					action_follow_up(player, opt.mafia, recv, "You can't " + verb + " yourself.");
+					action_follow_up(player, opt.mafia, recv, `You can't ${verb} yourself.`);
 				} else {
 					const target = player.game.players[targetNo];
 					collector.stop();

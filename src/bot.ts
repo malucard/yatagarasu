@@ -319,7 +319,7 @@ const cmds = [{
 		}
 		const role = Object.values(roles).find(role => role.name.toLowerCase() === matchString.toLowerCase());
 		if (role) {
-			message.reply(`${role.name} (${Side[role.side]}): ${role.help}${role.hidden_help ? " " + role.hidden_help : ""}`);
+			message.reply(`${role.name} (${Side[role.side]}): ${role.help}${role.hidden_help ? ` ${role.hidden_help}` : ""}`);
 		} else {
 			message.reply("Invalid role name");
 		}
@@ -331,7 +331,7 @@ const cmds = [{
 		let helperText = "";
 		// let replied;
 		for (const r of Object.values(roles)) {
-			const line = `\n${Side[r.side][0]}/${r.name}: ${r.help}${r.hidden_help ? " " + r.hidden_help : ""}`;
+			const line = `\n${Side[r.side][0]}/${r.name}: ${r.help}${r.hidden_help ? ` ${r.hidden_help}` : ""}`;
 			const testConcat = helperText + line;
 			if (testConcat.length > 2000) {
 				if (message instanceof Discord.CommandInteraction && message.replied) {

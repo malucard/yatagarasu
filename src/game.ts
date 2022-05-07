@@ -153,12 +153,10 @@ export class Game {
 		if (side === Side.TIE && thirds.length === 0) {
 			list += "It was a tie between the VILLAGE and the MAFIA!";
 		} else if (side) {
-			list += "The " + Side[side] + " ("
-				+ this.all_players.filter(p => p.role.side === side).map(p => "<@" + p.member.id + ">").join(", ")
-				+ (thirds.length > 0 ? "), " : ")");
+			list += `The ${Side[side]} (${this.all_players.filter(p => p.role.side === side).map(p => `<@${p.member.id}>`).join(", ")}${thirds.length > 0 ? "), " : ")"}`;
 		}
 		if (thirds.length > 0) {
-			list += thirds.map(p => "<@" + p.member.id + ">").join(", ");
+			list += thirds.map(p => `<@${p.member.id}>`).join(", ");
 		}
 		if (side !== Side.TIE || thirds.length > 0) list += " won!";
 		for (const player of this.all_players) {
@@ -188,7 +186,7 @@ export class Game {
 				if (this.mafia_night_report_passed) {
 					player.do_state(State.NIGHT_REPORT);
 				} else if (this.killing !== player.number) {
-					//					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
+					// this.mafia_secret_chat.send(`[debug] not end night because hooker not done and action report pending to ${player.name}`);
 					return;
 				}
 			}
@@ -198,13 +196,13 @@ export class Game {
 				if (this.night_report_passed) {
 					player.do_state(State.NIGHT_REPORT);
 				} else if (this.killing !== player.number) {
-					//					this.mafia_secret_chat.send("[debug] not end night because hooker not done and action report pending to " + player.name);
+					// this.mafia_secret_chat.send(`[debug] not end night because hooker not done and action report pending to ${player.name}`);
 					return;
 				}
 			}
 		}
 		if (this.cur_state != State.NIGHT) {
-			// this.mafia_secret_chat.send("[debug] not end night because its not night (its actually " + State[this.cur_state] + ")");
+			// this.mafia_secret_chat.send(`[debug] not end night because its not night (its actually ${State[this.cur_state]})`);
 			return;
 		}
 		this.do_state(State.NIGHT_END);
@@ -300,7 +298,7 @@ export class Game {
 
 	async do_state(state: State): Promise<void> {
 		if (!this.running && state !== State.GAME_END) return;
-		//		this.mafia_secret_chat.send("[debug] game do state " + State[state]);
+		// this.mafia_secret_chat.send(`[debug] game do state ${State[state]}`);
 		this.cur_state = state;
 		switch (state) {
 		case State.GAME:
@@ -520,7 +518,7 @@ export class Game {
 			let numbers = "";
 			for (const p of Object.values(this.players)) {
 				if (p.role.side !== Side.MAFIA) {
-					numbers += "\n" + p.number + "- " + (this.hiding_names ? "<hidden>" : p.name);
+					numbers += `\n${p.number}- ${this.hiding_names ? "<hidden>" : p.name}`;
 				}
 			}
 			this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
