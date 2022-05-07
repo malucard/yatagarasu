@@ -428,7 +428,7 @@ export const roles: { [name: string]: Role } = {
 				}
 			},
 
-			template_action("use your gun tonight", (target, player) => {
+			template_action("use your gun", (target, player) => {
 				player.data.granny_use_gun = true;
 			}, {
 				cancel_report: player => {
