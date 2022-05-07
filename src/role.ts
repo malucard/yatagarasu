@@ -403,7 +403,7 @@ export const roles: { [name: string]: Role } = {
 	},
 	Granny: {
 		name: "Granny",
-		help: "3 nights per game, choose whether to use your gun. If targeted by any action or kill that night, they die. This is reported together with the mafia kill in a random order. You can still die. ",
+		help: "2 nights per game, choose whether to use your gun. If targeted by any action or kill that night, they die. This is reported together with the mafia kill in a random order. You can still die. ",
 		side: Side.VILLAGE,
 		can_overturn: true,
 		unhookable: true,
@@ -423,6 +423,7 @@ export const roles: { [name: string]: Role } = {
 					}
 				}, [State.DEAD]: player => {
 					if (player.data.granny_use_gun && (player.game.cur_state === State.NIGHT || player.game.cur_state === State.NIGHT_END)) {
+						player.dead = false;
 						player.game.extra_kills.push([player.data.night_targeted_by, player]);
 					}
 				}
