@@ -2,7 +2,7 @@ import Discord from "discord.js";
 import { role_name, Role, Side, RoleAction } from "./role";
 import { calculate_lynch, death_messages, list_lynch, shuffle_array, State } from "./util";
 import { Inventory, Item } from "./item";
-import { mizukithumbsup } from "./bot";
+import { games_happening, mizukithumbsup } from "./bot";
 
 export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
 export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
@@ -385,6 +385,7 @@ export class Game {
 				clearTimeout(this.timeout);
 				this.timeout = null;
 			}
+			delete games_happening[this.day_channel.id];
 			break;
 		case State.DAY: {
 			this.hiding_names = false;
