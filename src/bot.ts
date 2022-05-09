@@ -226,6 +226,12 @@ const cmds = [{
 				} else if (message.content === ";stopsignup") {
 					col.stop();
 					delete happening[channel.id];
+					const role_mafia_player = message.guild.roles.cache.find(x => x.name === "Mafia Player");
+					const players = (await role_mafia_player.guild.members.fetch({ force: true, withPresences: false }))
+						.filter(memb => !!memb.roles.cache.find(r => r.id === role_mafia_player.id));
+					for (const [_id, member] of players) {
+						member.roles.remove(role_mafia_player).catch(() => message.reply("Could not remove role").catch((e) => { console.error(e);}));
+					}
 					message.react(kaismile);
 				} else if (message.content === ";players") {
 					const count = role_mafia_player.members.size;
@@ -430,7 +436,9 @@ const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => void 
 			(happening[interaction.channel.id] as Discord.MessageCollector).stop();
 			delete happening[interaction.channel.id];
 			const role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
-			for (const [_id, member] of interaction.guild.members.cache.filter(x => x.id === interaction.user.id)) {
+			const players = (await role_mafia_player.guild.members.fetch({ force: true, withPresences: false }))
+				.filter(memb => !!memb.roles.cache.find(r => r.id === role_mafia_player.id));
+			for (const [_id, member] of players) {
 				member.roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role").catch((e) => { console.error(e);}));
 			}
 			(interaction.message as Discord.Message).edit({ content: "Signup ended", components: [], embeds: [] });
