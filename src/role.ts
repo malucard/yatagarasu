@@ -75,14 +75,14 @@ function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | 
 function request_action(verb: string, report: RoleActionReport, opt: ActionOptions, player: Player) {
 	player.data.collector = null;
 	player.data.target = null;
-	const can_cancel = opt.immediate || opt.dont_wait;
+	const can_cancel = !(opt.immediate || opt.dont_wait);
 	let msg_txt = opt.dont_wait ? "Optionally, before anything else, select " : "Select ";
 	msg_txt += opt.yes_no ? `whether to ${verb} tonight.` :
 		can_cancel ?
+			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to not do this.` :
+				`a player to ${verb} tonight, or ❌ to not do this.`:
 			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`.` :
-				`a player to ${verb} tonight.` :
-			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to do nothing.` :
-				`a player to ${verb} tonight, or ❌ to do nothing.`;
+				`a player to ${verb} tonight.`;
 	if (opt.max_shots !== undefined) {
 		const left = opt.max_shots - (player.data.shots_done || 0);
 		msg_txt += ` You have ${left} use${left !== 1 ? "s" : ""} of this action left.`;
@@ -154,7 +154,8 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					targetNo = parseInt(reaction.substring(0, 1));
 				} else {
 					const match = content.match(new RegExp(`^; *${verb} +([0-9]+)$`, "i"));
-					targetNo = match ? parseInt(match[1]) : NaN;
+					if(!match) return;
+					targetNo = parseInt(match[1]);
 				}
 				if (isNaN(targetNo) || !player.game.players[targetNo]) {
 					action_follow_up(player, opt.mafia, recv, "Invalid target.");
@@ -589,7 +590,12 @@ export const roles: { [name: string]: Role } = {
 
 			template_action("frame", (target, player) => {
 				player.data.framing = target;
-			}, { mafia: true })
+			}, {
+				cancel_report: player => {
+					player.data.framing = null;
+				},
+				mafia: true
+			})
 		)
 	},
 	Kirby: {

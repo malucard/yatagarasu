@@ -57,6 +57,8 @@ export class Player {
 				this.game.mafia_secret_chat.permissionOverwrites.delete(this.member);
 				this.member.send(`You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
 			}
+		} else if (state == State.DAY) {
+			this.protected = false;
 		}
 		//		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
 		for (const it of this.inventory.items) {
