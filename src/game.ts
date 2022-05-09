@@ -2,7 +2,7 @@ import Discord from "discord.js";
 import { role_name, Role, Side, RoleAction } from "./role";
 import { calculate_lynch, death_messages, list_lynch, shuffle_array, State } from "./util";
 import { Inventory, Item } from "./item";
-import { kaismile } from "./bot";
+import { mizukithumbsup } from "./bot";
 
 export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
 export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
@@ -100,7 +100,7 @@ export class Player {
 
 //export let maf_start_state: State = {};
 
-export const valid_options = ["daystart", "dayless", "nightless"];
+export const valid_options = ["daystart", "dayless", "nightless", "nonk", "nonk1"];
 
 export const foods = [
 	"spaghetti",
@@ -142,6 +142,7 @@ export class Game {
 	kill_pending: boolean;
 	killing = 0;
 	mafia_killer?: Player | Player[];
+	no_mafia_kill?: boolean;
 	/** players to be killed at the end of the night, will be shuffled together with the mafia kill for confusion */
 	extra_kills: [Player, Player | Player[]][] = [];
 	/** to make kills temporarily not cause wins */
@@ -408,10 +409,10 @@ export class Game {
 					if (player.member.id === message.author.id) {
 						if (message.content.match(/^; *lynch$/)) {
 							player.lynch_vote = 0;
-							message.react(kaismile);
+							message.react(mizukithumbsup);
 						} else if (message.content.match(/^; *removelynch$/)) {
 							player.lynch_vote = null;
-							message.react(kaismile);
+							message.react(mizukithumbsup);
 						} else if (message.content.match(/^; *listlynch$/)) {
 							message.reply(list_lynch(this.players));
 						} else if (message.content.match(/^; *listlunch$/)) {
@@ -432,7 +433,7 @@ export class Game {
 								for (const player2 of Object.values(this.players)) {
 									if (player2.member.id === match[1]) {
 										player.lynch_vote = player2.number;
-										message.react(kaismile);
+										message.react(mizukithumbsup);
 										break;
 									}
 								}
@@ -508,11 +509,12 @@ export class Game {
 			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
 			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, PARTIAL_SEND_PERMS);
-			if (this.timeout !== null) {
+			if (this.timeout) {
 				clearTimeout(this.timeout);
 				this.timeout = null;
 			}
 			this.kill_pending = true;
+			this.no_mafia_kill = this.options.includes("-nonk") || (this.options.includes("-nonk1") && this.day == 1);
 			this.night_report_passed = true;
 			this.mafia_night_report_passed = true;
 			let numbers = "";
@@ -521,11 +523,15 @@ export class Game {
 					numbers += `\n${p.number}- ${this.hiding_names ? "<hidden>" : p.name}`;
 				}
 			}
-			this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
+			if(this.no_mafia_kill) {
+				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`);
+			} else {
+				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
+			}
 			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
 			this.mafia_collector.on("collect", msg => {
 				const m = msg.content.match(/^; *kill +([0-9]+)$/);
-				if (this.kill_pending && m) {
+				if (this.kill_pending && m && !this.no_mafia_kill) {
 					const n = parseInt(m[1]);
 					const target = this.players[n];
 					if (target) {
@@ -605,7 +611,7 @@ export class Game {
 				this.mafia_secret_chat.send("The night ended. You killed no one.");
 			}
 			let targets = this.extra_kills || [];
-			if (this.killing && this.killing > 0) {
+			if (this.killing && this.killing > 0 && !this.no_mafia_kill) {
 				targets.push([this.players[this.killing], this.mafia_killer]);
 			}
 			targets = shuffle_array(targets);

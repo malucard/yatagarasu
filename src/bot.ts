@@ -4,7 +4,7 @@ import { FULL_SEND_PERMS, Game, Player, valid_options } from "./game";
 import { Role, roles, Side } from "./role";
 import { everyone_prevent, shuffle_array, State } from "./util";
 
-export const kaismile = "497430068331544577";
+export const mizukithumbsup = "973110554090676224";
 
 const client = new Discord.Client({
 	intents: [
@@ -164,7 +164,7 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 			h.stop();
 			delete happening[channel.id];
 		}
-		if (message instanceof Discord.Message) message.react(kaismile);
+		if (message instanceof Discord.Message) message.react(mizukithumbsup);
 		else if (message instanceof Discord.CommandInteraction) message.reply("Starting");
 		const g = new Game();
 		const players: { [number: number]: Player } = {};
@@ -192,6 +192,7 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 		g.all_players = all_players;
 		g.players = players;
 		await g.do_state(State.GAME);
+		happening[channel.id] = g;
 	} else if (player_count < setup_roles.length) {
 		channel.send(`Not enough players. You need ${setup_roles.length}, but there are ${player_count}.`);
 	} else {
@@ -219,10 +220,10 @@ const cmds = [{
 			col.on("collect", async (message) => {
 				if (message.content === ";signup") {
 					message.member.roles.add(role_mafia_player).catch(() => message.reply("Could not add role"));
-					message.react(kaismile);
+					message.react(mizukithumbsup);
 				} else if (message.content === ";signout") {
 					message.member.roles.remove(role_mafia_player).catch(() => message.reply("Could not remove role"));
-					message.react(kaismile);
+					message.react(mizukithumbsup);
 				} else if (message.content === ";stopsignup") {
 					col.stop();
 					delete happening[channel.id];
@@ -232,7 +233,7 @@ const cmds = [{
 					for (const [_id, member] of players) {
 						member.roles.remove(role_mafia_player).catch(() => message.reply("Could not remove role").catch((e) => { console.error(e);}));
 					}
-					message.react(kaismile);
+					message.react(mizukithumbsup);
 				} else if (message.content === ";players") {
 					const count = role_mafia_player.members.size;
 					if (count < 10) {
@@ -302,7 +303,7 @@ const cmds = [{
 		});
 		channel.permissionOverwrites.edit(channel.guild.roles.everyone, FULL_SEND_PERMS);
 		channel.permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
-		if (message instanceof Discord.Message) message.react(kaismile);
+		if (message instanceof Discord.Message) message.react(mizukithumbsup);
 		else message.reply("Done");
 	},
 }, {
