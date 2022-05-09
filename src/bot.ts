@@ -249,20 +249,45 @@ const cmds: MafiaCommand[] = [{
 		interaction.reply(await signup_message(role_mafia_player));
 	}
 }, {
+	name: "cleanup",
+	description: "cleanup",
+	manager_only: true,
+	action: async (interaction: Discord.Message | Discord.CommandInteraction) => {
+		const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
+		mafia_secret_chat.permissionOverwrites.cache.forEach(element => {
+			if (element.type === "member") {
+				element.delete("cleanup");
+			}
+		});
+		const game = games_happening[interaction.channel.id];
+		if (game) {
+			game.do_state(State.GAME_END);
+			for (const player of Object.values(game.players)) {
+				player.member.roles.remove(game.role_mafia_player);
+			}
+			delete games_happening[interaction.channel.id];
+		}
+		(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, FULL_SEND_PERMS);
+		(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
+		if (interaction instanceof Discord.Message) interaction.react(mizukithumbsup);
+		else interaction.reply(`<:mizukithumbsup:${mizukithumbsup}>`);
+	},
+}, {
 	name: "partialcleanup",
 	description: "partialcleanup",
 	manager_only: true,
 	action: async (interaction: Discord.Message | Discord.CommandInteraction) => {
-		if (games_happening[interaction.channel.id]) {
-			games_happening[interaction.channel.id].do_state(State.GAME_END);
-			delete games_happening[interaction.channel.id];
-		}
 		const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
 		mafia_secret_chat.permissionOverwrites.cache.forEach(element => {
 			if (element.type === "member") {
 				element.delete("partialcleanup");
 			}
 		});
+		const game = games_happening[interaction.channel.id];
+		if (game) {
+			game.do_state(State.GAME_END);
+			delete games_happening[interaction.channel.id];
+		}
 		(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, FULL_SEND_PERMS);
 		(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
 		if (interaction instanceof Discord.Message) interaction.react(mizukithumbsup);

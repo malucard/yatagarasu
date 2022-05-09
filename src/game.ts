@@ -168,6 +168,9 @@ export class Game {
 			if (player.role.side === side || thirds.find(p => p.number === player.number)) list += " (won)";
 		}
 		this.do_state(State.GAME_END);
+		for (const player of Object.values(this.players)) {
+			player.member.roles.remove(this.role_mafia_player);
+		}
 		if (side) {
 			this.day_channel.send(list);
 		}
@@ -369,7 +372,6 @@ export class Game {
 			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 			for (const player of Object.values(this.players)) {
 				this.mafia_secret_chat.permissionOverwrites.delete(player.member);
-				player.member.roles.remove(this.role_mafia_player);
 				player.item_collector.stop("game end");
 				player.do_state(state);
 			}
@@ -517,7 +519,7 @@ export class Game {
 				this.timeout = null;
 			}
 			this.kill_pending = true;
-			this.no_mafia_kill = this.options.includes("-nonk") || (this.options.includes("-nonk1") && this.day == 1);
+			this.no_mafia_kill = this.options.includes("nonk") || (this.options.includes("nonk1") && this.day == 1);
 			this.night_report_passed = true;
 			this.mafia_night_report_passed = true;
 			let numbers = "";
@@ -529,7 +531,7 @@ export class Game {
 			if(this.no_mafia_kill) {
 				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`);
 			} else {
-				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Use \`;kill <number>\` to kill someone, or just \`;kill\` to not kill tonight. The mafia can only do this once tonight, and you can't change your choice. Targets:${numbers}`);
+				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`);
 			}
 			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
 			this.mafia_collector.on("collect", msg => {
