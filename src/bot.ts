@@ -425,14 +425,15 @@ const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => void 
 			interaction.reply({content: "You need the Mafia Manager role for this.", ephemeral: true});
 			return;
 		}
-		interaction.update({}).catch((e) => {console.error(e);});
 		const role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
 		if(role_mafia_player) {
+			interaction.update({}).catch((e) => {console.error(e);});
 			const players = (await role_mafia_player.guild.members.fetch({ force: true, withPresences: false }))
 				.filter(memb => !!memb.roles.cache.find(r => r.id === role_mafia_player.id));
 			for (const [_id, member] of players) {
 				member.roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role").catch((e) => { console.error(e);}));
 			}
+			await (interaction.message as Discord.Message).edit(await signup_message(role_mafia_player)).catch((e) => { console.error(e);});
 		}
 	}
 };
@@ -452,14 +453,19 @@ client.on("ready", async () => {
 	console.log(`Connected as ${client.user.tag}`);
 	const appcmds = await client.application.commands.fetch();
 	for (const c of cmds) {
+		const newcmdstr = c.options?.map(opt => opt.name + opt.description + opt.type).join(", ");
 		const appcmd = appcmds.find(x => x.name === c.name);
 		if (c.kind !== CmdKind.TEXT) {
-			if (appcmd) appcmd.edit(c);
-			else client.application.commands.create(c);
+			if (!appcmd) {
+				client.application.commands.create(c);
+			} else if (newcmdstr !== appcmd.options?.map(opt => opt.name + opt.description + opt.type).join(", ")) {
+				appcmd.edit(c);
+			}
 		} else {
 			if (appcmd) appcmd.delete();
 		}
 	}
+	console.log(`Application commands prepared`);
 });
 
 client.on("error", error => {
