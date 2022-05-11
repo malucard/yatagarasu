@@ -474,11 +474,11 @@ export class Game {
 									this.day_collector = null;
 								}
 								this.do_state(State.DAY_END);
-							}, 10000);
-						}, 50000);
-					}, 90000);
-				}, 150000);
-			}, 300000);
+							}, 10000); // 10 -> 0 seconds
+						}, 50000); // 1 minute -> 10 seconds
+					}, 90000); // 2.5 -> 1 minute
+				}, 150000); // 5 -> 2.5 minutes
+			}, 300000); // 10 -> 5 minutes
 			break;
 		}
 		case State.DAY_END:
@@ -535,28 +535,28 @@ export class Game {
 			}
 			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
 			this.mafia_collector.on("collect", msg => {
-				const m = msg.content.match(/^; *kill +([0-9]+)$/);
-				if (this.kill_pending && m && !this.no_mafia_kill) {
-					const n = parseInt(m[1]);
-					const target = this.players[n];
+				const matches = msg.content.match(/^; *kill +([0-9]+)$/);
+				if (this.kill_pending && matches && !this.no_mafia_kill) {
+					const number = parseInt(matches[1]);
+					const target = this.players[number];
 					if (target) {
 						if (target.role.side === Side.MAFIA) {
-							msg.reply(`${m[1]}- ${target.name} is mafia-aligned.`);
+							msg.reply(`${matches[1]}- ${target.name} is mafia-aligned.`);
 						} else {
 							const killer = Object.values(this.players).find(p => p.member.id === msg.member.id);
 							target.data.night_targeted_by = killer;
 							if (!target.do_state(State.NIGHT_TARGETED)) {
 								this.kill_pending = false;
-								this.killing = n;
+								this.killing = number;
 								this.mafia_killer = killer;
 							}
-							msg.reply(`You chose to kill number ${m[1]}, ${this.players[n].name}.`);
+							msg.reply(`You chose to kill number ${matches[1]}, ${this.players[number].name}.`);
 							this.mafia_collector.stop("kill chosen");
 							this.mafia_collector = null;
 							this.update_night();
 						}
 					} else {
-						msg.reply(`${m[1]} is not a valid player.`);
+						msg.reply(`${matches[1]} is not a valid player.`);
 					}
 				} else if (this.kill_pending && msg.content.match(/^; *kill$/)) {
 					this.kill_pending = false;
@@ -621,9 +621,9 @@ export class Game {
 			}
 			targets = shuffle_array(targets);
 			for (let i = 0; i < targets.length; i++) {
-				const t = targets[i][0];
+				const target = targets[i][0];
 				for (let i2 = i + 1; i2 < targets.length; i2++) {
-					if (t.number === targets[i2][0].number) {
+					if (target.number === targets[i2][0].number) {
 						targets.splice(i2, 1);
 						i2--;
 					}
@@ -631,8 +631,8 @@ export class Game {
 			}
 			for (const [target, killer] of targets) {
 				this.kill(target, killer, () => {
-					const d = death_messages[Math.floor(Math.random() * death_messages.length)];
-					this.day_channel.send(d.replace(/%pr/g, `<@${target.member.id}> (${role_name(target)})`));
+					const message = death_messages[Math.floor(Math.random() * death_messages.length)];
+					this.day_channel.send(message.replace(/%pr/g, `<@${target.member.id}> (${role_name(target)})`));
 				}, true);
 			}
 			this.extra_kills = [];

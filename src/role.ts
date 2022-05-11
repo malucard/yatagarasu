@@ -373,7 +373,7 @@ export const roles: { [name: string]: Role } = {
 		name: "Doc",
 		help: "Every night, choose a player to prevent from dying that night.",
 		side: Side.VILLAGE,
-		actions: template_action("protect", (target, player) => {
+		actions: template_action("protect", (target, _player) => {
 			if (!target.role.macho) target.protected = true;
 		})
 	},
@@ -382,7 +382,7 @@ export const roles: { [name: string]: Role } = {
 		help: "Every night, choose a player to prevent from dying that night. You can't be protected, such as by other docs.",
 		side: Side.VILLAGE,
 		macho: true,
-		actions: template_action("protect", (target, player) => {
+		actions: template_action("protect", (target, _player) => {
 			if (!target.role.macho) target.protected = true;
 		})
 	},
@@ -430,7 +430,7 @@ export const roles: { [name: string]: Role } = {
 				}
 			},
 
-			template_action("use your gun", (target, player) => {
+			template_action("use your gun", (_target, player) => {
 				player.data.granny_use_gun = true;
 			}, {
 				cancel_report: player => {
@@ -486,7 +486,7 @@ export const roles: { [name: string]: Role } = {
 		help: "Every night, choose a player to give a gun to.",
 		side: Side.VILLAGE,
 		can_overturn: true,
-		actions: template_action("give a gun to", (target, player) => {
+		actions: template_action("give a gun to", (target, _player) => {
 			target.receive(items.Gun);
 		})
 	},
@@ -505,7 +505,7 @@ export const roles: { [name: string]: Role } = {
 		help: "Every night, choose a player to give armor to. Each armor will absorb one attempt at their life.",
 		side: Side.VILLAGE,
 		can_overturn: true,
-		actions: template_action("give armor to", (target, player) => {
+		actions: template_action("give armor to", (target, _player) => {
 			target.receive(items.Armor);
 		})
 	},
