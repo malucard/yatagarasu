@@ -138,6 +138,8 @@ export class Game {
 	timeout?: NodeJS.Timeout = null;
 	day_collector?: Discord.MessageCollector = null;
 	mafia_collector?: Discord.MessageCollector = null;
+	/** setup string for dming */
+	setup = "";
 	lunches: string[] = [];
 	day = 1;
 	hiding_names = true;
@@ -293,7 +295,7 @@ export class Game {
 			player.item_collector.stop("dead");
 		}
 		player.member.roles.remove(this.role_mafia_player);
-		this.mafia_secret_chat.permissionOverwrites.delete(player.member);
+		// this.mafia_secret_chat.permissionOverwrites.delete(player.member);
 		delete this.players[player.number];
 		if (prevent_win) {
 			this.prevent_win = prev_prevent_win;
@@ -318,6 +320,7 @@ export class Game {
 					this.mafia_secret_chat.permissionOverwrites.delete(player.member);
 				}
 				player.member.createDM().then(ch => {
+					player.member.send(`Setup is ${this.setup}`);
 					player.item_collector = ch.createMessageCollector();
 					player.item_collector.on("collect", msg => {
 						if (msg.content.match(/^; *inv$/)) {
@@ -370,8 +373,10 @@ export class Game {
 			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, FULL_SEND_PERMS);
 			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, FULL_SEND_PERMS);
 			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			for (const player of Object.values(this.players)) {
+			for (const player of Object.values(this.all_players)) {
 				this.mafia_secret_chat.permissionOverwrites.delete(player.member);
+			}
+			for (const player of Object.values(this.players)) {
 				player.item_collector.stop("game end");
 				player.do_state(state);
 			}

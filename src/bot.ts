@@ -187,7 +187,9 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 		new_game.options = options;
 		new_game.all_players = all_players;
 		new_game.players = players;
+		new_game.setup = setup;
 		games_happening[channel.id] = new_game;
+		channel.send(`Setup selected: ${setup}`);
 		await new_game.do_state(State.GAME);
 	} else if (player_count < setup_roles.length) {
 		channel.send(`Not enough players. You need ${setup_roles.length}, but there are ${player_count}.`);
