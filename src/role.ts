@@ -335,7 +335,7 @@ export const roles: { [name: string]: Role } = {
 		name: "ParanoidCop",
 		fake_name: "Cop",
 		help: "Every night, investigate a player to learn their side.",
-		hidden_help: "Sees everyone as mafia.",
+		hidden_help: "Sees everyone as mafia. Sees self as normal cop.",
 		side: Side.VILLAGE,
 		actions: template_action("investigate", (target, player) => {
 			player.member.send(`${target.name} is sided with ${Side[Side.MAFIA]}.`);
@@ -345,7 +345,7 @@ export const roles: { [name: string]: Role } = {
 		name: "NaiveCop",
 		fake_name: "Cop",
 		help: "Every night, investigate a player to learn their side.",
-		hidden_help: "Sees everyone as village.",
+		hidden_help: "Sees everyone as village. Sees self as normal cop.",
 		side: Side.VILLAGE,
 		actions: template_action("investigate", (target, player) => {
 			player.member.send(`${target.name} is sided with ${Side[Side.VILLAGE]}.`);
@@ -355,7 +355,7 @@ export const roles: { [name: string]: Role } = {
 		name: "InsaneCop",
 		fake_name: "Cop",
 		help: "Every night, investigate a player to learn their side.",
-		hidden_help: "Gets inverted reports.",
+		hidden_help: "Gets inverted reports. Sees self as normal cop.",
 		side: Side.VILLAGE,
 		actions: template_action("investigate", (target, player) => {
 			player.member.send(`${target.name} is sided with ${Side[get_side(target.role) === Side.MAFIA ? Side.VILLAGE : Side.MAFIA]}.`);
@@ -553,7 +553,7 @@ export const roles: { [name: string]: Role } = {
 	},
 	Hooker: {
 		name: "Hooker",
-		help: "Every night, choose a village-aligned player, and their action will be prevented that night.",
+		help: "Every night, choose a village-aligned player, and their action will be prevented that night. They will only know if they were expecting a report.",
 		side: Side.MAFIA,
 		actions: template_join(
 			template_action("hook", (target, player) => {
@@ -600,20 +600,25 @@ export const roles: { [name: string]: Role } = {
 	},
 	Kirby: {
 		name: "Kirby",
-		help: "You deflect attacks and absorb the attacker's role if they die. If lynched, will absorb a random voter.",
+		help: "You deflect attacks and absorb the attacker's role if they die (has unique day chat message). If lynched, will absorb a random voter.",
 		side: Side.THIRD,
 		can_overturn: true,
 		actions: {
 			[State.DEAD]: (player: Player) => {
-				if (!player.killed_by) return;
-				const target = Array.isArray(player.killed_by) ?
-					player.killed_by[Math.floor(Math.random() * player.killed_by.length)] :
-					player.killed_by;
-				player.dead = false;
+				let target: Player;
+				if (Array.isArray(player.killed_by)) {
+					const killers = player.killed_by.filter(x => x.number !== player.number);
+					if(killers.length === 0) return;
+					target = killers[Math.floor(Math.random() * killers.length)];
+				} else if (player.killed_by && player.killed_by.number !== player.number) {
+					target = player.killed_by;
+				} else {
+					return;
+				}
 				player.game.kill(target, player, () => {
+					player.dead = false; // only cancel death if successful, otherwise kirbies would overflow the stack
 					player.role = Object.assign({}, target.role);
-					if (!player.role.fake_name) player.role.fake_name = player.role.name;
-					player.role.name += " (Kirby)";
+					if (!player.role.fake_name) player.role.fake_name = player.role.name; 
 					if (player.role.side == Side.MAFIA) {
 						player.game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name} and became their role.`);
 					} else {
@@ -621,6 +626,7 @@ export const roles: { [name: string]: Role } = {
 					}
 					player.game.day_channel.send(`${target.name} was eaten.`);
 					player.do_state(State.GAME); // send them help and do whatever that role does when starting
+					player.role.name += " (Kirby)"; // only do this after do_state in case the role changes its own name
 				});
 				return true;
 			}
@@ -635,12 +641,15 @@ export const roles: { [name: string]: Role } = {
 	},
 	Angel: {
 		name: "Angel",
-		help: "You protect a random player. If they are killed, you will die in their place. If they are alive when the game ends, you win.",
+		fake_name: "Angel",
+		help: "You protect a random player. If they are killed, you will die in their place (has unique day chat message). If they are alive when the game ends, you win.",
 		side: Side.THIRD,
 		actions: {
 			[State.GAME]: (player: Player) => {
 				const others = Object.values(player.game.players).filter(p => p.number !== player.number);
 				player.data.angel_of = others[Math.floor(Math.random() * others.length)];
+				player.role = Object.assign({}, player.role);
+				player.role.name += ` (watching over ${player.data.angel_of.name})`;
 				player.data.angel_of.hook_action(State.DEAD, (angel_of: Player, game: Game) => {
 					if (!player.dead) {
 						angel_of.dead = false;
