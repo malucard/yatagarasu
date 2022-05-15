@@ -343,7 +343,11 @@ const cmds: MafiaCommand[] = [{
 		name: "setup",
 		description: "name of setup",
 		type: ApplicationCommandOptionTypes.STRING,
-		required: true
+		required: true,
+		choices: Object.keys(setups).map(setup => ({
+			name: setup,
+			value: setup
+		}))
 	}],
 	no_ingame: true,
 	manager_only: true,
