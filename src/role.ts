@@ -75,7 +75,7 @@ function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | 
 function request_action(verb: string, report: RoleActionReport, opt: ActionOptions, player: Player) {
 	player.data.collector = null;
 	player.data.target = null;
-	const can_cancel = !(opt.immediate || opt.dont_wait);
+	const can_cancel = !opt.dont_wait;
 	let msg_txt = opt.dont_wait ? "Optionally, before anything else, select " : "Select ";
 	msg_txt += opt.yes_no ? `whether to ${verb} tonight.` :
 		can_cancel ?
@@ -564,8 +564,8 @@ export const roles: { [name: string]: Role } = {
 			}, {
 				cancel_report: player => {
 					player.game.night_report_passed = true;
-				}, immediate: true,
-				mafia: true
+				},
+				immediate: true, mafia: true,
 			}),
 
 			{
