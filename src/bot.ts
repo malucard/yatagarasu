@@ -1,6 +1,5 @@
 import Discord from "discord.js";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes } from "discord.js/typings/enums";
-import { botLoginAuth } from "./auth";
 import { FULL_SEND_PERMS, Game, Player, valid_options } from "./game";
 import { Role, roles, Side } from "./role";
 import { everyone_prevent, shuffle_array, State } from "./util";
@@ -551,4 +550,4 @@ client.on("interactionCreate", async interaction => {
 	}
 });
 
-client.login(botLoginAuth);
+client.login(process.env["LOGIN_AUTH"]);
