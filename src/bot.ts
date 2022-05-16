@@ -246,8 +246,11 @@ const cmds: MafiaCommand[] = [{
 	no_ingame: true,
 	manager_only: true,
 	action: async (interaction: Discord.Message | Discord.CommandInteraction) => {
+		if (interaction instanceof Discord.CommandInteraction) {
+			interaction.deferReply();
+		}
 		const [role_mafia_player, _mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
-		interaction.reply(await signup_message(role_mafia_player));
+		(interaction instanceof Discord.CommandInteraction ? interaction.editReply : interaction.reply)(await signup_message(role_mafia_player));
 	}
 }, {
 	name: "cleanup",
@@ -343,10 +346,9 @@ const cmds: MafiaCommand[] = [{
 		description: "name of setup",
 		type: ApplicationCommandOptionTypes.STRING,
 		required: true,
-		choices: Object.keys(setups).map(setup => ({
-			name: setup,
-			value: setup
-		}))
+		choices: Object.keys(setups).length <= 25 ? Object.keys(setups).map(setup => ({
+			name: `${setup} (${setups[setup][0]}) - ${setups[setup]}`, value: setup
+		})) : undefined
 	}],
 	no_ingame: true,
 	manager_only: true,
@@ -460,9 +462,13 @@ const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => void 
 			interaction.update({}).catch((e) => { console.error(e); });
 			const players = (await role_mafia_player.guild.members.fetch({ force: true, withPresences: false }))
 				.filter(memb => !!memb.roles.cache.find(r => r.id === role_mafia_player.id));
-			for (const [_id, member] of players) {
-				member.roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role").catch((e) => { console.error(e); }));
-			}
+			players.forEach(member => member.roles
+				.remove(role_mafia_player)
+				.catch(() => interaction
+					.reply("Could not remove role")
+					.catch(e => console.error(e))
+				)
+			);
 			await (interaction.message as Discord.Message).edit(await signup_message(role_mafia_player)).catch((e) => { console.error(e); });
 		}
 	}
