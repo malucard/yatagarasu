@@ -246,11 +246,15 @@ const cmds: MafiaCommand[] = [{
 	no_ingame: true,
 	manager_only: true,
 	action: async (interaction: Discord.Message | Discord.CommandInteraction) => {
+		let reply: Discord.Message;
 		if (interaction instanceof Discord.CommandInteraction) {
-			interaction.deferReply();
+			reply = await interaction.deferReply({ fetchReply: true }) as Discord.Message;
 		}
 		const [role_mafia_player, _mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
-		(interaction instanceof Discord.CommandInteraction ? interaction.editReply : interaction.reply)(await signup_message(role_mafia_player));
+		const reply_opts = await signup_message(role_mafia_player);
+		if (reply && interaction instanceof Discord.CommandInteraction) {
+			interaction.editReply(reply_opts);
+		} else interaction.reply(reply_opts);
 	}
 }, {
 	name: "cleanup",
