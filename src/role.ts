@@ -80,7 +80,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 	msg_txt += opt.yes_no ? `whether to ${verb} tonight.` :
 		can_cancel ?
 			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to not do this.` :
-				`a player to ${verb} tonight, or ❌ to not do this.`:
+				`a player to ${verb} tonight, or ❌ to not do this.` :
 			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`.` :
 				`a player to ${verb} tonight.`;
 	if (opt.max_shots !== undefined) {
@@ -154,7 +154,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					targetNo = parseInt(reaction.substring(0, 1));
 				} else {
 					const match = content.match(new RegExp(`^; *${verb} +([0-9]+)$`, "i"));
-					if(!match) return;
+					if (!match) return;
 					targetNo = parseInt(match[1]);
 				}
 				if (isNaN(targetNo) || !player.game.players[targetNo]) {
@@ -450,9 +450,13 @@ export const roles: { [name: string]: Role } = {
 				cancel_report: player => {
 					player.data.oracle_target = null;
 					player.member.send("No prophecy will be revealed today.");
-				}
-			}),
-
+				},
+				hooked_report: player => {
+					player.data.oracle_target = null;
+					player.member.send("You were hooked. No prophecy will be revealed today.");
+				},
+			}
+			),
 			{
 				[State.DEAD]: player => {
 					if (player.data.oracle_target) {
@@ -488,7 +492,7 @@ export const roles: { [name: string]: Role } = {
 		can_overturn: true,
 		actions: template_action("give a gun to", (target, _player) => {
 			target.receive(items.Gun);
-		})
+		}, { hooked_report: true })
 	},
 	Deputy: {
 		name: "Deputy",
@@ -507,7 +511,7 @@ export const roles: { [name: string]: Role } = {
 		can_overturn: true,
 		actions: template_action("give armor to", (target, _player) => {
 			target.receive(items.Armor);
-		})
+		}, { hooked_report: true })
 	},
 	Bulletproof: {
 		name: "Bulletproof",
@@ -608,7 +612,7 @@ export const roles: { [name: string]: Role } = {
 				let target: Player;
 				if (Array.isArray(player.killed_by)) {
 					const killers = player.killed_by.filter(x => x.number !== player.number);
-					if(killers.length === 0) return;
+					if (killers.length === 0) return;
 					target = killers[Math.floor(Math.random() * killers.length)];
 				} else if (player.killed_by && player.killed_by.number !== player.number) {
 					target = player.killed_by;
@@ -618,7 +622,7 @@ export const roles: { [name: string]: Role } = {
 				player.game.kill(target, player, () => {
 					player.dead = false; // only cancel death if successful, otherwise kirbies would overflow the stack
 					player.role = Object.assign({}, target.role);
-					if (!player.role.fake_name) player.role.fake_name = player.role.name; 
+					if (!player.role.fake_name) player.role.fake_name = player.role.name;
 					if (player.role.side == Side.MAFIA) {
 						player.game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name} and became their role.`);
 					} else {
