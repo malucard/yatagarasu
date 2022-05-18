@@ -375,7 +375,7 @@ export const roles: { [name: string]: Role } = {
 		side: Side.VILLAGE,
 		actions: template_action("protect", (target, _player) => {
 			if (!target.role.macho) target.protected = true;
-		}, { hooked_report: true })
+		})
 	},
 	MachoDoc: {
 		name: "MachoDoc",
@@ -384,7 +384,7 @@ export const roles: { [name: string]: Role } = {
 		macho: true,
 		actions: template_action("protect", (target, _player) => {
 			if (!target.role.macho) target.protected = true;
-		}, { hooked_report: true })
+		})
 	},
 	Bomb: {
 		name: "Bomb",
