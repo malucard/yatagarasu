@@ -598,7 +598,7 @@ export class Game {
 					this.mafia_collector = null;
 				}
 				this.do_state(State.NIGHT_END);
-			}, 420000);
+			}, 240000); // 4 minutes
 			this.update_night();
 			break;
 		}

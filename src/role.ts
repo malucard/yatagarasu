@@ -647,19 +647,20 @@ export const roles: { [name: string]: Role } = {
 		actions: {
 			[State.GAME]: (player: Player) => {
 				const others = Object.values(player.game.players).filter(p => p.number !== player.number);
-				player.data.angel_of = others[Math.floor(Math.random() * others.length)];
-				player.role = Object.assign({}, player.role);
-				player.role.name += ` (watching over ${player.data.angel_of.name})`;
-				player.data.angel_of.hook_action(State.DEAD, (angel_of: Player, game: Game) => {
+				const angel_of = others[Math.floor(Math.random() * others.length)];
+				angel_of.hook_action(State.DEAD, (angel_of: Player) => {
 					if (!player.dead) {
 						angel_of.dead = false;
-						game.kill(player, angel_of.killed_by, () => {
+						angel_of.game.kill(player, angel_of.killed_by, () => {
 							player.member.send(`You sacrificed yourself to save ${angel_of.name}.`);
-							game.day_channel.send(`${player.name} sacrificed themselves.`);
+							angel_of.game.day_channel.send(`${player.name} sacrificed themselves.`);
 						});
 						return true;
 					}
 				});
+				player.data["angel_of"] = angel_of;
+				player.role = Object.assign({}, player.role);
+				player.role.name += ` (watching over ${player.data.angel_of.name})`;
 				player.member.send(`You are watching over ${player.data.angel_of.name}.`);
 			}
 		},
