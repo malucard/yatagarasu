@@ -451,7 +451,7 @@ export const roles: { [name: string]: Role } = {
 					player.data.oracle_target = null;
 					player.member.send("No prophecy will be revealed today.");
 				},
-				hooked_report: player => {
+				hooked_report: (_target, player) => {
 					player.data.oracle_target = null;
 					player.member.send("You were hooked. No prophecy will be revealed today.");
 				},
