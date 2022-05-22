@@ -524,7 +524,11 @@ export class Game {
 				this.timeout = null;
 			}
 			this.kill_pending = true;
-			this.no_mafia_kill = this.options.includes("nonk") || (this.options.includes("nonk1") && this.day == 1);
+			if (this.options.includes("nonk1")){
+				this.no_mafia_kill = this.day === 1;
+			} else {
+				this.no_mafia_kill = this.options.includes("nonk");
+			}
 			this.night_report_passed = true;
 			this.mafia_night_report_passed = true;
 			let numbers = "";

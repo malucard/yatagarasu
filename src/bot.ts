@@ -131,7 +131,7 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 		}
 	}
 	const oerror: string[] = [];
-	match_array = setup.match(/-[a-zA-Z]+/g);
+	match_array = setup.match(/-[a-zA-Z]+\b/g);
 	const options = [];
 	if (match_array) {
 		for (let opt of match_array) {
