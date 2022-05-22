@@ -351,7 +351,7 @@ const cmds: MafiaCommand[] = [{
 		type: ApplicationCommandOptionTypes.STRING,
 		required: true,
 		choices: Object.keys(setups).length <= 25 ? Object.keys(setups).map(setup => ({
-			name: `${setup} (${setups[setup][0]}) - ${setups[setup]}`, value: setup
+			name: `${setup} (${setups[setup][0]}) - ${setups[setup][1]}`, value: setup
 		})) : undefined
 	}],
 	no_ingame: true,
