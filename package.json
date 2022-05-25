@@ -3,7 +3,7 @@
 	"scripts": {
 		"prebuild": "eslint .",
 		"build": "tsc",
-		"prestart": "npm run build",
+		"prestart": "tsc",
 		"start": "npm run serve",
 		"serve": "node dist/bot.js",
 		"watch-node": "nodemon dist/bot.js",
