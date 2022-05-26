@@ -1,5 +1,7 @@
 import Discord from "discord.js";
-import { buttons, cmds, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
+import { archivelpCommands } from "./commands/lpcommands/archivelp";
+import { upgradelpCommands } from "./commands/lpcommands/upgradelp";
+import { buttons, cmds as mafiaCommands, MafiaCommand, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
 
 const client = new Discord.Client({
 	intents: [
@@ -27,6 +29,8 @@ export class CombinedApplicationCommand implements Discord.ChatInputApplicationC
 	kind?: CmdKind;
 	action?: (interaction: Discord.CommandInteraction) => any;
 }
+
+const cmds: (CombinedApplicationCommand | MafiaCommand)[] = [...mafiaCommands, ...archivelpCommands, ...upgradelpCommands];
 
 client.on("ready", async () => {
 	console.log(`Connected as ${client.user.tag}`);
@@ -57,7 +61,9 @@ client.on("messageCreate", async msg => {
 		for (const command of cmds) {
 			if (command.name === matches[1]) {
 				if (command.kind === undefined || command.kind === CmdKind.TEXT_OR_SLASH || command.kind === CmdKind.TEXT) {
-					await (command as MafiaCommandTextOrSlash).action(msg, matches[2]?.trim() || "");
+					if (!(command instanceof CombinedApplicationCommand)) {
+						await (command as MafiaCommandTextOrSlash).action(msg, matches[2]?.trim() || "");
+					}
 				}
 				break;
 			}
@@ -70,8 +76,12 @@ client.on("interactionCreate", async interaction => {
 		for (const command of cmds) {
 			if (command.name === interaction.commandName) {
 				if (command.kind === undefined || command.kind === CmdKind.TEXT_OR_SLASH || command.kind === CmdKind.SLASH) {
-					const args = interaction.options.data.map(opt => opt.value.toString()).join(" ");
-					await (command as MafiaCommandTextOrSlash).action(interaction as Discord.CommandInteraction, args);
+					if (command instanceof CombinedApplicationCommand) {
+						command.action(interaction as Discord.CommandInteraction);
+					} else {
+						const args = interaction.options.data.map(opt => opt.value.toString()).join(" ");
+						await (command as MafiaCommandTextOrSlash).action(interaction as Discord.CommandInteraction, args);
+					}
 				}
 				break;
 			}
