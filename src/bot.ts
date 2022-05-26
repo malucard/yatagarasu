@@ -1,7 +1,7 @@
 import Discord from "discord.js";
 import { archivelpCommands } from "./commands/lpcommands/archivelp";
 import { upgradelpCommands } from "./commands/lpcommands/upgradelp";
-import { buttons, cmds as mafiaCommands, MafiaCommand, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
+import { buttons, CmdKind, cmds as mafiaCommands, MafiaCommand, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
 
 const client = new Discord.Client({
 	intents: [
@@ -14,19 +14,12 @@ const client = new Discord.Client({
 	]
 });
 
-export enum CmdKind {
-	TEXT_OR_SLASH,
-	TEXT,
-	SLASH,
-	MESSAGE_CONTEXT
-}
-
 export class CombinedApplicationCommand implements Discord.ChatInputApplicationCommandData {
 	name: string;
 	description: string;
 	options?: Discord.ApplicationCommandOptionData[];
 	defaultPermission?: boolean;
-	kind?: CmdKind;
+	kind?: CmdKind.SLASH;
 	action?: (interaction: Discord.CommandInteraction) => any;
 }
 

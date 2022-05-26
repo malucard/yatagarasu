@@ -1,11 +1,17 @@
 import Discord from "discord.js";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes } from "discord.js/typings/enums";
-import { CmdKind } from "../../bot";
 import { FULL_SEND_PERMS, Game, valid_options, Player } from "./game";
 import { Role, roles, Side } from "./role";
 import { everyone_prevent, shuffle_array, State } from "./util";
 
 export const mizukithumbsup = "895512297169092729";
+
+export enum CmdKind {
+	TEXT_OR_SLASH,
+	TEXT,
+	SLASH,
+	MESSAGE_CONTEXT
+}
 
 export class MafiaCommandBase {
 	name: string;
