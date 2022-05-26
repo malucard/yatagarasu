@@ -270,7 +270,7 @@ export const cmds: MafiaCommand[] = [{
 	}
 }];
 
-export const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => void } = {
+export const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => Promise<void> } = {
 	signup: async (interaction: Discord.ButtonInteraction) => {
 		if (buttonsCheck(interaction)) {
 			interaction.update({});
@@ -315,7 +315,7 @@ export const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) =
 	}
 };
 
-export const select_menus: { [id: string]: (interaction: Discord.SelectMenuInteraction) => void } = {
+export const select_menus: { [id: string]: (interaction: Discord.SelectMenuInteraction) => Promise<void> } = {
 	start: async interaction => {
 		if (games_happening[interaction.channel.id]) return;
 		if (!(interaction.member as Discord.GuildMember).roles.cache.find(x => x.name === "Mafia Manager")) {
