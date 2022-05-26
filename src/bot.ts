@@ -204,6 +204,14 @@ enum CmdKind {
 	MESSAGE_CONTEXT
 }
 
+export class CombinedApplicationCommand implements Discord.ChatInputApplicationCommandData {
+	name: string;
+	description: string;
+	options?: Discord.ApplicationCommandOptionData[];
+	defaultPermission?: boolean;
+	action?: (interaction: Discord.CommandInteraction) => any;
+}
+
 class MafiaCommandBase {
 	name: string;
 	options?: Discord.ApplicationCommandOptionData[];
