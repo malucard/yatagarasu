@@ -1,5 +1,5 @@
 import Discord from "discord.js";
-import { Player, Game } from "./game";
+import { Player } from "./game";
 import { Item, items } from "./item";
 import { shuffle_array, State } from "./util";
 
