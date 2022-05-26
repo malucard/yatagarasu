@@ -1,8 +1,8 @@
 import Discord from "discord.js";
 import { ApplicationCommandOptionTypes, ApplicationCommandTypes } from "discord.js/typings/enums";
-import { FULL_SEND_PERMS, Game, Player, valid_options } from "./game";
-import { Role, roles, Side } from "./role";
-import { everyone_prevent, shuffle_array, State } from "./util";
+import { FULL_SEND_PERMS, Game, Player, valid_options } from "./commands/mafia/game";
+import { Role, roles, Side } from "./commands/mafia/role";
+import { everyone_prevent, shuffle_array, State } from "./commands/mafia/util";
 
 export const mizukithumbsup = "895512297169092729";
 
