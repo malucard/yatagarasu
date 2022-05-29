@@ -39,6 +39,10 @@ export const MF_Comamnds: CombinedApplicationCommand[] = [
 
 			const name = interaction.options.getString("name", true);
 			const link = interaction.options.getString("link", true);
+			if (!link.startsWith("http")) {
+				hiddenReply(interaction, "Link is invalid");
+				return;
+			}
 			const targetChannel = interaction.options.getChannel("channel", false);
 			let channel: Discord.TextChannel;
 			if (targetChannel instanceof Discord.TextChannel) {
