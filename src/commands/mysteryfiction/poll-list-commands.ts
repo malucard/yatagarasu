@@ -36,10 +36,22 @@ export const MF_Comamnds: CombinedApplicationCommand[] = [
 			const member = interaction.member as Discord.GuildMember;
 			const usedChannel = interaction.channel;
 			const me = interaction.guild.me;
+
 			const name = interaction.options.getString("name", true);
 			const link = interaction.options.getString("link", true);
-			const givenChannel = interaction.options.getChannel("channel", false);
-			const channel = (givenChannel || usedChannel) as Discord.TextChannel;
+			const targetChannel = interaction.options.getChannel("channel", false);
+			let channel: Discord.TextChannel;
+			if (targetChannel instanceof Discord.TextChannel) {
+				channel = targetChannel;
+			} else if (targetChannel) {
+				hiddenReply(interaction, `${targetChannel.toString()} is not a text channel.`);
+				return;
+			} else if (usedChannel instanceof Discord.TextChannel) {
+				channel = usedChannel;
+			} else if (usedChannel) {
+				hiddenReply(interaction, `${usedChannel.toString()} is not a text channel.`);
+				return;
+			}
 			if (channel) {
 				if (channel.permissionsFor(me).has(BOT_PERMS)) {
 					if (channel.permissionsFor(member).has(USER_PERMS)) {
@@ -67,6 +79,7 @@ export const MF_Comamnds: CombinedApplicationCommand[] = [
 								}]
 							}]
 						});
+						hiddenReply(interaction, "Poll sent.");
 						for (let index = 0; index < 6; ++index) {
 							await message.react(`${index}\u20e3`);
 						}
