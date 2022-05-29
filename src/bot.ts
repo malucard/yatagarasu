@@ -2,6 +2,7 @@ import Discord from "discord.js";
 import { archivelpCommands } from "./commands/lpcommands/archivelp";
 import { upgradelpCommands } from "./commands/lpcommands/upgradelp";
 import { buttons, CmdKind, cmds as mafiaCommands, MafiaCommand, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
+import { MF_Comamnds } from "./commands/mysteryfiction/poll-list-commands";
 
 const client = new Discord.Client({
 	intents: [
@@ -23,7 +24,12 @@ export class CombinedApplicationCommand implements Discord.ChatInputApplicationC
 	action?: (interaction: Discord.CommandInteraction) => any;
 }
 
-const cmds: (CombinedApplicationCommand | MafiaCommand)[] = [...mafiaCommands, ...archivelpCommands, ...upgradelpCommands];
+const cmds: (CombinedApplicationCommand | MafiaCommand)[] = [
+	...mafiaCommands,
+	...archivelpCommands,
+	...upgradelpCommands,
+	...MF_Comamnds,
+];
 
 client.on("ready", async () => {
 	console.log(`Connected as ${client.user.tag}`);
