@@ -84,7 +84,7 @@ export const MF_Comamnds: CombinedApplicationCommand[] = [
 							}]
 						});
 						hiddenReply(interaction, "Poll sent.");
-						for (let index = 0; index < 6; ++index) {
+						for (let index = 1; index <= 6; ++index) {
 							await message.react(`${index}\u20e3`);
 						}
 					} else {
