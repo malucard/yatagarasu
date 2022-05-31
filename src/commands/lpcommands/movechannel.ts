@@ -5,7 +5,7 @@ import { FLAGS, hiddenReply, move_channel } from "../../utils/helpers";
 const CHANNEL_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
 const CATEGORY_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL;
 
-export const moveChannel: CombinedApplicationCommand[] = [{
+export const moveCommands: CombinedApplicationCommand[] = [{
 	name: "movechannel",
 	description: "move a channel into another place, relative to a category or another channel",
 	options: [

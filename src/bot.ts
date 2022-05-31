@@ -1,8 +1,9 @@
 import Discord from "discord.js";
 import { archivelpCommands } from "./commands/lpcommands/archivelp";
+import { moveCommands } from "./commands/lpcommands/movechannel";
 import { upgradelpCommands } from "./commands/lpcommands/upgradelp";
 import { buttons, CmdKind, cmds as mafiaCommands, MafiaCommand, MafiaCommandTextOrSlash, select_menus } from "./commands/mafia/mafia";
-import { MF_Comamnds } from "./commands/mysteryfiction/poll-list-commands";
+import { MF_Commands } from "./commands/mysteryfiction/poll-list-commands";
 
 const client = new Discord.Client({
 	intents: [
@@ -28,7 +29,8 @@ const cmds: (CombinedApplicationCommand | MafiaCommand)[] = [
 	...mafiaCommands,
 	...archivelpCommands,
 	...upgradelpCommands,
-	...MF_Comamnds,
+	...MF_Commands,
+	...moveCommands
 ];
 
 client.on("ready", async () => {
