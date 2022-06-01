@@ -52,17 +52,20 @@ export const moveCommands: CombinedApplicationCommand[] = [{
 					} else {
 						parent = targetChannel;
 					}
+					if (!parent) {
+						hiddenReply(interaction, "Uncategorized channels are not supported");
+						return;
+					}
 					if (!parent.permissionsFor(member).has(CATEGORY_PERMS)) {
 						hiddenReply(interaction, "You do not have valid perms for the category.");
 					} else if (!parent.permissionsFor(me).has(CATEGORY_PERMS)) {
 						hiddenReply(interaction, "Bot does not have valid perms for the category");
 					} else {
-						const success = await move_channel(channel, targetChannel);
-						if (success) {
+						move_channel(channel, targetChannel, () => {
 							interaction.reply(`${channel.toString()} moved.`);
-						} else {
+						}, () => {
 							hiddenReply(interaction, "Move failed, is the category full?");
-						}
+						});
 					}
 				}
 			}

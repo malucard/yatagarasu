@@ -9,9 +9,10 @@ export const hiddenReply = (interaction: Discord.CommandInteraction, message: st
  * Moves channels
  * @param channel - Channel to move
  * @param target - Channel or Category to move after
- * @returns success of the action.
+ * @param onsuccess - Callback when move succeeds
+ * @param onrejected - Callback when move fails
  */
-export const move_channel = async (channel: Discord.TextChannel, target: Discord.TextChannel | Discord.CategoryChannel): Promise<boolean> => {
+export const move_channel = (channel: Discord.TextChannel, target: Discord.TextChannel | Discord.CategoryChannel, onsuccess?: () => void, onrejected?: () => void): void => {
 	// at this point it is known that perms are valid.
 	let targetCategory: Discord.CategoryChannel;
 	let targetPosition: number;
@@ -23,14 +24,9 @@ export const move_channel = async (channel: Discord.TextChannel, target: Discord
 		targetCategory = parent;
 		targetPosition = target.position + 1;
 	}
-	if (channel.parentId !== targetCategory.id) {
-		channel = await channel.setParent(targetCategory, {
-			lockPermissions: false
-		});
-	}
-	if (!channel) {
-		return false; // Could not set parent
-	}
-	channel = await channel.setPosition(targetPosition);
-	return !!channel;
+	channel.setParent(targetCategory, { lockPermissions: false })
+		.then(channel => channel.setPosition(targetPosition)
+			.then(onsuccess)
+			.catch(onrejected))
+		.catch(onrejected);
 };

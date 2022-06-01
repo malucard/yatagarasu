@@ -1,11 +1,11 @@
 import Discord from "discord.js";
 import { ApplicationCommandOptionTypes, ChannelTypes } from "discord.js/typings/enums";
 import { CombinedApplicationCommand } from "../../bot";
-import { FLAGS, hiddenReply, move_channel } from "../../utils/helpers";
+import { FLAGS, hiddenReply } from "../../utils/helpers";
 
 const BOT_CHANNEL_PERMS = FLAGS.SEND_MESSAGES | FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
 const BOT_CATEGORY_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
-const USER_PERMS = FLAGS.VIEW_CHANNEL |FLAGS.MANAGE_CHANNELS;
+const USER_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_CHANNELS;
 const LP_LIST_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
 
 export const archivelpCommands: CombinedApplicationCommand[] = [{
@@ -117,21 +117,22 @@ export const archivelpCommands: CombinedApplicationCommand[] = [{
 					MANAGE_MESSAGES: null
 				})
 			);
-			if (await move_channel(textChannel, category)) {
+			textChannel.setParent(category, { lockPermissions: false }).then(() => {
+				textChannel.setPosition(0);
 				interaction.reply("LP Archived");
 				const lpList = guild.channels.cache.find(channel => channel.name === "lp-list");
 				if (lpList && lpList instanceof Discord.TextChannel && guild.me?.permissionsIn(lpList).has(LP_LIST_PERMS)) {
 					lpList.send(`<#${textChannel.id}> archived by <@${member.id}>`);
 				}
-			} else {
+			}).catch(reason => {
+				console.error(reason);
 				hiddenReply(interaction, "Archive failed, is category full?");
-			}
+			});
 		} else {
 			hiddenReply(interaction, "You do not have valid perms");
 			console.error(member.permissionsIn(channel).toJSON());
 			console.error(member.permissionsIn(category).toJSON());
 		}
 		return;
-
 	}
 }];
