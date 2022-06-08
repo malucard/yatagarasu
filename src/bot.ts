@@ -25,9 +25,9 @@ export class CombinedApplicationCommand implements Discord.ChatInputApplicationC
 }
 
 const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
-	// ...mafia.cmds,
-	// ...archivelpCommands,
-	// ...upgradelpCommands,
+	...mafia.cmds,
+	...archivelpCommands,
+	...upgradelpCommands,
 	...MF_Commands,
 ];
 
