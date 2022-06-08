@@ -98,5 +98,110 @@ export const MF_Commands: CombinedApplicationCommand[] = [
 				hiddenReply(interaction, "Channel does not exist or is invalid");
 			}
 		}
+	},
+	{
+		name: "mysterylist",
+		description: "Commands for the mysterylist",
+		options: [
+			{
+				name: "add",
+				type: "SUB_COMMAND",
+				description: "Add an entry to the mystery list",
+				options: [
+					{
+						name: "name",
+						description: "Name of the game to add to the list",
+						type: "STRING",
+						required: true
+					}
+				]
+			}, {
+				name: "remove",
+				type: "SUB_COMMAND",
+				description: "Remove an entry from the mystery list",
+				options: [
+					{
+						name: "name",
+						description: "Name of the game to remove from the list",
+						type: "STRING",
+						required: true,
+						autocomplete: true
+					}
+				]
+			}
+		],
+		action: async interaction => {
+			const guild = interaction.guild;
+			const me = guild.me;
+			const mysteryListChannel = guild.channels.cache.find(channel => channel.name === "mystery-list");
+			const member = interaction.member as Discord.GuildMember;
+			if (!member.permissions.has("ADMINISTRATOR")) {
+				hiddenReply(interaction, "Only admins can use these commands");
+				return;
+			}
+			if (!me.permissionsIn(mysteryListChannel).has(BOT_PERMS)) {
+				hiddenReply(interaction, "Bot does not have valid perms for mystery list channel");
+				return;
+			}
+			if (interaction.options.getSubcommand() === "add") {
+				const newGame = interaction.options.getString("name");
+				if (mysteryListChannel instanceof Discord.TextChannel) {
+					const messages = await mysteryListChannel.awaitMessages({
+						filter: message => message.author.id === me.id && message.embeds.length > 0
+					});
+					const message = messages.filter(message => message.embeds.some(embed => embed.title.startsWith("Other Games"))).first();
+					const embeds = message.embeds.filter(embed => embed.title.startsWith("Other Games"));
+
+					const games = embeds.flatMap(embed => embed.description.split("\n"));
+					games.push(newGame);
+					games.sort();
+					let join = "";
+					const descriptions: string[] = [];
+					for (let index = 0; index < games.length; index++) {
+						const game = games[index];
+						if (join.length + game.length > 4000) {
+							// I'm not touching the 4096 limit with a 100 character pole
+							descriptions.push(join);
+							join = "";
+						}
+						join = join ? game : `${join}\n${game}`;
+					}
+					descriptions.push(join);
+					const [header, spoiler, ...others] = message.embeds;
+					const tiermakers = others.at(-1);
+					const newOthers: Discord.MessageEmbed[] = descriptions.map((description, index) => new Discord.MessageEmbed({
+						title: `Other Games${index ? " (continued)" : ""}`,
+						description: description
+					}));
+					if (newOthers.length > 7) {
+						hiddenReply(interaction, "Too many embeds");
+						return;
+					}
+					const actuallyDoIt = false;
+					if (actuallyDoIt) {
+						// edit the embed
+						message.edit({
+							embeds: [header, spoiler, ...newOthers, tiermakers]
+						});
+						hiddenReply(interaction, `${newGame} added to ${mysteryListChannel.toString()}`);
+					} else {
+						// send the updated embed as a reply
+						if (me.permissionsIn(interaction.channel).has(BOT_PERMS)) {
+							interaction.reply({
+								content: "This is how it would look like",
+								embeds: [header, spoiler, ...newOthers, tiermakers]
+							});
+						} else {
+							hiddenReply(interaction, "Could not reply to you in this channel");
+							return;
+						}
+					}
+				}
+			} else if (interaction.options.getSubcommand() === "remove") {
+				// remove
+				hiddenReply(interaction, "Not implemented yet.");
+				return;
+			}
+		}
 	}
 ];
