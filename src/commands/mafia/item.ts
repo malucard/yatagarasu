@@ -94,7 +94,7 @@ export const items: { [name: string]: Item } = {
 		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			const framed = player.data.framing ? player.data.framing : player;
+			const framed: Player = player.data.framing ? player.data.framing as Player : player;
 			game.kill(target, player, () => {
 				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${framed.member.id}>.`);
 			});

@@ -42,8 +42,8 @@ export const archivelpCommands: CombinedApplicationCommand[] = [{
 			console.error("Member not found");
 			return;
 		}
-		let channel: any;
-		channel = interaction.options.getChannel("channel", false);
+		let channel: Discord.TextChannel;
+		channel = interaction.options.getChannel("channel", false) as Discord.TextChannel;
 		const category = interaction.options.getChannel("category") as Discord.CategoryChannel;
 		if (!channel) {
 			if (interaction.channel?.isThread()) {

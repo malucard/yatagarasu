@@ -28,7 +28,14 @@
             "error",
             "always"
         ],
-        "no-case-declarations": "warn"
+        "no-case-declarations": "off",
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_"
+            }
+        ]
     },
     "ignorePatterns": [
         ".vscode/",

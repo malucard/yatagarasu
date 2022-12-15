@@ -21,7 +21,7 @@ export class CombinedApplicationCommand implements Discord.ChatInputApplicationC
 	options?: Discord.ApplicationCommandOptionData[];
 	defaultPermission?: boolean;
 	kind?: mafia.CmdKind.SLASH;
-	action?: (interaction: Discord.CommandInteraction) => any;
+	action?: (interaction: Discord.CommandInteraction) => unknown;
 }
 
 const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [

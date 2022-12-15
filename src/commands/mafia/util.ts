@@ -86,7 +86,7 @@ export function list_lynch(players: { [num: number]: Player }) {
 			text += `\n${player.name} votes to lynch <invalid>`;
 		}
 	}
-	const [lynch, lynchers] = calculate_lynch(players);
+	const [lynch, _lynchers] = calculate_lynch(players);
 	if (lynch === 0) {
 		return `${text}\n**The consensus is to lynch nobody.**`;
 	} else {

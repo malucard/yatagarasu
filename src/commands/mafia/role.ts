@@ -84,7 +84,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			opt.mafia ? `a player to ${verb} tonight with \`;${verb} <number>\`.` :
 				`a player to ${verb} tonight.`;
 	if (opt.max_shots !== undefined) {
-		const left = opt.max_shots - (player.data.shots_done || 0);
+		const left = opt.max_shots - (player.data.shots_done as number || 0);
 		msg_txt += ` You have ${left} use${left !== 1 ? "s" : ""} of this action left.`;
 	}
 	if (!opt.yes_no && !opt.mafia) { // night kill already has target list so don't duplicate it
@@ -137,7 +137,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				collector.stop();
 				player.data.collector = null;
 				player.action_pending = false;
-				player.data.shots_done++;
+				(player.data.shots_done as number)++;
 				const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
 					" This was your last use of this action." : "";
 				action_follow_up(player, opt.mafia, recv, `You chose to ${verb}.${last_use_txt}`);
@@ -166,7 +166,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					collector.stop();
 					player.data.collector = null;
 					player.action_pending = false;
-					player.data.shots_done++;
+					(player.data.shots_done as number)++;
 					const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
 						" This was your last use of this action." : "";
 					action_follow_up(player, opt.mafia, recv, `You chose to ${verb} ${target.name}.${last_use_txt}`);
@@ -229,12 +229,12 @@ function template_action(verb: string, report: RoleActionReport, opt: ActionOpti
 						if (opt.hooked_report === true) {
 							action_follow_up(player, opt.mafia, null, "You were hooked.");
 						} else if (opt.hooked_report) {
-							opt.hooked_report(player.data.target, player);
+							opt.hooked_report(player.data.target as Player, player);
 						}
 					} else {
-						player.data.target.data.night_targeted_by = player;
-						if (!player.data.target.do_state(State.NIGHT_TARGETED)) {
-							report(player.data.target, player);
+						(player.data.target as Player).data.night_targeted_by = player;
+						if (!(player.data.target as Player).do_state(State.NIGHT_TARGETED)) {
+							report(player.data.target as Player, player);
 						}
 					}
 				}
@@ -246,7 +246,7 @@ function template_action(verb: string, report: RoleActionReport, opt: ActionOpti
 				action_follow_up(player, opt.mafia, null, "The night is over. Action cancelled.");
 			}
 			if (player.data.collector) {
-				player.data.collector.stop("night end");
+				(player.data.collector as Discord.ReactionCollector | Discord.MessageCollector).stop("night end");
 				player.data.collector = null;
 			}
 		}
@@ -414,18 +414,18 @@ export const roles: { [name: string]: Role } = {
 					player.data.granny_kills = [];
 				}, [State.NIGHT_TARGETED]: player => {
 					if (player.data.night_targeted_by) {
-						player.data.granny_kills.push([player.data.night_targeted_by, player]);
+						(player.data.granny_kills as Array<[Player, Player]>).push([player.data.night_targeted_by as Player, player]);
 					}
 				}, [State.NIGHT_END]: player => {
 					if (player.data.granny_use_gun) {
-						for (const k of player.data.granny_kills) {
+						for (const k of player.data.granny_kills as Array<[Player, Player]>) {
 							player.game.extra_kills.push(k);
 						}
 					}
 				}, [State.DEAD]: player => {
 					if (player.data.granny_use_gun && (player.game.cur_state === State.NIGHT || player.game.cur_state === State.NIGHT_END)) {
 						player.dead = false;
-						player.game.extra_kills.push([player.data.night_targeted_by, player]);
+						player.game.extra_kills.push([player.data.night_targeted_by as Player, player]);
 					}
 				}
 			},
@@ -459,7 +459,7 @@ export const roles: { [name: string]: Role } = {
 			),
 			{
 				[State.DEAD]: player => {
-					if (player.data.oracle_target) {
+					if (player.data.oracle_target instanceof Player) {
 						player.game.day_channel.send(`Oracle's prophecy: ${player.data.oracle_target.name} is a ${role_name(player.data.oracle_target)}.`);
 					} else {
 						player.game.day_channel.send("Oracle's prophecy: none.");
@@ -664,10 +664,10 @@ export const roles: { [name: string]: Role } = {
 				});
 				player.data["angel_of"] = angel_of;
 				player.role = Object.assign({}, player.role);
-				player.role.name += ` (watching over ${player.data.angel_of.name})`;
-				player.member.send(`You are watching over ${player.data.angel_of.name}.`);
+				player.role.name += ` (watching over ${(player.data.angel_of as Player).name})`;
+				player.member.send(`You are watching over ${(player.data.angel_of as Player).name}.`);
 			}
 		},
-		ensure_win: (player: Player) => player.data.angel_of && !player.data.angel_of.dead
+		ensure_win: (player: Player) => player.data.angel_of && !(player.data.angel_of as Player).dead
 	}
 };
