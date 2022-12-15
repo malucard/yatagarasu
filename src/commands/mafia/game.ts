@@ -37,7 +37,7 @@ export class Player {
 	/** if waiting to be able to send a report */
 	action_report_pending = false;
 	/** arbitrary data used by the roles */
-	data: { [property: string]: any } = {};
+	data: { [property: string]: unknown } = {};
 	/** player-specific callbacks for states, called after items' callbacks, but before roles' callbacks */
 	hook_actions: { [state: number]: RoleAction } = {};
 
@@ -243,7 +243,7 @@ export class Game {
 			}
 		}
 		let winning_side = null;
-		const has_vil = this.all_players.find(p => p.role.side === Side.VILLAGE);
+		// const has_vil = this.all_players.find(p => p.role.side === Side.VILLAGE);
 		if (village_can_overturn ? vil == 0 : (non_maf <= maf)) {
 			winning_side = Side.MAFIA;
 		}

@@ -1,6 +1,6 @@
 import { ChannelTypes } from "discord.js/typings/enums";
 import { CombinedApplicationCommand } from "../../bot";
-import Discord, { Interaction } from "discord.js";
+import Discord from "discord.js";
 import { hiddenReply } from "../../utils/helpers";
 
 const FLAGS = Discord.Permissions.FLAGS;
