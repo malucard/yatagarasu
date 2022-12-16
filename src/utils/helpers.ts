@@ -22,7 +22,12 @@ export const move_channel = (channel: Discord.TextChannel, target: Discord.TextC
 	} else {
 		const parent = target.parent;
 		targetCategory = parent;
-		targetPosition = target.position + 1;
+		// in same category, moving below causes an upshift, so you have to place at the same location
+		if (targetCategory.id === channel.parent.id && target.position > channel.position) {
+			targetPosition = target.position;
+		} else {
+			targetPosition = target.position + 1;
+		}
 	}
 	channel.setParent(targetCategory, { lockPermissions: false })
 		.then(channel => channel.setPosition(targetPosition)

@@ -48,6 +48,11 @@ export const moveCommands: CombinedApplicationCommand[] = [{
 				let parent: Discord.CategoryChannel;
 				if (targetChannel instanceof Discord.TextChannel || targetChannel instanceof Discord.CategoryChannel) {
 					if (targetChannel instanceof Discord.TextChannel) {
+						// same category, one place after or same channel
+						if ((targetChannel.parent.id === channel.parent.id && (targetChannel.position + 1) === channel.position) || (targetChannel.id === channel.id)) {
+							hiddenReply(interaction, "Channel already at target");
+							return;
+						}
 						parent = targetChannel.parent;
 					} else {
 						parent = targetChannel;
