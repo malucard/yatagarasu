@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 import { CombinedApplicationCommand } from "../../bot";
-import { FLAGS, hiddenReply, move_channel } from "../../utils/helpers";
+import { FLAGS, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const CHANNEL_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
 const CATEGORY_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL;
@@ -49,7 +49,7 @@ export const moveCommands: CombinedApplicationCommand[] = [{
 				if (targetChannel instanceof Discord.TextChannel || targetChannel instanceof Discord.CategoryChannel) {
 					if (targetChannel instanceof Discord.TextChannel) {
 						// same category, one place after or same channel
-						if ((targetChannel.parent.id === channel.parent.id && (targetChannel.position + 1) === channel.position) || (targetChannel.id === channel.id)) {
+						if (isInvalidMoveTarget(channel, targetChannel)) {
 							hiddenReply(interaction, "Channel already at target");
 							return;
 						}
@@ -67,7 +67,7 @@ export const moveCommands: CombinedApplicationCommand[] = [{
 						hiddenReply(interaction, "Bot does not have valid perms for the category");
 					} else {
 						move_channel(channel, targetChannel, () => {
-							interaction.reply(`${channel.toString()} moved.`);
+							interaction.reply(`${channel.toString()} moved after ${targetChannel.toString()}.`);
 						}, () => {
 							hiddenReply(interaction, "Move failed, is the category full?");
 						});

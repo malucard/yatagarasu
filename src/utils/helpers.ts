@@ -35,3 +35,13 @@ export const move_channel = (channel: Discord.TextChannel, target: Discord.TextC
 			.catch(onrejected))
 		.catch(onrejected);
 };
+
+/**
+ * Verifies if moving channels is valid
+ * @param channel - Channel to move
+ * @param targetChannel - Channel to move to
+ * @returns if the move is valid to do
+ */
+export const isInvalidMoveTarget = (channel: Discord.TextChannel, targetChannel: Discord.TextChannel) => {
+	return (targetChannel.parent.id === channel.parent.id && (targetChannel.position + 1) === channel.position) || (targetChannel.id === channel.id);
+};
