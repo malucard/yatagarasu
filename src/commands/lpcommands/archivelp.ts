@@ -192,10 +192,11 @@ export const archivelpCommands: CombinedApplicationCommand[] = [
 				message.push("LP Unarchived");
 				// set permissions for LPer, if doManage
 				if (doManage) {
-					await channel.permissionOverwrites.edit(user, {
-						MANAGE_MESSAGES: true
+					await channel.permissionOverwrites.edit(LPer, {
+						MANAGE_MESSAGES: true,
+						VIEW_CHANNEL: true
 					});
-					message.push(`${user.toString()} set as LPer`);
+					message.push(`${LPer.toString()} set as LPer`);
 				}
 				// move channel, if target given
 				if (doMove) {
