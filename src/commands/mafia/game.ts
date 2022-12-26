@@ -537,10 +537,11 @@ export class Game {
 					numbers += `\n${p.number}- ${this.hiding_names ? "<hidden>" : p.name}`;
 				}
 			}
+			const mafiaPings = Object.values(this.players).filter(player => player.role.side === Side.MAFIA).map(player => player.member.toString()).join("\n");
 			if(this.no_mafia_kill) {
-				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`);
+				this.mafia_secret_chat.send(`${mafiaPings}\n Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`);
 			} else {
-				this.mafia_secret_chat.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`);
+				this.mafia_secret_chat.send(`${mafiaPings}\n Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`);
 			}
 			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
 			this.mafia_collector.on("collect", msg => {
