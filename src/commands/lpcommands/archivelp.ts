@@ -1,6 +1,6 @@
 import Discord from "discord.js";
 import { ApplicationCommandOptionTypes, ChannelTypes } from "discord.js/typings/enums";
-import { CombinedApplicationCommand } from "../../bot";
+import { CombinedSlashCommand } from "../../bot";
 import { FLAGS, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const BOT_CHANNEL_PERMS = FLAGS.SEND_MESSAGES | FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
@@ -8,7 +8,7 @@ const BOT_CATEGORY_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
 const USER_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_CHANNELS;
 const LP_LIST_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
 
-export const archivelpCommands: CombinedApplicationCommand[] = [
+export const archivelpCommands: CombinedSlashCommand[] = [
 	{
 		name: "archivelp",
 		description: "Archives the given LP into the supplied category.",

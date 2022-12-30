@@ -2,7 +2,7 @@
 
 import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
 import { ApplicationCommandOptionTypes, ChannelTypes } from "discord.js/typings/enums";
-import { CombinedApplicationCommand } from "../../bot";
+import { CombinedSlashCommand } from "../../bot";
 import { FLAGS, hiddenReply } from "../../utils/helpers";
 
 /**
@@ -75,7 +75,7 @@ const roleLP_Map: { [key: string]: string[] } = {
 const USER_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.MANAGE_MESSAGES | FLAGS.SEND_MESSAGES; // Remove manage_channels if we want to let LPer upgrade
 const BOT_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.SEND_MESSAGES;
 
-export const upgradelpCommands: CombinedApplicationCommand[] = [{
+export const upgradelpCommands: CombinedSlashCommand[] = [{
 	name: "upgradelp",
 	description: "Upgrade the LP to the next game, if applicable and registered",
 	options: [{
