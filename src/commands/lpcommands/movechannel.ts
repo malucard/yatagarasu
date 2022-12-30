@@ -1,11 +1,11 @@
 import Discord from "discord.js";
-import { CombinedApplicationCommand } from "../../bot";
+import { CombinedSlashCommand } from "../../bot";
 import { FLAGS, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const CHANNEL_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
 const CATEGORY_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL;
 
-export const moveCommands: CombinedApplicationCommand[] = [{
+export const moveCommands: CombinedSlashCommand[] = [{
 	name: "movechannel",
 	description: "move a channel into another place, relative to a category or another channel",
 	options: [
@@ -23,7 +23,7 @@ export const moveCommands: CombinedApplicationCommand[] = [{
 			required: false
 		}
 	],
-	action: async interaction => {
+	action: async (interaction: Discord.CommandInteraction) => {
 		const member = interaction.member;
 		const usedChannel = interaction.channel;
 		const me = interaction.guild.me;

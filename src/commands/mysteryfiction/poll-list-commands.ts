@@ -1,5 +1,5 @@
 import { ChannelTypes } from "discord.js/typings/enums";
-import { CombinedApplicationCommand } from "../../bot";
+import { CombinedSlashCommand } from "../../bot";
 import Discord from "discord.js";
 import { hiddenReply } from "../../utils/helpers";
 
@@ -7,7 +7,7 @@ const FLAGS = Discord.Permissions.FLAGS;
 const BOT_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS | FLAGS.ADD_REACTIONS;
 const USER_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.MANAGE_MESSAGES | FLAGS.MANAGE_ROLES;
 
-export const MF_Commands: CombinedApplicationCommand[] = [
+export const MF_Commands: CombinedSlashCommand[] = [
 	{
 		name: "mysterypoll",
 		description: "Creates a mystery voting poll. For use in Mystery-Fiction.",
@@ -125,7 +125,7 @@ export const MF_Commands: CombinedApplicationCommand[] = [
 			type: "BOOLEAN",
 			required: false
 		}],
-		action: async interaction => {
+		action: async (interaction: Discord.CommandInteraction) => {
 			const guild = interaction.guild;
 			const me = guild.me;
 			const mysteryListChannel = guild.channels.cache.find(channel => channel.name === "mystery-list");
