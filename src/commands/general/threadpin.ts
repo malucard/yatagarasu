@@ -58,8 +58,8 @@ export const threadpinCommands: CombinedMessageContextCommand[] = [{
 		}
 
 		// perform pin or unpin
-		const wasPinned = message.pinned;
-		await ((await (wasPinned ? message.unpin() : message.pin())).reply(`Message ${wasPinned ? "unpinned" : "pinned"} by ${user.toString()}`));
-		hiddenReply(interaction, "Done");
+		const reply = `Message ${message.pinned ? "unpinned" : "pinned"}. Link to message: ${message.url}`;
+		await (message.pinned ? message.unpin() : message.pin());
+		interaction.reply(reply);
 	}
 }];
