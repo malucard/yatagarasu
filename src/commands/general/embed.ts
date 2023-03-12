@@ -2,7 +2,7 @@ import Discord from "discord.js";
 import axios from "axios";
 import { ChannelTypes } from "discord.js/typings/enums";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
+import { FLAGS, getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
 import { CmdKind } from "../mafia/mafia";
 
 const USER_SEND_PERMS = FLAGS.ADMINISTRATOR;
@@ -64,6 +64,43 @@ export const embedCommands: CombinedSlashCommand[] = [
 						required: true
 					}
 				]
+			},
+			{
+				name: "edit",
+				description: "Edit Embeds",
+				type: "SUB_COMMAND",
+				options: [
+					{
+						name: "target",
+						description: "Target message link to edit embed from",
+						type: "STRING",
+						required: true
+					},
+					{
+						name: "json_text",
+						description: "JSON data as text to embed",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "json_file",
+						description: "JSON data as file to embed",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "text",
+						description: "Text to show along with the embeds",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "message",
+						description: "Discord message to clone text from instead of 'text'",
+						type: "STRING",
+						required: false
+					}
+				]
 			}
 		],
 		action: async (interaction: Discord.CommandInteraction) => {
@@ -88,11 +125,14 @@ export const embedCommands: CombinedSlashCommand[] = [
 			case "fetch":
 				handleFetch(interaction, guild, member);
 				return;
+			case "edit":
+				handleEdit(interaction, guild, member);
 			}
 		}
 	}
 ];
 
+// Sub-Command Send
 async function handleSend(interaction:Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.options.getChannel("target") as Discord.TextChannel;
 	// check permissions
@@ -113,82 +153,23 @@ async function handleSend(interaction:Discord.CommandInteraction, guild: Discord
 		return;
 	}
 	try {
-		const messageText = await getMessageText(guild, text, message);
-		// text is priority over file
-		if (textJSON) {
-			if (await handleText(interaction, channel, textJSON, messageText)) {
-				interaction.reply(`Embed sent to ${channel.toString()}`);
-			}
-		} else {
-			if (await handleFile(interaction, channel, fileJSON, messageText)) {
-				interaction.reply(`Embed sent to ${channel.toString()}`);
-			}
+		const content = await getMessageText(guild, text, message);
+		const json = await getJSON(fileJSON, textJSON);
+		if (!json) {
+			throw Error("Please recheck the json given");
 		}
+		const embeds = [].concat(json).map((entry: unknown) => new Discord.MessageEmbed(entry));
+		await channel.send({ content, embeds });
+		interaction.reply(`Embed sent to ${channel.toString()}`);
 	}
 	catch (error) {
 		hiddenReply(interaction, error.message);
 		return;
 	}
 }
+// End of Sub-Command Send
 
-async function sendEmbed(channel: Discord.TextChannel, data: unknown, content?: string): Promise<void> {
-	const json = [].concat(data);
-	const embeds = json.map((entry: unknown) => new Discord.MessageEmbed(entry));
-	await channel.send({ content, embeds });
-}
-
-async function handleText(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, textJSON: string, messageText?: string): Promise<boolean> {
-	try {
-		sendEmbed(channel, JSON.parse(textJSON), messageText);
-	} catch (err) {
-		hiddenReply(interaction, "Invalid json, could not produce embed");
-		console.error(err);
-		return false;
-	}
-	return true;
-}
-
-async function handleFile(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, fileJSON: string, messageText?: string): Promise<boolean> {
-	try {
-		const url = new URL(fileJSON);
-		if(url.protocol !== "https:") {
-			throw Error("Invalid protocol");
-		}
-		const response = await axios({
-			method: "get",
-			url: url.href,
-			responseType: "json"
-		});
-		try {
-			sendEmbed(channel, response.data, messageText);
-		} catch (err) {
-			hiddenReply(interaction, "Invalid json, could not produce embed");
-			console.error(err);
-			return false;
-		}
-		
-	} catch (err) {
-		hiddenReply(interaction, "Invalid url, could not produce embed");
-		console.error(err);
-		return false;
-	}
-	return true;
-}
-
-async function getMessageText(guild: Discord.Guild, text?: string, messageLink?: string): Promise<string | undefined> {
-	if (!text && !messageLink) {
-		return undefined;
-	}
-	if (text) {
-		return text;
-	}
-	const message = await getMessageFromLink(guild, messageLink);
-	if (typeof message === "string") {
-		throw Error(message);
-	}
-	return message.content;
-}
-
+// Sub-Command Fetch
 async function handleFetch(interaction: Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.channel;
 	// check permissions
@@ -238,3 +219,84 @@ async function handleFetch(interaction: Discord.CommandInteraction, guild: Disco
 }
 
 const codeTicks = (input: string) => "```\n" + input + "\n```";
+// End of Sub-Command Fetch
+
+// Sub-Command Edit
+async function handleEdit(interaction: Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
+	const targetURL = interaction.options.getString("target");
+	try {
+		const channel = await getChannelFromLink(guild, targetURL);
+		if (typeof channel === "string") {
+			throw Error(channel);
+		}
+		// check permissions
+		if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
+			hiddenReply(interaction, "You do not have valid perms to use this");
+			return;
+		} else if (!channel.permissionsFor(guild.me).has(BOT_SEND_PERMS)) {
+			hiddenReply(interaction, "Bot cannot send messages in this channel");
+			return;
+		}
+		const target = await getMessageFromLink(guild, targetURL);
+		if (typeof target === "string") {
+			throw Error(target);
+		} else if (target.member.id !== guild.me.id) {
+			hiddenReply(interaction, "Cannot edit messages outside mine");
+			return;
+		}
+		const fileJSON = interaction.options.getString("json_file", false);
+		const textJSON = interaction.options.getString("json_text", false);
+		const text = interaction.options.getString("text", false);
+		const message = interaction.options.getString("message", false);
+		if (!(fileJSON || textJSON || text || message)) {
+			hiddenReply(interaction, "Please provide either embed or text to edit");
+			return;
+		}
+		const json = await getJSON(fileJSON, textJSON);
+		const content = await getMessageText(guild, text, message) || undefined;
+		if (!(json || content)) {
+			hiddenReply(interaction, "Please check the data given");
+			return;
+		}
+		const embeds = json ? [].concat(json).map((entry: unknown) => new Discord.MessageEmbed(entry)) : undefined;
+		await target.edit({	content, embeds });
+		interaction.reply("Embed Edited");
+
+	} catch(error) {
+		hiddenReply(interaction, error.message);
+		return;
+	}
+}
+// End of Sub-Command Edit
+
+// Shared
+async function getMessageText(guild: Discord.Guild, text?: string, messageLink?: string): Promise<string | undefined> {
+	if (!text && !messageLink) {
+		return undefined;
+	}
+	if (text) {
+		return text;
+	}
+	const message = await getMessageFromLink(guild, messageLink);
+	if (typeof message === "string") {
+		throw Error(message);
+	}
+	return message.content;
+}
+async function getJSON(fileJSON: string, textJSON: string): Promise<unknown> {
+	if (textJSON) {
+		return JSON.parse(textJSON);
+	} else if (fileJSON) {
+		const url = new URL(fileJSON);
+		if(url.protocol !== "https:") {
+			throw Error("Invalid protocol");
+		}
+		const response = await axios({
+			method: "get",
+			url: url.href,
+			responseType: "json"
+		});
+		return response.data;
+	}
+	return undefined;
+}
