@@ -34,7 +34,7 @@ export class MafiaCommandText extends MafiaCommandBase {
 export class MafiaCommandSlash extends MafiaCommandBase implements Discord.ChatInputApplicationCommandData {
 	description: string;
 	kind: CmdKind.SLASH;
-	action: (interaction: Discord.CommandInteraction, args: string) => Promise<void>;
+	action: (interaction: Discord.CommandInteraction) => Promise<void>;
 }
 
 export class MafiaCommandMessageContext extends MafiaCommandBase implements Discord.MessageApplicationCommandData {

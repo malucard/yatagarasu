@@ -11,39 +11,46 @@ const BOT_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS |
 export const embedCommands: CombinedSlashCommand[] = [
 	{
 		kind: CmdKind.SLASH,
-		name: "sendembed",
-		description: "Send an embed in a channel",
+		name: "embed",
+		description: "Embed Commands",
 		options: [
 			{
-				name: "target",
-				description: "Target channel to send embeds to",
-				type: "CHANNEL",
-				channelTypes: [ChannelTypes.GUILD_TEXT],
-				required: true
-			},
-			{
-				name: "json",
-				description: "JSON data as text to embed",
-				type: "STRING",
-				required: false
-			},
-			{
-				name: "file",
-				description: "JSON data as file to embed",
-				type: "STRING",
-				required: false
-			},
-			{
-				name: "text",
-				description: "Text to show along with the embeds",
-				type: "STRING",
-				required: false
-			},
-			{
-				name: "message",
-				description: "Discord message to clone text from instead of 'text'",
-				type: "STRING",
-				required: false
+				name: "send",
+				description: "Send embeds",
+				type: "SUB_COMMAND",
+				options: [
+					{
+						name: "target",
+						description: "Target channel to send embeds to",
+						type: "CHANNEL",
+						channelTypes: [ChannelTypes.GUILD_TEXT],
+						required: true
+					},
+					{
+						name: "json_text",
+						description: "JSON data as text to embed",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "json_file",
+						description: "JSON data as file to embed",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "text",
+						description: "Text to show along with the embeds",
+						type: "STRING",
+						required: false
+					},
+					{
+						name: "message",
+						description: "Discord message to clone text from instead of 'text'",
+						type: "STRING",
+						required: false
+					}
+				]
 			}
 		],
 		action: async (interaction: Discord.CommandInteraction) => {
@@ -60,44 +67,53 @@ export const embedCommands: CombinedSlashCommand[] = [
 				console.error("Member not found");
 				return;
 			}
-			const channel = interaction.options.getChannel("target") as Discord.TextChannel;
-			// check permissions
-			if (!channel.permissionsFor(member).has(USER_PERMS)) {
-				hiddenReply(interaction, "You do not have valid perms to use this");
-				return;
-			} else if (!channel.permissionsFor(guild.me).has(BOT_PERMS)) {
-				hiddenReply(interaction, "Bot cannot send embeds in this channel");
-				return;
-			}
-			const fileJSON = interaction.options.getString("file", false);
-			const textJSON = interaction.options.getString("json", false);
-			const text = interaction.options.getString("text", false);
-			const message = interaction.options.getString("message", false);
-			if (!(fileJSON || textJSON)) {
-				hiddenReply(interaction, "Please provide either the file url or the json as text");
-				console.error("No data provided");
-				return;
-			}
-			try {
-				const messageText = await getMessageText(guild, text, message);
-				// text is priority over file
-				if (textJSON) {
-					if (await handleText(interaction, channel, textJSON, messageText)) {
-						interaction.reply(`Embed sent to ${channel.toString()}`);
-					}
-				} else {
-					if (await handleFile(interaction, channel, fileJSON, messageText)) {
-						interaction.reply(`Embed sent to ${channel.toString()}`);
-					}
-				}
-			}
-			catch (error) {
-				hiddenReply(interaction, error.message);
+			const subcommand = interaction.options.getSubcommand(true);
+			switch (subcommand) {
+			case "send": 
+				await handleSend(interaction, guild, member);
 				return;
 			}
 		}
 	}
 ];
+
+async function handleSend(interaction:Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
+	const channel = interaction.options.getChannel("target") as Discord.TextChannel;
+	// check permissions
+	if (!channel.permissionsFor(member).has(USER_PERMS)) {
+		hiddenReply(interaction, "You do not have valid perms to use this");
+		return;
+	} else if (!channel.permissionsFor(guild.me).has(BOT_PERMS)) {
+		hiddenReply(interaction, "Bot cannot send embeds in this channel");
+		return;
+	}
+	const fileJSON = interaction.options.getString("json_file", false);
+	const textJSON = interaction.options.getString("json_text", false);
+	const text = interaction.options.getString("text", false);
+	const message = interaction.options.getString("message", false);
+	if (!(fileJSON || textJSON)) {
+		hiddenReply(interaction, "Please provide either the file url or the json as text");
+		console.error("No data provided");
+		return;
+	}
+	try {
+		const messageText = await getMessageText(guild, text, message);
+		// text is priority over file
+		if (textJSON) {
+			if (await handleText(interaction, channel, textJSON, messageText)) {
+				interaction.reply(`Embed sent to ${channel.toString()}`);
+			}
+		} else {
+			if (await handleFile(interaction, channel, fileJSON, messageText)) {
+				interaction.reply(`Embed sent to ${channel.toString()}`);
+			}
+		}
+	}
+	catch (error) {
+		hiddenReply(interaction, error.message);
+		return;
+	}
+}
 
 async function sendEmbed(channel: Discord.TextChannel, data: unknown, content?: string): Promise<void> {
 	const json = [].concat(data);
