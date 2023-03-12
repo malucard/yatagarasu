@@ -2,11 +2,12 @@ import Discord from "discord.js";
 import axios from "axios";
 import { ChannelTypes } from "discord.js/typings/enums";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, hiddenReply } from "../../utils/helpers";
+import { FLAGS, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
 import { CmdKind } from "../mafia/mafia";
 
-const USER_PERMS = FLAGS.ADMINISTRATOR;
-const BOT_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS | FLAGS.ATTACH_FILES;
+const USER_SEND_PERMS = FLAGS.ADMINISTRATOR;
+const BOT_SEND_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS;
+const BOT_FETCH_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS;
 
 export const embedCommands: CombinedSlashCommand[] = [
 	{
@@ -51,6 +52,18 @@ export const embedCommands: CombinedSlashCommand[] = [
 						required: false
 					}
 				]
+			}, {
+				name: "fetch",
+				description: "Get embeds from a message",
+				type: "SUB_COMMAND",
+				options: [
+					{
+						name: "message",
+						description: "Message Link to get embed json from",
+						type: "STRING",
+						required: true
+					}
+				]
 			}
 		],
 		action: async (interaction: Discord.CommandInteraction) => {
@@ -70,7 +83,10 @@ export const embedCommands: CombinedSlashCommand[] = [
 			const subcommand = interaction.options.getSubcommand(true);
 			switch (subcommand) {
 			case "send": 
-				await handleSend(interaction, guild, member);
+				handleSend(interaction, guild, member);
+				return;
+			case "fetch":
+				handleFetch(interaction, guild);
 				return;
 			}
 		}
@@ -80,10 +96,10 @@ export const embedCommands: CombinedSlashCommand[] = [
 async function handleSend(interaction:Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.options.getChannel("target") as Discord.TextChannel;
 	// check permissions
-	if (!channel.permissionsFor(member).has(USER_PERMS)) {
+	if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
 		hiddenReply(interaction, "You do not have valid perms to use this");
 		return;
-	} else if (!channel.permissionsFor(guild.me).has(BOT_PERMS)) {
+	} else if (!channel.permissionsFor(guild.me).has(BOT_SEND_PERMS)) {
 		hiddenReply(interaction, "Bot cannot send embeds in this channel");
 		return;
 	}
@@ -166,20 +182,34 @@ async function getMessageText(guild: Discord.Guild, text?: string, messageLink?:
 	if (text) {
 		return text;
 	}
-	const ID_MAP = /https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(messageLink).groups;
-	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
-		throw Error("Invalid Message Link");
-	}
-	if (guild.id !== ID_MAP?.ID_1) {
-		throw Error("Please use a message from this server");
-	}
-	const channel = await guild.channels.fetch(ID_MAP?.ID_2);
-	if (!(channel && channel.isText())) {
-		throw Error("Cannot access this channel");
-	}
-	const message = await channel.messages.fetch(ID_MAP.ID_3);
-	if (!message) {
-		throw Error("Cannot find this message");
+	const message = await getMessageFromLink(guild, messageLink);
+	if (typeof message === "string") {
+		throw Error(message);
 	}
 	return message.content;
+}
+
+async function handleFetch(interaction: Discord.CommandInteraction, guild: Discord.Guild) {
+	const channel = interaction.channel;
+	// check permissions
+	if (!channel.permissionsFor(guild.me).has(BOT_FETCH_PERMS)) {
+		hiddenReply(interaction, "Bot cannot send messages in this channel");
+		return;
+	}
+	const link = interaction.options.getString("message");
+	try {
+		const message = await getMessageFromLink(guild, link);
+		if (typeof message === "string") {
+			throw Error(message);
+		}
+		interaction.reply({
+			embeds: [{
+				title: "Embed Source",
+				description: sanitizedMessageEmbedString(message.embeds)
+			}]
+		});
+	} catch (error) {
+		hiddenReply(interaction, error.message);
+		return;
+	}
 }

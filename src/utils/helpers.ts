@@ -45,3 +45,40 @@ export const move_channel = (channel: Discord.TextChannel, target: Discord.TextC
 export const isInvalidMoveTarget = (channel: Discord.TextChannel, targetChannel: Discord.TextChannel) => {
 	return (targetChannel.parent.id === channel.parent.id && (targetChannel.position + 1) === channel.position) || (targetChannel.id === channel.id);
 };
+
+/**
+ * Get the message object from a given message link. Can throw DiscordAPI Error, and returns error messages as string.
+ * @param guild - Guild to find message in
+ * @param link - Message Link provided by user
+ * @returns Discord.Message if found, otherwise Error message
+ * @throws DiscordAPIError - if channel or messages are not fetchable
+ */
+export const getMessageFromLink = async (guild: Discord.Guild, link: string): Promise<Discord.Message | string> => {
+	const ID_MAP = /https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(link).groups;
+	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
+		return "Invalid Message Link";
+	}
+	if (guild.id !== ID_MAP?.ID_1) {
+		return "Please use a message from this server";
+	}
+	const channel = await guild.channels.fetch(ID_MAP?.ID_2);
+	if (!(channel && channel.isText())) {
+		return "Cannot access this channel";
+	}
+	const message = await channel.messages.fetch(ID_MAP.ID_3);
+	if (!message) {
+		return "Cannot find this message";
+	}
+	return message;
+};
+
+/**
+ * Stringifies the embeds with pretty printing and replaces backticks with escaped ones
+ * @param embeds - Array of Discord.MessageEmbeds to show
+ * @returns Pretty printed string with backticks escaped
+ */
+export const sanitizedMessageEmbedString: (embeds: Array<Discord.MessageEmbed>) => string =
+	(embeds) => "```\n"
+		+ JSON.stringify(embeds, undefined, 4)
+			.replace(/`/g, "\\`") 
+		+ "\n```";
