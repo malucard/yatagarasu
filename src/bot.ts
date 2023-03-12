@@ -21,7 +21,7 @@ const client = new Discord.Client({
 export class CombinedSlashCommand implements Discord.ChatInputApplicationCommandData {
 	name: string;
 	description: string;
-	options?: Discord.ApplicationCommandOptionData[];
+	options?: (Discord.ApplicationCommandOptionData)[];
 	defaultPermission?: boolean;
 	kind?: mafia.CmdKind.SLASH;
 	action?: (interaction: Discord.CommandInteraction) => unknown;
@@ -85,12 +85,12 @@ client.on("messageCreate", async msg => {
 	}
 });
 
-client.on("interactionCreate", async interaction => {
+client.on("interactionCreate", async (interaction: Discord.Interaction) => {
 	if (interaction.isApplicationCommand() || interaction.isCommand() || interaction.isMessageContextMenu()) {
 		for (const command of cmds) {
 			if (command.name === interaction.commandName) {
 				if (command.kind === undefined || command.kind === mafia.CmdKind.TEXT_OR_SLASH || command.kind === mafia.CmdKind.SLASH) {
-					if (command instanceof CombinedSlashCommand && interaction.isCommand()) {
+					if (command.kind === mafia.CmdKind.SLASH && interaction.isCommand()) {
 						command.action(interaction);
 					} else {
 						const args = interaction.options.data.map(opt => opt.value.toString()).join(" ");
