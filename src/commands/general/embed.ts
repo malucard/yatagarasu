@@ -16,7 +16,7 @@ export const embedCommands: CombinedSlashCommand[] = [
 		options: [
 			{
 				name: "target",
-				description: "Target channel to send embed to",
+				description: "Target channel to send embeds to",
 				type: "CHANNEL",
 				channelTypes: [ChannelTypes.GUILD_TEXT],
 				required: true
@@ -30,6 +30,18 @@ export const embedCommands: CombinedSlashCommand[] = [
 			{
 				name: "file",
 				description: "JSON data as file to embed",
+				type: "STRING",
+				required: false
+			},
+			{
+				name: "text",
+				description: "Text to show along with the embeds",
+				type: "STRING",
+				required: false
+			},
+			{
+				name: "message",
+				description: "Discord message to clone text from instead of 'text'",
 				type: "STRING",
 				required: false
 			}
@@ -59,35 +71,43 @@ export const embedCommands: CombinedSlashCommand[] = [
 			}
 			const fileJSON = interaction.options.getString("file", false);
 			const textJSON = interaction.options.getString("json", false);
+			const text = interaction.options.getString("text", false);
+			const message = interaction.options.getString("message", false);
 			if (!(fileJSON || textJSON)) {
 				hiddenReply(interaction, "Please provide either the file url or the json as text");
 				console.error("No data provided");
 				return;
 			}
-			// text is priority over file
-			if (textJSON) {
-				if (await handleText(interaction, channel, textJSON)) {
-					interaction.reply(`Embed sent to ${channel.toString()}`);
-				}
-			} else {
-				if (await handleFile(interaction, channel, fileJSON)) {
-					interaction.reply(`Embed sent to ${channel.toString()}`);
+			try {
+				const messageText = await getMessageText(guild, text, message);
+				// text is priority over file
+				if (textJSON) {
+					if (await handleText(interaction, channel, textJSON, messageText)) {
+						interaction.reply(`Embed sent to ${channel.toString()}`);
+					}
+				} else {
+					if (await handleFile(interaction, channel, fileJSON, messageText)) {
+						interaction.reply(`Embed sent to ${channel.toString()}`);
+					}
 				}
 			}
-
+			catch (error) {
+				hiddenReply(interaction, error.message);
+				return;
+			}
 		}
 	}
 ];
 
-async function sendEmbed(channel: Discord.TextChannel, data: unknown): Promise<void> {
+async function sendEmbed(channel: Discord.TextChannel, data: unknown, content?: string): Promise<void> {
 	const json = [].concat(data);
 	const embeds = json.map((entry: unknown) => new Discord.MessageEmbed(entry));
-	await channel.send({ embeds });
+	await channel.send({ content, embeds });
 }
 
-async function handleText(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, textJSON: string): Promise<boolean> {
+async function handleText(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, textJSON: string, messageText?: string): Promise<boolean> {
 	try {
-		sendEmbed(channel, JSON.parse(textJSON));
+		sendEmbed(channel, JSON.parse(textJSON), messageText);
 	} catch (err) {
 		hiddenReply(interaction, "Invalid json, could not produce embed");
 		console.error(err);
@@ -96,7 +116,7 @@ async function handleText(interaction: Discord.CommandInteraction, channel: Disc
 	return true;
 }
 
-async function handleFile(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, fileJSON: string): Promise<boolean> {
+async function handleFile(interaction: Discord.CommandInteraction, channel: Discord.TextChannel, fileJSON: string, messageText?: string): Promise<boolean> {
 	try {
 		const url = new URL(fileJSON);
 		if(url.protocol !== "https:") {
@@ -108,7 +128,7 @@ async function handleFile(interaction: Discord.CommandInteraction, channel: Disc
 			responseType: "json"
 		});
 		try {
-			sendEmbed(channel, response.data);
+			sendEmbed(channel, response.data, messageText);
 		} catch (err) {
 			hiddenReply(interaction, "Invalid json, could not produce embed");
 			console.error(err);
@@ -121,4 +141,29 @@ async function handleFile(interaction: Discord.CommandInteraction, channel: Disc
 		return false;
 	}
 	return true;
+}
+
+async function getMessageText(guild: Discord.Guild, text?: string, messageLink?: string): Promise<string | undefined> {
+	if (!text && !messageLink) {
+		return undefined;
+	}
+	if (text) {
+		return text;
+	}
+	const ID_MAP = /https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(messageLink).groups;
+	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
+		throw Error("Invalid Message Link");
+	}
+	if (guild.id !== ID_MAP?.ID_1) {
+		throw Error("Please use a message from this server");
+	}
+	const channel = await guild.channels.fetch(ID_MAP?.ID_2);
+	if (!(channel && channel.isText())) {
+		throw Error("Cannot access this channel");
+	}
+	const message = await channel.messages.fetch(ID_MAP.ID_3);
+	if (!message) {
+		throw Error("Cannot find this message");
+	}
+	return message.content;
 }
