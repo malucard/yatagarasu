@@ -21,7 +21,7 @@ const client = new Discord.Client({
 export class CombinedSlashCommand implements Discord.ChatInputApplicationCommandData {
 	name: string;
 	description: string;
-	options?: (Discord.ApplicationCommandOptionData)[];
+	options?: Discord.ApplicationCommandOptionData[];
 	defaultPermission?: boolean;
 	kind?: mafia.CmdKind.SLASH;
 	action?: (interaction: Discord.CommandInteraction) => unknown;
@@ -97,7 +97,7 @@ client.on("interactionCreate", async (interaction: Discord.Interaction) => {
 						await (command as mafia.MafiaCommandTextOrSlash).action(interaction as Discord.CommandInteraction, args);
 					}
 				} else if (command.kind === mafia.CmdKind.MESSAGE_CONTEXT) {
-					if(interaction.isMessageContextMenu()) {
+					if (interaction.isMessageContextMenu()) {
 						command.action(interaction);
 					}
 				}
