@@ -78,7 +78,4 @@ export const getMessageFromLink = async (guild: Discord.Guild, link: string): Pr
  * @returns Pretty printed string with backticks escaped
  */
 export const sanitizedMessageEmbedString: (embeds: Array<Discord.MessageEmbed>) => string =
-	(embeds) => "```\n"
-		+ JSON.stringify(embeds, undefined, 4)
-			.replace(/`/g, "\\`") 
-		+ "\n```";
+	(embeds) => JSON.stringify(embeds, undefined, 4).replace(/`/g, "\\`");

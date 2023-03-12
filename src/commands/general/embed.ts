@@ -86,7 +86,7 @@ export const embedCommands: CombinedSlashCommand[] = [
 				handleSend(interaction, guild, member);
 				return;
 			case "fetch":
-				handleFetch(interaction, guild);
+				handleFetch(interaction, guild, member);
 				return;
 			}
 		}
@@ -189,27 +189,52 @@ async function getMessageText(guild: Discord.Guild, text?: string, messageLink?:
 	return message.content;
 }
 
-async function handleFetch(interaction: Discord.CommandInteraction, guild: Discord.Guild) {
+async function handleFetch(interaction: Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.channel;
 	// check permissions
-	if (!channel.permissionsFor(guild.me).has(BOT_FETCH_PERMS)) {
+	if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
+		hiddenReply(interaction, "You do not have valid perms to use this");
+		return;
+	} else if (!channel.permissionsFor(guild.me).has(BOT_FETCH_PERMS)) {
 		hiddenReply(interaction, "Bot cannot send messages in this channel");
 		return;
 	}
 	const link = interaction.options.getString("message");
 	try {
+		await interaction.deferReply();
 		const message = await getMessageFromLink(guild, link);
 		if (typeof message === "string") {
 			throw Error(message);
 		}
-		interaction.reply({
-			embeds: [{
-				title: "Embed Source",
-				description: sanitizedMessageEmbedString(message.embeds)
-			}]
-		});
+		const sanitized = sanitizedMessageEmbedString(message.embeds);
+		const CHUNK_SIZE = 4096 - 8; // backticks and newline
+		if (sanitized.length < CHUNK_SIZE) {
+			interaction.followUp({
+				embeds: [{
+					title: "Embed Source",
+					description: codeTicks(sanitized)
+				}]
+			});
+		} else {
+			const chunkCount = Math.ceil(sanitized.length / CHUNK_SIZE);
+			if (chunkCount > 10) {
+				throw Error("Embed too large to get source from");
+			}
+			for (let index = 0; index < chunkCount; ++index) {
+				const substr = sanitized.substring(index * CHUNK_SIZE, (index + 1) * CHUNK_SIZE);
+				interaction.followUp({
+					embeds: [{
+						title: index ? "Continued..." : "Embed Source",
+						description: codeTicks(substr)
+					}]
+				});
+			}
+		}
+		
 	} catch (error) {
 		hiddenReply(interaction, error.message);
 		return;
 	}
 }
+
+const codeTicks = (input: string) => "```\n" + input + "\n```";
