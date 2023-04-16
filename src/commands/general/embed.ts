@@ -1,13 +1,12 @@
 import Discord from "discord.js";
 import axios from "axios";
-import { ChannelTypes } from "discord.js/typings/enums";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
+import { getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
 import { CmdKind } from "../mafia/mafia";
 
-const USER_SEND_PERMS = FLAGS.ADMINISTRATOR;
-const BOT_SEND_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS;
-const BOT_FETCH_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS;
+const USER_SEND_PERMS = Discord.PermissionFlagsBits.Administrator;
+const BOT_SEND_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.EmbedLinks;
+const BOT_FETCH_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.EmbedLinks;
 
 export const embedCommands: CombinedSlashCommand[] = [
 	{
@@ -18,49 +17,49 @@ export const embedCommands: CombinedSlashCommand[] = [
 			{
 				name: "send",
 				description: "Send embeds",
-				type: "SUB_COMMAND",
+				type: Discord.ApplicationCommandOptionType.Subcommand,
 				options: [
 					{
 						name: "target",
 						description: "Target channel to send embeds to",
-						type: "CHANNEL",
-						channelTypes: [ChannelTypes.GUILD_TEXT],
+						type: Discord.ApplicationCommandOptionType.Channel,
+						channelTypes: [Discord.ChannelType.GuildText],
 						required: true
 					},
 					{
 						name: "json_text",
 						description: "JSON data as text to embed",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "json_file",
 						description: "JSON data as file to embed",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "text",
 						description: "Text to show along with the embeds",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "message",
 						description: "Discord message to clone text from instead of 'text'",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					}
 				]
 			}, {
 				name: "fetch",
 				description: "Get embeds from a message",
-				type: "SUB_COMMAND",
+				type: Discord.ApplicationCommandOptionType.Subcommand,
 				options: [
 					{
 						name: "message",
 						description: "Message Link to get embed json from",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: true
 					}
 				]
@@ -68,42 +67,42 @@ export const embedCommands: CombinedSlashCommand[] = [
 			{
 				name: "edit",
 				description: "Edit Embeds",
-				type: "SUB_COMMAND",
+				type: Discord.ApplicationCommandOptionType.Subcommand,
 				options: [
 					{
 						name: "target",
 						description: "Target message link to edit embed from",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: true
 					},
 					{
 						name: "json_text",
 						description: "JSON data as text to embed",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "json_file",
 						description: "JSON data as file to embed",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "text",
 						description: "Text to show along with the embeds",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					},
 					{
 						name: "message",
 						description: "Discord message to clone text from instead of 'text'",
-						type: "STRING",
+						type: Discord.ApplicationCommandOptionType.String,
 						required: false
 					}
 				]
 			}
 		],
-		action: async (interaction: Discord.CommandInteraction) => {
+		action: async (interaction: Discord.ChatInputCommandInteraction) => {
 			const user = interaction.user;
 			const guild = interaction.guild;
 			if (!guild) {
@@ -133,13 +132,14 @@ export const embedCommands: CombinedSlashCommand[] = [
 ];
 
 // Sub-Command Send
-async function handleSend(interaction:Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
+async function handleSend(interaction:Discord.ChatInputCommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.options.getChannel("target") as Discord.TextChannel;
+	const me = await guild.members.fetchMe();
 	// check permissions
 	if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
 		hiddenReply(interaction, "You do not have valid perms to use this");
 		return;
-	} else if (!channel.permissionsFor(guild.me).has(BOT_SEND_PERMS)) {
+	} else if (!channel.permissionsFor(me).has(BOT_SEND_PERMS)) {
 		hiddenReply(interaction, "Bot cannot send embeds in this channel");
 		return;
 	}
@@ -158,7 +158,7 @@ async function handleSend(interaction:Discord.CommandInteraction, guild: Discord
 		if (!json) {
 			throw Error("Please recheck the json given");
 		}
-		const embeds = [].concat(json).map((entry: unknown) => new Discord.MessageEmbed(entry));
+		const embeds = [].concat(json).map((entry: unknown) => new Discord.EmbedBuilder(entry));
 		await channel.send({ content, embeds });
 		interaction.reply(`Embed sent to ${channel.toString()}`);
 	}
@@ -170,13 +170,14 @@ async function handleSend(interaction:Discord.CommandInteraction, guild: Discord
 // End of Sub-Command Send
 
 // Sub-Command Fetch
-async function handleFetch(interaction: Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
+async function handleFetch(interaction: Discord.ChatInputCommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const channel = interaction.channel;
+	const me = await guild.members.fetchMe();
 	// check permissions
 	if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
 		hiddenReply(interaction, "You do not have valid perms to use this");
 		return;
-	} else if (!channel.permissionsFor(guild.me).has(BOT_FETCH_PERMS)) {
+	} else if (!channel.permissionsFor(me).has(BOT_FETCH_PERMS)) {
 		hiddenReply(interaction, "Bot cannot send messages in this channel");
 		return;
 	}
@@ -222,25 +223,26 @@ const codeTicks = (input: string) => "```\n" + input + "\n```";
 // End of Sub-Command Fetch
 
 // Sub-Command Edit
-async function handleEdit(interaction: Discord.CommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
+async function handleEdit(interaction: Discord.ChatInputCommandInteraction, guild: Discord.Guild, member: Discord.GuildMember) {
 	const targetURL = interaction.options.getString("target");
 	try {
 		const channel = await getChannelFromLink(guild, targetURL);
 		if (typeof channel === "string") {
 			throw Error(channel);
 		}
+		const me = await guild.members.fetchMe();
 		// check permissions
 		if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
 			hiddenReply(interaction, "You do not have valid perms to use this");
 			return;
-		} else if (!channel.permissionsFor(guild.me).has(BOT_SEND_PERMS)) {
+		} else if (!channel.permissionsFor(me).has(BOT_SEND_PERMS)) {
 			hiddenReply(interaction, "Bot cannot send messages in this channel");
 			return;
 		}
 		const target = await getMessageFromLink(guild, targetURL);
 		if (typeof target === "string") {
 			throw Error(target);
-		} else if (target.member.id !== guild.me.id) {
+		} else if (target.member.id !== me.id) {
 			hiddenReply(interaction, "Cannot edit messages outside mine");
 			return;
 		}
@@ -258,7 +260,7 @@ async function handleEdit(interaction: Discord.CommandInteraction, guild: Discor
 			hiddenReply(interaction, "Please check the data given");
 			return;
 		}
-		const embeds = json ? [].concat(json).map((entry: unknown) => new Discord.MessageEmbed(entry)) : undefined;
+		const embeds = json ? [].concat(json).map((entry: unknown) => new Discord.EmbedBuilder(entry)) : undefined;
 		await target.edit({	content, embeds });
 		interaction.reply("Embed Edited");
 

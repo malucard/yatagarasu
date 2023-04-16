@@ -1,11 +1,10 @@
-import { ChannelTypes } from "discord.js/typings/enums";
 import { CombinedSlashCommand } from "../../bot";
 import Discord from "discord.js";
 import { hiddenReply } from "../../utils/helpers";
 
-const FLAGS = Discord.Permissions.FLAGS;
-const BOT_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.EMBED_LINKS | FLAGS.ADD_REACTIONS;
-const USER_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.MANAGE_MESSAGES | FLAGS.MANAGE_ROLES;
+
+const BOT_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.EmbedLinks | Discord.PermissionFlagsBits.AddReactions;
+const USER_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ManageMessages | Discord.PermissionFlagsBits.ManageRoles;
 
 export const MF_Commands: CombinedSlashCommand[] = [
 	{
@@ -15,27 +14,27 @@ export const MF_Commands: CombinedSlashCommand[] = [
 			{
 				name: "name",
 				description: "Name of the game to poll",
-				type: "STRING",
+				type: Discord.ApplicationCommandOptionType.String,
 				required: true
 			},
 			{
 				name: "link",
 				description: "Message Link to the submission from the user. Do not escape it with brackets.",
-				type: "STRING",
+				type: Discord.ApplicationCommandOptionType.String,
 				required: true
 			},
 			{
 				name: "channel",
 				description: "Channel to send it to (defaults to current channel)",
-				type: "CHANNEL",
-				channelTypes: [ChannelTypes.GUILD_TEXT],
+				type: Discord.ApplicationCommandOptionType.Channel,
+				channelTypes: [Discord.ChannelType.GuildText],
 				required: false
 			}
 		],
-		action: async (interaction: Discord.CommandInteraction) => {
+		action: async (interaction) => {
 			const member = interaction.member as Discord.GuildMember;
 			const usedChannel = interaction.channel;
-			const me = interaction.guild.me;
+			const me = await interaction.guild.members.fetchMe();
 
 			const name = interaction.options.getString("name", true);
 			const link = interaction.options.getString("link", true);
@@ -73,11 +72,11 @@ export const MF_Commands: CombinedSlashCommand[] = [
 								url: link
 							}],
 							components: [{
-								type: "ACTION_ROW",
+								type: Discord.ComponentType.ActionRow,
 								components: [{
-									type: "BUTTON",
+									type: Discord.ComponentType.Button,
 									url: link,
-									style: "LINK",
+									style: Discord.ButtonStyle.Link,
 									label: "Go to Suggestion Post",
 									disabled: false
 								}]
@@ -105,7 +104,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 		options: [{
 			name: "action",
 			description: "Add or Remove from the Mystery List",
-			type: "STRING",
+			type: Discord.ApplicationCommandOptionType.String,
 			choices: [{
 				name: "Add Game",
 				value: "add"
@@ -117,21 +116,16 @@ export const MF_Commands: CombinedSlashCommand[] = [
 		}, {
 			name: "name",
 			description: "Name of the Game",
-			type: "STRING",
+			type: Discord.ApplicationCommandOptionType.String,
 			required: true
-		}, {
-			name: "do_it",
-			description: "Actually perform the action, otherwise by default replies with how it would look.",
-			type: "BOOLEAN",
-			required: false
 		}],
-		action: async (interaction: Discord.CommandInteraction) => {
+		action: async (interaction) => {
 			const guild = interaction.guild;
-			const me = guild.me;
+			const me = await guild.members.fetchMe();
 			const mysteryListChannel = guild.channels.cache.find(channel => channel.name === "mystery-list");
 			const member = interaction.member as Discord.GuildMember;
 			const action = interaction.options.getString("action");
-			if (!member.permissions.has("ADMINISTRATOR")) {
+			if (!member.permissions.has(Discord.PermissionFlagsBits.Administrator)) {
 				hiddenReply(interaction, "Only admins can use these commands");
 				return;
 			}
@@ -148,7 +142,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 				if (action === "add") {
 					games.push(name);
 				} else {
-					const index = games.findIndex(game => game.toLowerCase() === name.toLowerCase());
+					const index = games.findIndex(game => game.toLowerCase() === name?.toLowerCase());
 					if (index > -1) {
 						[name] = games.splice(index, 1);
 					} else {
@@ -164,29 +158,14 @@ export const MF_Commands: CombinedSlashCommand[] = [
 					hiddenReply(interaction, "Too many embeds");
 					return;
 				}
-				const actuallyDoIt = interaction.options.getBoolean("do_it", false);
-				if (actuallyDoIt) {
-					// edit the embed
-					message.edit({
-						embeds: [header, spoiler, ...newOthers, tiermakers]
-					});
-					if (action === "add") {
-						hiddenReply(interaction, `${name} added to ${mysteryListChannel.toString()}`);
-					} else {
-						hiddenReply(interaction, `${name} removed from ${mysteryListChannel.toString()}`);
-					}
+				// edit the embed
+				message.edit({
+					embeds: [header, spoiler, ...newOthers, tiermakers]
+				});
+				if (action === "add") {
+					hiddenReply(interaction, `${name} added to ${mysteryListChannel.toString()}`);
 				} else {
-					// send the updated embed as a reply
-					if (me.permissionsIn(interaction.channel).has(BOT_PERMS)) {
-						interaction.reply({
-							content: "This is how it would look like",
-							embeds: [header, spoiler, ...newOthers, tiermakers],
-							ephemeral: true
-						});
-					} else {
-						hiddenReply(interaction, "Could not reply to you in this channel");
-						return;
-					}
+					hiddenReply(interaction, `${name} removed from ${mysteryListChannel.toString()}`);
 				}
 			} else {
 				hiddenReply(interaction, "Mystery List channel not found.");
@@ -196,7 +175,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 	}
 ];
 
-function getNewOthers(games: string[]): Discord.MessageEmbed[] {
+function getNewOthers(games: string[]): Discord.EmbedBuilder[] {
 	let join = "";
 	const descriptions: string[] = [];
 	for (let index = 0; index < games.length; index++) {
@@ -209,9 +188,6 @@ function getNewOthers(games: string[]): Discord.MessageEmbed[] {
 		join = !join ? game : `${join}\n${game}`;
 	}
 	descriptions.push(join);
-	const newOthers: Discord.MessageEmbed[] = descriptions.map((description, index) => new Discord.MessageEmbed({
-		title: `Other Games${index > 0 ? " (continued)" : ""}`,
-		description: description
-	}));
+	const newOthers: Discord.EmbedBuilder[] = descriptions.map((description, index) => new Discord.EmbedBuilder().setTitle(`Other Games${index > 0 ? " (continued)" : ""}`).setDescription(description));
 	return newOthers;
 }

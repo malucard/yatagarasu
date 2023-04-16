@@ -8,14 +8,13 @@ import * as mafia from "./commands/mafia/mafia";
 import { MF_Commands } from "./commands/mysteryfiction/poll-list-commands";
 
 const client = new Discord.Client({
-	intents: [
-		Discord.Intents.FLAGS.GUILDS,
-		Discord.Intents.FLAGS.GUILD_MEMBERS,
-		Discord.Intents.FLAGS.GUILD_MESSAGES,
-		Discord.Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
-		Discord.Intents.FLAGS.DIRECT_MESSAGES,
-		Discord.Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
-	]
+	intents: Discord.GatewayIntentBits.Guilds
+		| Discord.GatewayIntentBits.GuildMessages
+		| Discord.GatewayIntentBits.GuildMessages
+		| Discord.GatewayIntentBits.GuildMessageReactions
+		| Discord.GatewayIntentBits.DirectMessages
+		| Discord.GatewayIntentBits.DirectMessageReactions
+
 });
 
 export class CombinedSlashCommand implements Discord.ChatInputApplicationCommandData {
@@ -24,14 +23,14 @@ export class CombinedSlashCommand implements Discord.ChatInputApplicationCommand
 	options?: Discord.ApplicationCommandOptionData[];
 	defaultPermission?: boolean;
 	kind?: mafia.CmdKind.SLASH;
-	action?: (interaction: Discord.CommandInteraction) => unknown;
+	action?: (interaction: Discord.ChatInputCommandInteraction) => unknown;
 }
 
 export class CombinedMessageContextCommand implements Discord.MessageApplicationCommandData {
-	type: "MESSAGE";
+	type: Discord.ApplicationCommandType.Message;
 	name: string;
 	kind: mafia.CmdKind.MESSAGE_CONTEXT;
-	action?: (interaction: Discord.MessageContextMenuInteraction) => unknown;
+	action?: (interaction: Discord.MessageContextMenuCommandInteraction) => unknown;
 }
 
 export type CombinedApplicationCommand = CombinedSlashCommand | CombinedMessageContextCommand;
@@ -85,27 +84,25 @@ client.on("messageCreate", async msg => {
 	}
 });
 
-client.on("interactionCreate", async (interaction: Discord.Interaction) => {
-	if (interaction.isApplicationCommand() || interaction.isCommand() || interaction.isMessageContextMenu()) {
-		for (const command of cmds) {
-			if (command.name === interaction.commandName) {
-				if (command.kind === undefined || command.kind === mafia.CmdKind.TEXT_OR_SLASH || command.kind === mafia.CmdKind.SLASH) {
-					if (command.kind === mafia.CmdKind.SLASH && interaction.isCommand()) {
-						command.action(interaction);
-					} else {
-						const args = interaction.options.data.map(opt => opt.value.toString()).join(" ");
-						await (command as mafia.MafiaCommandTextOrSlash).action(interaction as Discord.CommandInteraction, args);
-					}
-				} else if (command.kind === mafia.CmdKind.MESSAGE_CONTEXT) {
-					if (interaction.isMessageContextMenu()) {
-						command.action(interaction);
-					}
-				}
-				break;
-			}
-		}
+async function resolveApplicationCommand(interaction: Discord.ChatInputCommandInteraction<Discord.CacheType> | Discord.MessageContextMenuCommandInteraction<Discord.CacheType> | Discord.UserContextMenuCommandInteraction<Discord.CacheType>) {
+	const command = cmds.find(cmd => cmd.name === interaction.commandName);
+	if (!command) {
+		console.error("Unknown Interaction", interaction);
+	} else if (command.kind === mafia.CmdKind.TEXT_OR_SLASH && interaction.isChatInputCommand()) {
+		const args = interaction.options.data.reduce((acc, next) => `${acc} ${next.value}`, "");
+		await command.action(interaction, args);
+	} else if (command.kind === mafia.CmdKind.SLASH && interaction.isChatInputCommand()) {
+		await command.action(interaction);
+	} else if (command.kind === mafia.CmdKind.MESSAGE_CONTEXT && interaction.isMessageContextMenuCommand()) {
+		await command.action(interaction);
 	}
-	else if (interaction.isSelectMenu() && mafia.select_menus[interaction.customId]) {
+}
+
+client.on("interactionCreate", async (interaction: Discord.Interaction) => {
+	if (interaction.type === Discord.InteractionType.ApplicationCommand) {
+		await resolveApplicationCommand(interaction);
+	}
+	else if (interaction.isStringSelectMenu() && mafia.select_menus[interaction.customId]) {
 		await mafia.select_menus[interaction.customId](interaction);
 	}
 	else if (interaction.isButton() && mafia.buttons[interaction.customId]) {

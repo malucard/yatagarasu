@@ -1,9 +1,7 @@
 import Discord from "discord.js";
 
-export const FLAGS = Discord.Permissions.FLAGS;
-
 const hiddenReplyContent = (message: string): Discord.InteractionReplyOptions => ({ content: message, ephemeral: true });
-export const hiddenReply = (interaction: Discord.BaseCommandInteraction, message: string) => interaction.reply(hiddenReplyContent(message));
+export const hiddenReply = (interaction: Discord.CommandInteraction, message: string) => interaction.reply(hiddenReplyContent(message));
 
 /**
  * Moves channels
@@ -62,7 +60,7 @@ export const getMessageFromLink = async (guild: Discord.Guild, link: string): Pr
 		return "Please use a message from this server";
 	}
 	const channel = await guild.channels.fetch(ID_MAP?.ID_2);
-	if (!(channel && channel.isText())) {
+	if (!channel || channel.type !== Discord.ChannelType.GuildText) {
 		return "Cannot access this channel";
 	}
 	const message = await channel.messages.fetch(ID_MAP.ID_3);
@@ -88,7 +86,7 @@ export const getChannelFromLink = async (guild: Discord.Guild, link: string): Pr
 		return "Please use a message from this server";
 	}
 	const channel = await guild.channels.fetch(ID_MAP?.ID_2);
-	if (!(channel && channel.isText())) {
+	if (!channel || channel.type !== Discord.ChannelType.GuildText) {
 		return "Cannot access this channel";
 	}
 	return channel;
@@ -96,8 +94,8 @@ export const getChannelFromLink = async (guild: Discord.Guild, link: string): Pr
 
 /**
  * Stringifies the embeds with pretty printing and replaces backticks with escaped ones
- * @param embeds - Array of Discord.MessageEmbeds to show
+ * @param embeds - Array of Discord.Embed to show
  * @returns Pretty printed string with backticks escaped
  */
-export const sanitizedMessageEmbedString: (embeds: Array<Discord.MessageEmbed>) => string =
+export const sanitizedMessageEmbedString: (embeds: Array<Discord.Embed>) => string =
 	(embeds) => JSON.stringify(embeds, undefined, 4).replace(/`/g, "\\`");

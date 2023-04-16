@@ -1,9 +1,8 @@
 // File to create commands for upgradeLP / command
 
-import { CommandInteraction, GuildMember, TextChannel } from "discord.js";
-import { ApplicationCommandOptionTypes, ChannelTypes } from "discord.js/typings/enums";
+import Discord from "discord.js";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, hiddenReply } from "../../utils/helpers";
+import { hiddenReply } from "../../utils/helpers";
 
 /**
  * Upgradable LP names under each role.
@@ -72,8 +71,8 @@ const roleLP_Map: { [key: string]: string[] } = {
 	]
 };
 
-const USER_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.MANAGE_MESSAGES | FLAGS.SEND_MESSAGES; // Remove manage_channels if we want to let LPer upgrade
-const BOT_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.SEND_MESSAGES;
+const USER_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ManageMessages | Discord.PermissionFlagsBits.SendMessages; // Remove manage_channels if we want to let LPer upgrade
+const BOT_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.SendMessages;
 
 export const upgradelpCommands: CombinedSlashCommand[] = [{
 	name: "upgradelp",
@@ -81,20 +80,20 @@ export const upgradelpCommands: CombinedSlashCommand[] = [{
 	options: [{
 		name: "channel",
 		description: "Channel to upgrade, defaults to current channel",
-		type: ApplicationCommandOptionTypes.CHANNEL,
-		channelTypes: [ChannelTypes.GUILD_TEXT],
+		type: Discord.ApplicationCommandOptionType.Channel,
+		channelTypes: [Discord.ChannelType.GuildText],
 		required: false
 	}],
-	action: async (interaction: CommandInteraction) => {
+	action: async (interaction) => {
 		const usedChannel = interaction.channel;
 		const targetChannel = interaction.options.getChannel("channel", false);
-		let channel: TextChannel;
-		if (targetChannel instanceof TextChannel) {
+		let channel: Discord.TextChannel;
+		if (targetChannel instanceof Discord.TextChannel) {
 			channel = targetChannel;
 		} else if (targetChannel) {
 			hiddenReply(interaction, `${targetChannel.toString()} is not a text channel.`);
 			return;
-		} else if (usedChannel instanceof TextChannel) {
+		} else if (usedChannel instanceof Discord.TextChannel) {
 			channel = usedChannel;
 		} else if (usedChannel) {
 			hiddenReply(interaction, `${usedChannel.toString()} is not a text channel.`);
@@ -102,8 +101,8 @@ export const upgradelpCommands: CombinedSlashCommand[] = [{
 		} else return;
 		const member = interaction.member;
 		const guild = interaction.guild;
-		const me = guild?.me;
-		if (me && member instanceof GuildMember && channel.permissionsFor(member).has(USER_PERMS)) {
+		const me = await guild.members.fetchMe();
+		if (me && member instanceof Discord.GuildMember && channel.permissionsFor(member).has(USER_PERMS)) {
 			if (!channel.permissionsFor(me).has(BOT_PERMS)) {
 				hiddenReply(interaction, "Bot does not have valid perms.");
 				return;
