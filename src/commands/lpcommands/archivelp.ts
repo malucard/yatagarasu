@@ -1,12 +1,11 @@
 import Discord from "discord.js";
-import { ApplicationCommandOptionTypes, ChannelTypes } from "discord.js/typings/enums";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
+import { hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
-const BOT_CHANNEL_PERMS = FLAGS.SEND_MESSAGES | FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
-const BOT_CATEGORY_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_ROLES;
-const USER_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.MANAGE_CHANNELS;
-const LP_LIST_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
+const BOT_CHANNEL_PERMS = Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageRoles;
+const BOT_CATEGORY_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageRoles;
+const USER_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageChannels;
+const LP_LIST_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages;
 
 export const archivelpCommands: CombinedSlashCommand[] = [
 	{
@@ -17,18 +16,18 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				name: "category",
 				description: "Category to archive the channel to.",
 				required: true,
-				type: ApplicationCommandOptionTypes.CHANNEL,
-				channelTypes: [ChannelTypes.GUILD_CATEGORY]
+				type: Discord.ApplicationCommandOptionType.Channel,
+				channelTypes: [Discord.ChannelType.GuildCategory]
 			},
 			{
 				name: "channel",
 				description: "Channel to archive, defaults to current channel.",
 				required: false,
-				type: ApplicationCommandOptionTypes.CHANNEL,
-				channelTypes: [ChannelTypes.GUILD_TEXT]
+				type: Discord.ApplicationCommandOptionType.Channel,
+				channelTypes: [Discord.ChannelType.GuildText]
 			},
 		],
-		action: async (interaction: Discord.CommandInteraction) => {
+		action: async (interaction) => {
 			const user = interaction.user;
 			const guild = interaction.guild;
 			if (!guild) {
@@ -57,8 +56,9 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				console.error("Not a text channel");
 				return;
 			}
-			if (!guild.me?.permissionsIn(channel).has(BOT_CHANNEL_PERMS) ||
-				!guild.me?.permissionsIn(category).has(BOT_CATEGORY_PERMS)) {
+			const me = await guild.members.fetchMe();
+			if (!me?.permissionsIn(channel).has(BOT_CHANNEL_PERMS) ||
+				!me?.permissionsIn(category).has(BOT_CATEGORY_PERMS)) {
 				handle_no_bot_perms(interaction, guild, channel, category);
 				return;
 			}
@@ -67,14 +67,14 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 			) {
 				const textChannel = channel as Discord.TextChannel;
 				await textChannel.permissionOverwrites.edit(guild.roles.everyone, {
-					ADD_REACTIONS: false,
-					SEND_MESSAGES: false,
-					SEND_MESSAGES_IN_THREADS: false,
+					AddReactions: false,
+					SendMessages: false,
+					SendMessagesInThreads: false,
 				});
 				textChannel.permissionOverwrites.cache.forEach(permOverwrite =>
-					permOverwrite.type === "member" &&
+					permOverwrite.type === Discord.OverwriteType.Member &&
 					permOverwrite.edit({
-						MANAGE_MESSAGES: null
+						ManageMessages: null
 					})
 				);
 				move_channel(
@@ -102,22 +102,22 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				name: "channel",
 				description: "Which channel to unarchive. Defaults to the current channel.",
 				required: false,
-				type: ApplicationCommandOptionTypes.CHANNEL,
-				channelTypes: [ChannelTypes.GUILD_TEXT],
+				type: Discord.ApplicationCommandOptionType.Channel,
+				channelTypes: [Discord.ChannelType.GuildText],
 			}, {
 				name: "target",
 				description: "Where to move to. Defaults to not moving.",
 				required: false,
-				type: ApplicationCommandOptionTypes.CHANNEL,
-				channelTypes: [ChannelTypes.GUILD_TEXT]
+				type: Discord.ApplicationCommandOptionType.Channel,
+				channelTypes: [Discord.ChannelType.GuildText]
 			}, {
 				name: "lper",
 				description: "LPer to restore manage messages to. Can be ignored",
 				required: false,
-				type: ApplicationCommandOptionTypes.USER
+				type: Discord.ApplicationCommandOptionType.User
 			}
 		],
-		action: async (interaction: Discord.CommandInteraction) => {
+		action: async (interaction) => {
 			const user = interaction.user;
 			const guild = interaction.guild;
 			if (!guild) {
@@ -175,7 +175,8 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				hiddenReply(interaction, "Cannot use with uncategorized target channel");
 				return;
 			}
-			if (!guild.me.permissionsIn(channel).has(BOT_CHANNEL_PERMS) || (category && !guild.me?.permissionsIn(category).has(BOT_CATEGORY_PERMS))) {
+			const me = await guild.members.fetchMe();
+			if (!me.permissionsIn(channel).has(BOT_CHANNEL_PERMS) || (category && !me?.permissionsIn(category).has(BOT_CATEGORY_PERMS))) {
 				handle_no_bot_perms(interaction, guild, channel, category);
 				return;
 			}
@@ -185,16 +186,16 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				const message: string[] = [];
 				// set permissions for channel
 				await channel.permissionOverwrites.edit(guild.roles.everyone, {
-					ADD_REACTIONS: null,
-					SEND_MESSAGES: null,
-					SEND_MESSAGES_IN_THREADS: null,
+					AddReactions: null,
+					SendMessages: null,
+					SendMessagesInThreads: null,
 				});
 				message.push("LP Unarchived");
 				// set permissions for LPer, if doManage
 				if (doManage) {
 					await channel.permissionOverwrites.edit(LPer, {
-						MANAGE_MESSAGES: true,
-						VIEW_CHANNEL: true
+						ManageMessages: true,
+						ViewChannel: true
 					});
 					message.push(`${LPer.toString()} set as LPer`);
 				}
@@ -220,10 +221,11 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 
 async function handle_reply(interaction: Discord.CommandInteraction, message: string, guild: Discord.Guild, lpListMessage: string) {
 	interaction.reply(message);
+	const me = await guild.members.fetchMe();
 	const lpList = guild.channels.cache.find(channel => channel.name === "lp-list");
-	if (lpList && lpList instanceof Discord.TextChannel && guild.me?.permissionsIn(lpList).has(LP_LIST_PERMS)) {
+	if (lpList && lpList instanceof Discord.TextChannel && me?.permissionsIn(lpList).has(LP_LIST_PERMS)) {
 		await lpList.messages.fetch();
-		if (lpList.lastMessage?.member.id === guild.me.id) {
+		if (lpList.lastMessage?.member.id === me.id) {
 			const oldContent = lpList.lastMessage.content;
 			lpList.lastMessage.edit([oldContent, lpListMessage].join("\n\n"));
 		} else {
@@ -232,20 +234,21 @@ async function handle_reply(interaction: Discord.CommandInteraction, message: st
 	}
 }
 
-function handle_no_bot_perms(interaction: Discord.CommandInteraction, guild: Discord.Guild, channel: Discord.TextChannel, category?: Discord.CategoryChannel) {
+async function handle_no_bot_perms(interaction: Discord.CommandInteraction, guild: Discord.Guild, channel: Discord.TextChannel, category?: Discord.CategoryChannel) {
 	let missingPerms = "";
 	let missingPermsArr: string[] = [];
-	const channelPerms = guild.me.permissionsIn(channel);
-	const categoryPerms: Readonly<Discord.Permissions> = category && guild.me.permissionsIn(category);
+	const me = await guild.members.fetchMe();
+	const channelPerms = me.permissionsIn(channel);
+	const categoryPerms: Readonly<Discord.PermissionsBitField> = category && me.permissionsIn(category);
 	if (!channelPerms.has(BOT_CHANNEL_PERMS)) {
 		missingPerms += "Channel: ";
-		if (!channelPerms.has(FLAGS.SEND_MESSAGES)) {
+		if (!channelPerms.has(Discord.PermissionFlagsBits.SendMessages)) {
 			missingPermsArr.push("Send messages");
 		}
-		if (!channelPerms.has(FLAGS.VIEW_CHANNEL)) {
+		if (!channelPerms.has(Discord.PermissionFlagsBits.ViewChannel)) {
 			missingPermsArr.push("View Channel");
 		}
-		if (!channelPerms.has(FLAGS.MANAGE_ROLES)) {
+		if (!channelPerms.has(Discord.PermissionFlagsBits.ManageRoles)) {
 			missingPermsArr.push("Manage Roles");
 		}
 		if (missingPermsArr.length) {
@@ -256,10 +259,10 @@ function handle_no_bot_perms(interaction: Discord.CommandInteraction, guild: Dis
 	missingPermsArr = [];
 	if (category && !categoryPerms.has(BOT_CATEGORY_PERMS)) {
 		missingPerms += "Category: ";
-		if (!categoryPerms.has(FLAGS.VIEW_CHANNEL)) {
+		if (!categoryPerms.has(Discord.PermissionFlagsBits.ViewChannel)) {
 			missingPermsArr.push("View Channel");
 		}
-		if (!categoryPerms.has(FLAGS.MANAGE_ROLES)) {
+		if (!categoryPerms.has(Discord.PermissionFlagsBits.ManageRoles)) {
 			missingPermsArr.push("Manage Roles");
 		}
 		if (missingPermsArr.length) {
@@ -268,7 +271,7 @@ function handle_no_bot_perms(interaction: Discord.CommandInteraction, guild: Dis
 		missingPerms += "\n";
 	}
 	hiddenReply(interaction, "Bot does not have valid perms:\n" + missingPerms);
-	console.error(guild.me?.permissionsIn(channel).toJSON());
-	category && console.error(guild.me?.permissionsIn(category).toJSON());
+	console.error(me?.permissionsIn(channel).toJSON());
+	category && console.error(me?.permissionsIn(category).toJSON());
 	return;
 }

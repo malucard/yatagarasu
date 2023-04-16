@@ -111,7 +111,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			collector = req_msg.createReactionCollector();
 		}
 		player.data.collector = collector;
-		collector.on("collect", (recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
+		collector.handleCollect((recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
 			let reaction, content;
 			if (recv instanceof Discord.Message) {
 				content = recv.content;
@@ -138,7 +138,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 				player.data.collector = null;
 				player.action_pending = false;
 				(player.data.shots_done as number)++;
-				const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
+				const last_use_txt = opt.max_shots !== undefined && (player.data.shots_done as number) >= opt.max_shots ?
 					" This was your last use of this action." : "";
 				action_follow_up(player, opt.mafia, recv, `You chose to ${verb}.${last_use_txt}`);
 				if (opt.immediate) {
@@ -167,7 +167,7 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					player.data.collector = null;
 					player.action_pending = false;
 					(player.data.shots_done as number)++;
-					const last_use_txt = opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots ?
+					const last_use_txt = opt.max_shots !== undefined && (player.data.shots_done as number) >= opt.max_shots ?
 						" This was your last use of this action." : "";
 					action_follow_up(player, opt.mafia, recv, `You chose to ${verb} ${target.name}.${last_use_txt}`);
 					target.data.night_targeted_by = player;
@@ -214,7 +214,7 @@ function template_action(verb: string, report: RoleActionReport, opt: ActionOpti
 	return {
 		[State.NIGHT]: player => {
 			if (!player.data.shots_done) player.data.shots_done = 0;
-			if (opt.max_shots !== undefined && player.data.shots_done >= opt.max_shots) return;
+			if (opt.max_shots !== undefined && (player.data.shots_done as number) >= opt.max_shots) return;
 			player.action_pending = !opt.dont_wait; // do not make them wait
 			player.action_report_pending = opt.dont_wait; // we don't need NIGHT_REPORT if we're not waiting for it
 			request_action(verb, report, opt, player);

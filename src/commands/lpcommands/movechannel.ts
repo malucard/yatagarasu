@@ -1,9 +1,9 @@
 import Discord from "discord.js";
 import { CombinedSlashCommand } from "../../bot";
-import { FLAGS, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
+import { hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
-const CHANNEL_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES;
-const CATEGORY_PERMS = FLAGS.MANAGE_CHANNELS | FLAGS.VIEW_CHANNEL;
+const CHANNEL_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages;
+const CATEGORY_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ViewChannel;
 
 export const moveCommands: CombinedSlashCommand[] = [{
 	name: "movechannel",
@@ -12,24 +12,24 @@ export const moveCommands: CombinedSlashCommand[] = [{
 		{
 			name: "target",
 			description: "Channel / Category to move relative to.",
-			type: "CHANNEL",
-			channelTypes: ["GUILD_CATEGORY", "GUILD_TEXT"],
+			type: Discord.ApplicationCommandOptionType.Channel,
+			channelTypes: [Discord.ChannelType.GuildText, Discord.ChannelType.GuildCategory],
 			required: true
 		}, {
 			name: "channel",
 			description: "Channel to use, defaults to current channel.",
-			type: "CHANNEL",
-			channelTypes: ["GUILD_TEXT"],
+			type: Discord.ApplicationCommandOptionType.Channel,
+			channelTypes: [Discord.ChannelType.GuildText],
 			required: false
 		}
 	],
-	action: async (interaction: Discord.CommandInteraction) => {
+	action: async (interaction) => {
 		const member = interaction.member;
 		const usedChannel = interaction.channel;
-		const me = interaction.guild.me;
+		const me = await interaction.guild.members.fetchMe();
 
 		const givenChannel = interaction.options.getChannel("channel", false);
-		const targetChannel = interaction.options.getChannel("target");
+		const targetChannel = interaction.options.getChannel("target", true);
 
 		let channel: Discord.TextChannel = null;
 		if (usedChannel instanceof Discord.TextChannel) {

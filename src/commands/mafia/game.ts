@@ -4,11 +4,11 @@ import { calculate_lynch, death_messages, list_lynch, shuffle_array, State } fro
 import { Inventory, Item } from "./item";
 import { games_happening, mizukithumbsup } from "./mafia";
 
-export const TALK_REACT_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: true, ADD_REACTIONS: true };
-export const VIEW_ONLY_PERMS = { VIEW_CHANNEL: true, SEND_MESSAGES: false, ADD_REACTIONS: false };
-export const NO_SEND_PERMS = { SEND_MESSAGES: false, ADD_REACTIONS: false, ATTACH_FILES: false };
-export const PARTIAL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: false };
-export const FULL_SEND_PERMS = { SEND_MESSAGES: true, ADD_REACTIONS: true, ATTACH_FILES: true };
+export const TALK_REACT_PERMS = { ViewChannel: true, SendMessages: true, AddReactions: true };
+export const VIEW_ONLY_PERMS = { ViewChannel: true, SendMessages: false, AddReactions: false };
+export const NO_SEND_PERMS = { SendMessages: false, AddReactions: false, AttachFiles: false };
+export const PARTIAL_SEND_PERMS = { SendMessages: true, AddReactions: true, AttachFiles: false };
+export const FULL_SEND_PERMS = { SendMessages: true, AddReactions: true, AttachFiles: true };
 
 export class Player {
 	number: number;
@@ -50,7 +50,7 @@ export class Player {
 	do_state(state: State): boolean {
 		if (state == State.GAME) {
 			if (this.role.side == Side.MAFIA) {
-				this.game.mafia_secret_chat.permissionOverwrites.create(this.member, { VIEW_CHANNEL: true }).finally(() => {
+				this.game.mafia_secret_chat.permissionOverwrites.create(this.member, { ViewChannel: true }).finally(() => {
 					this.game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
 				});
 			} else {
@@ -315,7 +315,7 @@ export class Game {
 			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
 			for (const player of Object.values(this.players)) {
 				if (player.role.side === Side.MAFIA) {
-					await this.mafia_secret_chat.permissionOverwrites.create(player.member, { VIEW_CHANNEL: true });
+					await this.mafia_secret_chat.permissionOverwrites.create(player.member, { ViewChannel: true });
 				} else {
 					this.mafia_secret_chat.permissionOverwrites.delete(player.member);
 				}

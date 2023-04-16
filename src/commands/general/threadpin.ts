@@ -1,14 +1,14 @@
 import Discord from "discord.js";
 import { CombinedMessageContextCommand } from "../../bot";
-import { FLAGS, hiddenReply } from "../../utils/helpers";
+import { hiddenReply } from "../../utils/helpers";
 import { CmdKind } from "../mafia/mafia";
 
-const USER_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.SEND_MESSAGES_IN_THREADS | FLAGS.CREATE_PUBLIC_THREADS;
-const BOT_PERMS = FLAGS.VIEW_CHANNEL | FLAGS.SEND_MESSAGES | FLAGS.SEND_MESSAGES_IN_THREADS | FLAGS.MANAGE_MESSAGES;
+const USER_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.SendMessagesInThreads | Discord.PermissionFlagsBits.CreatePublicThreads;
+const BOT_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.SendMessagesInThreads | Discord.PermissionFlagsBits.ManageMessages;
 
 export const threadpinCommands: CombinedMessageContextCommand[] = [{
 	name: "Pin/Unpin (for Thread Owner)",
-	type: "MESSAGE",
+	type: Discord.ApplicationCommandType.Message,
 	kind: CmdKind.MESSAGE_CONTEXT,
 	action: async (interaction) => {
 		const user = interaction.user;
@@ -36,6 +36,7 @@ export const threadpinCommands: CombinedMessageContextCommand[] = [{
 		}
 		const thread = message.channel;
 		const owner = await thread.fetchOwner();
+		const me = await guild.members.fetchMe();
 		// check perms
 		if (member.id !== owner.id) {
 			hiddenReply(interaction, "You are not the owner of the thread. If you are a mod, please use the normal pin operation");
@@ -45,7 +46,7 @@ export const threadpinCommands: CombinedMessageContextCommand[] = [{
 			hiddenReply(interaction, "You do not have valid perms to use this");
 			return;
 		}
-		if (!guild.me.permissionsIn(thread).has(BOT_PERMS)) {
+		if (!me.permissionsIn(thread).has(BOT_PERMS)) {
 			hiddenReply(interaction, "Bot does not have valid perms to pin");
 			return;
 		}
