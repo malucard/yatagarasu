@@ -1,6 +1,5 @@
-import { CombinedSlashCommand } from "../../bot";
 import Discord from "discord.js";
-import { hiddenReply } from "../../utils/helpers";
+import { CmdKind, CombinedSlashCommand, hiddenReply } from "../../utils/helpers";
 
 
 const BOT_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.EmbedLinks | Discord.PermissionFlagsBits.AddReactions;
@@ -10,6 +9,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 	{
 		name: "mysterypoll",
 		description: "Creates a mystery voting poll. For use in Mystery-Fiction.",
+		kind: CmdKind.SLASH,
 		options: [
 			{
 				name: "name",
@@ -101,6 +101,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 	{
 		name: "mysterylist",
 		description: "Commands for the mysterylist",
+		kind: CmdKind.SLASH,
 		options: [{
 			name: "action",
 			description: "Add or Remove from the Mystery List",

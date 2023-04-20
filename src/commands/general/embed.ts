@@ -1,8 +1,6 @@
 import Discord from "discord.js";
 import axios from "axios";
-import { CombinedSlashCommand } from "../../bot";
-import { getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
-import { CmdKind } from "../mafia/mafia";
+import { CmdKind, CombinedSlashCommand, getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
 
 const USER_SEND_PERMS = Discord.PermissionFlagsBits.Administrator;
 const BOT_SEND_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.EmbedLinks;

@@ -1,6 +1,5 @@
 import Discord from "discord.js";
-import { CombinedSlashCommand } from "../../bot";
-import { hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
+import { CmdKind, CombinedSlashCommand, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const BOT_CHANNEL_PERMS = Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageRoles;
 const BOT_CATEGORY_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageRoles;
@@ -11,6 +10,7 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 	{
 		name: "archivelp",
 		description: "Archives the given LP into the supplied category.",
+		kind: CmdKind.SLASH,
 		options: [
 			{
 				name: "category",
@@ -97,6 +97,7 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 	}, {
 		name: "unarchivelp",
 		description: "Unarchives the LP and moves to a target location if given",
+		kind: CmdKind.SLASH,
 		options: [
 			{
 				name: "channel",

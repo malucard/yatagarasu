@@ -2,25 +2,20 @@ import Discord from "discord.js";
 import { FULL_SEND_PERMS, Game, valid_options, Player } from "./game";
 import { Role, roles, Side } from "./role";
 import { everyone_prevent, shuffle_array, State } from "./util";
+import { CmdKind } from "../../utils/helpers";
 
 export const mizukithumbsup = "895512297169092729";
 
-export enum CmdKind {
-	TEXT_OR_SLASH,
-	TEXT,
-	SLASH,
-	MESSAGE_CONTEXT
-}
-
 export class MafiaCommandBase {
 	name: string;
+	kind: CmdKind;
 	options?: Discord.ApplicationCommandOptionData[];
 	type?: number;
 }
 
 export class MafiaCommandTextOrSlash extends MafiaCommandBase implements Discord.ChatInputApplicationCommandData {
 	description: string;
-	kind?: CmdKind.TEXT_OR_SLASH;
+	kind: CmdKind.TEXT_OR_SLASH;
 	action: (interaction: Discord.Message | Discord.ChatInputCommandInteraction, args: string) => Promise<void>;
 }
 
@@ -71,6 +66,7 @@ export const cmds: MafiaCommand[] = [
 	{
 		name: "startsignup",
 		description: "startsignup",
+		kind: CmdKind.TEXT_OR_SLASH,
 		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
 			if (mafiaCommandChecks(interaction, true, true)) {
 				let reply: Discord.Message;
@@ -87,6 +83,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "cleanup",
 		description: "cleanup",
+		kind: CmdKind.TEXT_OR_SLASH,
 		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
 			if (mafiaCommandChecks(interaction, false, true)) {
 				const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
@@ -112,6 +109,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "partialcleanup",
 		description: "partialcleanup",
+		kind: CmdKind.TEXT_OR_SLASH,
 		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
 			if (mafiaCommandChecks(interaction, false, true)) {
 				const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
@@ -134,6 +132,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "role",
 		description: "role",
+		kind: CmdKind.TEXT_OR_SLASH,
 		options: [{
 			name: "name",
 			description: "name of the role",
@@ -153,6 +152,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "roles",
 		description: "roles",
+		kind: CmdKind.TEXT_OR_SLASH,
 		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
 			if (mafiaCommandChecks(interaction, true)) {
 				let helperText = "";
@@ -178,7 +178,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "setup",
 		description: "setup",
-		type: CmdKind.TEXT_OR_SLASH,
+		kind: CmdKind.TEXT_OR_SLASH,
 		options: [{
 			name: "setup",
 			description: "name of setup",
@@ -200,7 +200,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "setupcustom",
 		description: "setupcustom",
-		type: CmdKind.TEXT_OR_SLASH,
+		kind: CmdKind.TEXT_OR_SLASH,
 		options: [{
 			name: "setup",
 			description: "list of roles and options",
@@ -246,7 +246,7 @@ export const cmds: MafiaCommand[] = [
 	}, {
 		name: "playerlist",
 		description: "get list of players",
-		type: CmdKind.TEXT_OR_SLASH,
+		kind: CmdKind.TEXT_OR_SLASH,
 		action: async (message: Discord.Message | Discord.ChatInputCommandInteraction) => {
 			if (mafiaCommandChecks(message)) {
 				if (message instanceof Discord.CommandInteraction) return;

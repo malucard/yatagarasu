@@ -1,7 +1,5 @@
 import Discord from "discord.js";
-import { CombinedMessageContextCommand } from "../../bot";
-import { hiddenReply } from "../../utils/helpers";
-import { CmdKind } from "../mafia/mafia";
+import { CmdKind, CombinedMessageContextCommand, hiddenReply } from "../../utils/helpers";
 
 const USER_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.SendMessagesInThreads | Discord.PermissionFlagsBits.CreatePublicThreads;
 const BOT_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.SendMessagesInThreads | Discord.PermissionFlagsBits.ManageMessages;

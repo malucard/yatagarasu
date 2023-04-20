@@ -1,5 +1,30 @@
 import Discord from "discord.js";
 
+export enum CmdKind {
+	TEXT_OR_SLASH,
+	TEXT,
+	SLASH,
+	MESSAGE_CONTEXT
+}
+
+export class CombinedSlashCommand implements Discord.ChatInputApplicationCommandData {
+	name: string;
+	description: string;
+	options?: Discord.ApplicationCommandOptionData[];
+	defaultPermission?: boolean;
+	kind: CmdKind.SLASH;
+	action?: (interaction: Discord.ChatInputCommandInteraction) => unknown;
+}
+
+export class CombinedMessageContextCommand implements Discord.MessageApplicationCommandData {
+	type: Discord.ApplicationCommandType.Message;
+	name: string;
+	kind: CmdKind.MESSAGE_CONTEXT;
+	action?: (interaction: Discord.MessageContextMenuCommandInteraction) => unknown;
+}
+
+export type CombinedApplicationCommand = CombinedSlashCommand | CombinedMessageContextCommand;
+
 const hiddenReplyContent = (message: string): Discord.InteractionReplyOptions => ({ content: message, ephemeral: true });
 export const hiddenReply = (interaction: Discord.CommandInteraction, message: string) => interaction.reply(hiddenReplyContent(message));
 

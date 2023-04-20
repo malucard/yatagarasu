@@ -1,6 +1,5 @@
 import Discord from "discord.js";
-import { CombinedSlashCommand } from "../../bot";
-import { hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
+import { CmdKind, CombinedSlashCommand, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const CHANNEL_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages;
 const CATEGORY_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ViewChannel;
@@ -8,6 +7,7 @@ const CATEGORY_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.Perm
 export const moveCommands: CombinedSlashCommand[] = [{
 	name: "movechannel",
 	description: "move a channel into another place, relative to a category or another channel",
+	kind: CmdKind.SLASH,
 	options: [
 		{
 			name: "target",

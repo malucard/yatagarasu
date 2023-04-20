@@ -1,8 +1,7 @@
 // File to create commands for upgradeLP / command
 
 import Discord from "discord.js";
-import { CombinedSlashCommand } from "../../bot";
-import { hiddenReply } from "../../utils/helpers";
+import { CmdKind, CombinedSlashCommand, hiddenReply } from "../../utils/helpers";
 
 /**
  * Upgradable LP names under each role.
@@ -77,6 +76,7 @@ const BOT_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.Permissio
 export const upgradelpCommands: CombinedSlashCommand[] = [{
 	name: "upgradelp",
 	description: "Upgrade the LP to the next game, if applicable and registered",
+	kind: CmdKind.SLASH,
 	options: [{
 		name: "channel",
 		description: "Channel to upgrade, defaults to current channel",
