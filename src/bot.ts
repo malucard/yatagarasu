@@ -11,7 +11,6 @@ import { CmdKind, CombinedApplicationCommand, CombinedSlashCommand, hiddenReply 
 const client = new Discord.Client({
 	intents: Discord.GatewayIntentBits.Guilds
 		| Discord.GatewayIntentBits.GuildMessages
-		| Discord.GatewayIntentBits.GuildMessages
 		| Discord.GatewayIntentBits.GuildMessageReactions
 		| Discord.GatewayIntentBits.DirectMessages
 		| Discord.GatewayIntentBits.DirectMessageReactions
