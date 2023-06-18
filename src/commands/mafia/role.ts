@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { Player } from "./game";
 import { Item, items } from "./item";
 import { shuffle_array, State } from "./util";
@@ -65,7 +65,7 @@ function get_side(role: Role): Side {
 function action_follow_up(player: Player, mafia: boolean, to: Discord.Message | Discord.MessageReaction | null, content: string): Promise<Discord.Message> {
 	if (mafia) {
 		return to instanceof Discord.Message ? to.reply(content) :
-			player.game.mafia_secret_chat.send(`<@${player.member.id}> ${content}`);
+			player.game.mafia_secret_chat.send(`${player.member.toString()} ${content}`);
 	} else {
 		return to instanceof Discord.MessageReaction && to.message.editable ? to.message.edit(`${to.message.content}\n${content}`) :
 			player.member.send(content);
@@ -396,7 +396,7 @@ export const roles: { [name: string]: Role } = {
 				if (player.killed_by instanceof Player && !player.killed_by.dead) {
 					const killer = player.killed_by;
 					player.game.kill(player.killed_by, player, () => {
-						player.game.day_channel.send(`<@${killer.member.id}>, the ${role_name(killer)}, exploded.`);
+						player.game.day_channel.send(`${killer.member.toString()}, the ${role_name(killer)}, exploded.`);
 					});
 				}
 			}
@@ -549,8 +549,8 @@ export const roles: { [name: string]: Role } = {
 				player.game.mafia_collector.stop("janitor cleaned");
 				player.game.mafia_collector = null;
 				player.game.kill(target, player, () => {
-					player.game.day_channel.send(`<@${target.member.id}> is missing!`);
-					player.game.mafia_secret_chat.send(`<@&${player.game.role_mafia_player.id}> While cleaning up the mess, you learned that ${target.name} is a ${role_name(target)}.`);
+					player.game.day_channel.send(`${target.member.toString()} is missing!`);
+					player.game.mafia_secret_chat.send(`${player.game.role_mafia_player.toString()} While cleaning up the mess, you learned that ${target.name} is a ${role_name(target)}.`);
 				});
 			}
 		}, { mafia: true, dont_wait: true, max_shots: 1 })
@@ -624,7 +624,7 @@ export const roles: { [name: string]: Role } = {
 					player.role = Object.assign({}, target.role);
 					if (!player.role.fake_name) player.role.fake_name = player.role.name;
 					if (player.role.side == Side.MAFIA) {
-						player.game.mafia_secret_chat.send(`<@${player.member.id}> You ate ${target.name} and became their role.`);
+						player.game.mafia_secret_chat.send(`${player.member.toString()} You ate ${target.name} and became their role.`);
 					} else {
 						player.member.send(`You ate ${target.name} and became their role.`);
 					}

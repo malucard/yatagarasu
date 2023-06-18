@@ -1,6 +1,6 @@
 // File to create commands for upgradeLP / command
 
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { CmdKind, CombinedSlashCommand, hiddenReply } from "../../utils/helpers";
 
 /**
@@ -121,18 +121,10 @@ export const upgradelpCommands: CombinedSlashCommand[] = [{
 				return;
 			} else if (matches.length === 1) {
 				const index = matches[0];
-				const actuallyDoIt = true;
-				if (actuallyDoIt) {
-					const oldName = new String(channel.name).toString();
-					channel = await channel.setName(channel.name.replace(matchList[index], matchList[index + 1]));
-					interaction.reply(`LP Upgraded to ${channel.name} from ${oldName}`);
-					return;
-				} else {
-					const oldName = channel.name.toString();
-					const newName = channel.name.replace(matchList[index], matchList[index + 1]);
-					hiddenReply(interaction, `LP would be upgraded to ${newName} from ${oldName}`);
-					return;
-				}
+				const oldName = new String(channel.name).toString();
+				channel = await channel.setName(channel.name.replace(matchList[index], matchList[index + 1]));
+				interaction.reply(`LP Upgraded to ${channel.name} from ${oldName}`);
+				return;
 			} else if (matches.length) {
 				hiddenReply(interaction, "Unclear which upgrade to perform on this LP.");
 				return;

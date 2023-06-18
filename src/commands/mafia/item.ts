@@ -70,9 +70,9 @@ export const items: { [name: string]: Item } = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
 				if (Math.random() < 0.5) {
-					game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${player.member.id}>.`);
+					game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot by ${player.member.toString()}.`);
 				} else {
-					game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot.`);
+					game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot.`);
 				}
 			});
 		}
@@ -84,7 +84,7 @@ export const items: { [name: string]: Item } = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
-				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot.`);
+				game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot.`);
 			});
 		}
 	},
@@ -96,7 +96,7 @@ export const items: { [name: string]: Item } = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			const framed: Player = player.data.framing ? player.data.framing as Player : player;
 			game.kill(target, player, () => {
-				game.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was shot by <@${framed.member.id}>.`);
+				game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot by ${framed.member.toString()}.`);
 			});
 		}
 	},

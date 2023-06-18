@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { CmdKind, CombinedSlashCommand, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const BOT_CHANNEL_PERMS = Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.ManageRoles;
@@ -81,7 +81,7 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 					textChannel,
 					category,
 					() => {
-						handle_reply(interaction, "LP Archived", guild, `<#${textChannel.id}> archived by <@${member.id}>`);
+						handle_reply(interaction, "LP Archived", guild, `${textChannel.toString()} - (${textChannel.name}) archived by ${member.toString()}`);
 					},
 					() => {
 						hiddenReply(interaction, "Move failed, is category full?");
@@ -203,13 +203,13 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				// move channel, if target given
 				if (doMove) {
 					move_channel(channel, target, () => {
-						message.push(`Channel moved after ${target.toString()}`);
-						handle_reply(interaction, message.join("\n"), guild, `<#${channel.id}> unarchived by <@${member.id}>`);
+						message.push(`Channel moved after ${target.toString()} - (${target.name})`);
+						handle_reply(interaction, message.join("\n"), guild, `${channel.toString()} - (${channel.name}) unarchived by ${member.toString()}`);
 					}, () => {
 						hiddenReply(interaction, "Move failed, is category full?");
 					});
 				} else {
-					handle_reply(interaction, message.join("\n"), guild, `<#${channel.id}> unarchived by <@${member.id}>`);
+					handle_reply(interaction, message.join("\n"), guild, `${channel.toString()} - (${channel.name}) unarchived by ${member.toString()}`);
 				}
 			} else {
 				hiddenReply(interaction, "You do not have valid perms");

@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { CmdKind, CombinedSlashCommand, hiddenReply, isInvalidMoveTarget, move_channel } from "../../utils/helpers";
 
 const CHANNEL_PERMS = Discord.PermissionFlagsBits.ManageChannels | Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages;
@@ -67,7 +67,7 @@ export const moveCommands: CombinedSlashCommand[] = [{
 						hiddenReply(interaction, "Bot does not have valid perms for the category");
 					} else {
 						move_channel(channel, targetChannel, () => {
-							interaction.reply(`${channel.toString()} moved after ${targetChannel.toString()}.`);
+							interaction.reply(`${channel.toString()} - (${channel.name}) moved after ${targetChannel.toString()} - (${targetChannel.name}).`);
 						}, () => {
 							hiddenReply(interaction, "Move failed, is the category full?");
 						});
