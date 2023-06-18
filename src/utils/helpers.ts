@@ -124,3 +124,42 @@ export const getChannelFromLink = async (guild: Discord.Guild, link: string): Pr
  */
 export const sanitizedMessageEmbedString: (embeds: Array<Discord.Embed>) => string =
 	(embeds) => JSON.stringify(embeds, undefined, 4).replace(/`/g, "\\`");
+
+
+/**
+ * Send a split message in slices if larger than `messageSize`, simply joined otherwise
+ * @param interaction Interaction object
+ * @param list Array of message chunks to combine
+ * @param messageSize Max size of message
+ * @param separator Separator to join chunks with, defaults to newline
+ */
+export async function slicedReply(interaction: Discord.CommandInteraction, list: string[], messageSize: number, separator = "\n"): Promise<void> {
+	const joined = list.join(separator);
+	if (joined.length > messageSize) {
+		let reply: Discord.Message;
+		let slice = "";
+		for (let index = 0; index < list.length; index++) {
+			if (slice.length + list[index].length > messageSize) {
+				reply = await performReply(slice, reply);
+				slice = "Continued:\n"; // new line regardless of separator
+			} else {
+				slice += `${list[index]}${separator}`;
+				if (index === list.length - 1) {
+					reply = await performReply(slice, reply);
+				}
+			}
+		}
+	} else {
+		interaction.reply(joined);
+	}
+
+	async function performReply(slice: string, reply: Discord.Message): Promise<Discord.Message> {
+		const response = { content: slice, fetchReply: true } as const;
+		if (interaction.replied) {
+			reply = await reply.reply(response);
+		} else {
+			reply = await interaction.reply(response);
+		}
+		return reply;
+	}
+}

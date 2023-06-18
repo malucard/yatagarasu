@@ -3,6 +3,7 @@ import {
 	CmdKind,
 	CombinedSlashCommand,
 	hiddenReply,
+	slicedReply
 } from "../../utils/helpers";
 
 const USER_PERMS =
@@ -78,12 +79,13 @@ async function handleList(interaction: Discord.ChatInputCommandInteraction, guil
 	}
 	const { children } = category;
 	let index = 0;
-	const list: string = children.cache
+	const list: Array<string> = children.cache
 		.sort((a, b) => a.rawPosition - b.rawPosition)
-		.reduce((acc, child) => {
+		.map(child => {
 			index++;
-			return acc + `${index}: ${child.toString()} - (${child.name})\n`;
-		}
-		, `Total Channels: ${children.cache.size}\n`);
-	interaction.reply(list);
+			return `${index}: ${child.toString()} - (${child.name})`;
+		});
+	list.unshift(`Total Channels: ${children.cache.size}`);
+	const messageSize = 1500;
+	await slicedReply(interaction, list, messageSize, "\n");
 }
