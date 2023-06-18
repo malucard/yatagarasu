@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { CmdKind, CombinedMessageContextCommand, hiddenReply } from "../../utils/helpers";
 
 const USER_PERMS = Discord.PermissionFlagsBits.ViewChannel | Discord.PermissionFlagsBits.SendMessages | Discord.PermissionFlagsBits.SendMessagesInThreads | Discord.PermissionFlagsBits.CreatePublicThreads;

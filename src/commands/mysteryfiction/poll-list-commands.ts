@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { CmdKind, CombinedSlashCommand, hiddenReply } from "../../utils/helpers";
 
 

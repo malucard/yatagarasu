@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import axios from "axios";
 import { CmdKind, CombinedSlashCommand, getChannelFromLink, getMessageFromLink, hiddenReply, sanitizedMessageEmbedString } from "../../utils/helpers";
 
@@ -158,7 +158,7 @@ async function handleSend(interaction:Discord.ChatInputCommandInteraction, guild
 		}
 		const embeds = [].concat(json).map((entry: unknown) => new Discord.EmbedBuilder(entry));
 		await channel.send({ content, embeds });
-		interaction.reply(`Embed sent to ${channel.toString()}`);
+		interaction.reply(`Embed sent to ${channel.toString()} - (${channel.name})`);
 	}
 	catch (error) {
 		hiddenReply(interaction, error.message);

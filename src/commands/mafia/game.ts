@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 import { role_name, Role, Side, RoleAction } from "./role";
 import { calculate_lynch, death_messages, list_lynch, shuffle_array, State } from "./util";
 import { Inventory, Item } from "./item";
@@ -51,7 +51,7 @@ export class Player {
 		if (state == State.GAME) {
 			if (this.role.side == Side.MAFIA) {
 				this.game.mafia_secret_chat.permissionOverwrites.create(this.member, { ViewChannel: true }).finally(() => {
-					this.game.mafia_secret_chat.send(`<@${this.member.id}> You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
+					this.game.mafia_secret_chat.send(`${this.member.toString()} You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
 				});
 			} else {
 				this.game.mafia_secret_chat.permissionOverwrites.delete(this.member);
@@ -154,14 +154,14 @@ export class Game {
 
 	post_win(side?: Side, thirds: Player[] = []) {
 		this.running = false;
-		let list = `<@&${this.role_mafia_player.id}> `;
+		let list = `${this.role_mafia_player.toString()} `;
 		if (side === Side.TIE && thirds.length === 0) {
 			list += "It was a tie between the VILLAGE and the MAFIA!";
 		} else if (side) {
-			list += `The ${Side[side]} (${this.all_players.filter(p => p.role.side === side).map(p => `<@${p.member.id}>`).join(", ")}${thirds.length > 0 ? "), " : ")"}`;
+			list += `The ${Side[side]} (${this.all_players.filter(p => p.role.side === side).map(p => `${p.member.toString()}`).join(", ")}${thirds.length > 0 ? "), " : ")"}`;
 		}
 		if (thirds.length > 0) {
-			list += thirds.map(p => `<@${p.member.id}>`).join(", ");
+			list += thirds.map(p => `${p.member.toString()}`).join(", ");
 		}
 		if (side !== Side.TIE || thirds.length > 0) list += " won!";
 		for (const player of this.all_players) {
@@ -410,7 +410,7 @@ export class Game {
 			for (const player of Object.values(this.players)) {
 				numbers += `\n${player.number}- ${player.name}`;
 			}
-			this.day_channel.send(`<@&${this.role_mafia_player.id}> Day ${this.day} has begun. You have 10 minutes to vote on who to lynch with \`;lynch @usermention\`.${numbers}`);
+			this.day_channel.send(`${this.role_mafia_player.toString()} Day ${this.day} has begun. You have 10 minutes to vote on who to lynch with \`;lynch @usermention\`.${numbers}`);
 			this.lunches = shuffle_array(foods).slice(0, 4);
 			this.day_collector = this.day_channel.createMessageCollector();
 			this.day_collector.on("collect", message => {
@@ -498,7 +498,7 @@ export class Game {
 				this.day_channel.send("Nobody was lynched.");
 			} else {
 				const target = this.players[lynched];
-				this.day_channel.send(`<@${target.member.id}>, the ${role_name(target)}, was lynched.`);
+				this.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was lynched.`);
 				this.kill(target, lynchers, null); // even if lynched doesn't die, we need to report the result
 			}
 			if (this.day_collector) {
@@ -588,7 +588,7 @@ export class Game {
 				}
 				player.do_state(State.PRE_NIGHT);
 			}
-			this.day_channel.send(`<@&${this.role_mafia_player.id}> Night ${this.day} has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.`);
+			this.day_channel.send(`${this.role_mafia_player.toString()} Night ${this.day} has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.`);
 			for (const player of Object.values(this.players)) {
 				player.do_state(state);
 			}
@@ -642,7 +642,7 @@ export class Game {
 			for (const [target, killer] of targets) {
 				this.kill(target, killer, () => {
 					const message = death_messages[Math.floor(Math.random() * death_messages.length)];
-					this.day_channel.send(message.replace(/%pr/g, `<@${target.member.id}> (${role_name(target)})`));
+					this.day_channel.send(message.replace(/%pr/g, `${target.member.toString()} (${role_name(target)})`));
 				}, true);
 			}
 			this.extra_kills = [];

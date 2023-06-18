@@ -1,4 +1,4 @@
-import Discord from "discord.js";
+import * as Discord from "discord.js";
 
 export enum CmdKind {
 	TEXT_OR_SLASH,
