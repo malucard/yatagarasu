@@ -25,7 +25,7 @@ const client = new Discord.Client({
 		Discord.GatewayIntentBits.GuildMessageReactions |
 		Discord.GatewayIntentBits.DirectMessages |
 		Discord.GatewayIntentBits.DirectMessageReactions,
-	partials: [Discord.Partials.Message, Discord.Partials.Reaction]
+	partials: [Discord.Partials.Message, Discord.Partials.Reaction],
 });
 
 const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
@@ -46,17 +46,17 @@ client.on("ready", async () => {
 		const newcmdstr =
 			command.kind !== CmdKind.MESSAGE_CONTEXT
 				? command.options
-					?.map((opt) => opt.name + opt.description + opt.type)
-					.join(", ")
+						?.map(opt => opt.name + opt.description + opt.type)
+						.join(", ")
 				: "";
-		const appcmd = appcmds.find((x) => x.name === command.name);
+		const appcmd = appcmds.find(x => x.name === command.name);
 		if (command.kind !== CmdKind.TEXT) {
 			if (!appcmd) {
 				client.application.commands.create(command);
 			} else if (
 				newcmdstr !==
 				appcmd.options
-					?.map((opt) => opt.name + opt.description + opt.type)
+					?.map(opt => opt.name + opt.description + opt.type)
 					.join(", ")
 			) {
 				appcmd.edit(command);
@@ -68,11 +68,11 @@ client.on("ready", async () => {
 	console.log("Application commands prepared");
 });
 
-client.on("error", (error) => {
+client.on("error", error => {
 	console.error(error.message);
 });
 
-client.on("messageCreate", async (msg) => {
+client.on("messageCreate", async msg => {
 	try {
 		msg = await msg.fetch();
 		const matches = msg.content.match(/^; *([a-z]+)(\s+(.*))?$/);
@@ -85,10 +85,9 @@ client.on("messageCreate", async (msg) => {
 						command.kind === CmdKind.TEXT
 					) {
 						if (!(command instanceof CombinedSlashCommand)) {
-							await (command as mafia.MafiaCommandTextOrSlash).action(
-								msg,
-								matches[2]?.trim() || ""
-							);
+							await (
+								command as mafia.MafiaCommandTextOrSlash
+							).action(msg, matches[2]?.trim() || "");
 						}
 					}
 					break;
@@ -106,7 +105,7 @@ async function resolveApplicationCommand(
 		| Discord.MessageContextMenuCommandInteraction<Discord.CacheType>
 		| Discord.UserContextMenuCommandInteraction<Discord.CacheType>
 ) {
-	const command = cmds.find((cmd) => cmd.name === interaction.commandName);
+	const command = cmds.find(cmd => cmd.name === interaction.commandName);
 	if (!command) {
 		console.error("Unknown Interaction", interaction);
 	} else if (
@@ -143,7 +142,10 @@ client.on("interactionCreate", async (interaction: Discord.Interaction) => {
 			mafia.select_menus[interaction.customId]
 		) {
 			await mafia.select_menus[interaction.customId](interaction);
-		} else if (interaction.isButton() && mafia.buttons[interaction.customId]) {
+		} else if (
+			interaction.isButton() &&
+			mafia.buttons[interaction.customId]
+		) {
 			await mafia.buttons[interaction.customId](interaction);
 		} else {
 			console.error("Unknown interaction", interaction);

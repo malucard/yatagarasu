@@ -4,10 +4,12 @@ export enum CmdKind {
 	TEXT_OR_SLASH,
 	TEXT,
 	SLASH,
-	MESSAGE_CONTEXT
+	MESSAGE_CONTEXT,
 }
 
-export class CombinedSlashCommand implements Discord.ChatInputApplicationCommandData {
+export class CombinedSlashCommand
+	implements Discord.ChatInputApplicationCommandData
+{
 	name: string;
 	description: string;
 	options?: Discord.ApplicationCommandOptionData[];
@@ -16,17 +18,28 @@ export class CombinedSlashCommand implements Discord.ChatInputApplicationCommand
 	action?: (interaction: Discord.ChatInputCommandInteraction) => unknown;
 }
 
-export class CombinedMessageContextCommand implements Discord.MessageApplicationCommandData {
+export class CombinedMessageContextCommand
+	implements Discord.MessageApplicationCommandData
+{
 	type: Discord.ApplicationCommandType.Message;
 	name: string;
 	kind: CmdKind.MESSAGE_CONTEXT;
-	action?: (interaction: Discord.MessageContextMenuCommandInteraction) => unknown;
+	action?: (
+		interaction: Discord.MessageContextMenuCommandInteraction
+	) => unknown;
 }
 
-export type CombinedApplicationCommand = CombinedSlashCommand | CombinedMessageContextCommand;
+export type CombinedApplicationCommand =
+	| CombinedSlashCommand
+	| CombinedMessageContextCommand;
 
-const hiddenReplyContent = (message: string): Discord.InteractionReplyOptions => ({ content: message, ephemeral: true });
-export const hiddenReply = (interaction: Discord.CommandInteraction, message: string) => interaction.reply(hiddenReplyContent(message));
+const hiddenReplyContent = (
+	message: string
+): Discord.InteractionReplyOptions => ({ content: message, ephemeral: true });
+export const hiddenReply = (
+	interaction: Discord.CommandInteraction,
+	message: string
+) => interaction.reply(hiddenReplyContent(message));
 
 /**
  * Moves channels
@@ -35,7 +48,12 @@ export const hiddenReply = (interaction: Discord.CommandInteraction, message: st
  * @param onsuccess - Callback when move succeeds
  * @param onrejected - Callback when move fails
  */
-export const move_channel = (channel: Discord.TextChannel, target: Discord.TextChannel | Discord.CategoryChannel, onsuccess?: () => void, onrejected?: () => void): void => {
+export const move_channel = (
+	channel: Discord.TextChannel,
+	target: Discord.TextChannel | Discord.CategoryChannel,
+	onsuccess?: () => void,
+	onrejected?: () => void
+): void => {
 	// at this point it is known that perms are valid.
 	let targetCategory: Discord.CategoryChannel;
 	let targetPosition: number;
@@ -46,16 +64,23 @@ export const move_channel = (channel: Discord.TextChannel, target: Discord.TextC
 		const parent = target.parent;
 		targetCategory = parent;
 		// in same category, moving below causes an upshift, so you have to place at the same location
-		if (targetCategory.id === channel.parent.id && target.position > channel.position) {
+		if (
+			targetCategory.id === channel.parent.id &&
+			target.position > channel.position
+		) {
 			targetPosition = target.position;
 		} else {
 			targetPosition = target.position + 1;
 		}
 	}
-	channel.setParent(targetCategory, { lockPermissions: false })
-		.then(channel => channel.setPosition(targetPosition)
-			.then(onsuccess)
-			.catch(onrejected))
+	channel
+		.setParent(targetCategory, { lockPermissions: false })
+		.then(channel =>
+			channel
+				.setPosition(targetPosition)
+				.then(onsuccess)
+				.catch(onrejected)
+		)
 		.catch(onrejected);
 };
 
@@ -65,8 +90,15 @@ export const move_channel = (channel: Discord.TextChannel, target: Discord.TextC
  * @param targetChannel - Channel to move to
  * @returns if the move is valid to do
  */
-export const isInvalidMoveTarget = (channel: Discord.TextChannel, targetChannel: Discord.TextChannel) => {
-	return (targetChannel.parent.id === channel.parent.id && (targetChannel.position + 1) === channel.position) || (targetChannel.id === channel.id);
+export const isInvalidMoveTarget = (
+	channel: Discord.TextChannel,
+	targetChannel: Discord.TextChannel
+) => {
+	return (
+		(targetChannel.parent.id === channel.parent.id &&
+			targetChannel.position + 1 === channel.position) ||
+		targetChannel.id === channel.id
+	);
 };
 
 /**
@@ -76,8 +108,14 @@ export const isInvalidMoveTarget = (channel: Discord.TextChannel, targetChannel:
  * @returns Discord.Message if found, otherwise Error message
  * @throws DiscordAPIError - if channel or messages are not fetchable
  */
-export const getMessageFromLink = async (guild: Discord.Guild, link: string): Promise<Discord.Message | string> => {
-	const ID_MAP = /https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(link).groups;
+export const getMessageFromLink = async (
+	guild: Discord.Guild,
+	link: string
+): Promise<Discord.Message | string> => {
+	const ID_MAP =
+		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(
+			link
+		).groups;
 	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
 		return "Invalid Message Link";
 	}
@@ -102,8 +140,14 @@ export const getMessageFromLink = async (guild: Discord.Guild, link: string): Pr
  * @returns Discord.NonThreadGuildBasedChannel if found, otherwise Error message
  * @throws DiscordAPIError - if channel or messages are not fetchable
  */
-export const getChannelFromLink = async (guild: Discord.Guild, link: string): Promise<Discord.NonThreadGuildBasedChannel | string> => {
-	const ID_MAP = /https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(link).groups;
+export const getChannelFromLink = async (
+	guild: Discord.Guild,
+	link: string
+): Promise<Discord.NonThreadGuildBasedChannel | string> => {
+	const ID_MAP =
+		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(
+			link
+		).groups;
 	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
 		return "Invalid Message Link";
 	}
@@ -122,9 +166,10 @@ export const getChannelFromLink = async (guild: Discord.Guild, link: string): Pr
  * @param embeds - Array of Discord.Embed to show
  * @returns Pretty printed string with backticks escaped
  */
-export const sanitizedMessageEmbedString: (embeds: Array<Discord.Embed>) => string =
-	(embeds) => JSON.stringify(embeds, undefined, 4).replace(/`/g, "\\`");
-
+export const sanitizedMessageEmbedString: (
+	embeds: Array<Discord.Embed>
+) => string = embeds =>
+	JSON.stringify(embeds, undefined, 4).replace(/`/g, "\\`");
 
 /**
  * Send a split message in slices if larger than `messageSize`, simply joined otherwise
@@ -133,7 +178,12 @@ export const sanitizedMessageEmbedString: (embeds: Array<Discord.Embed>) => stri
  * @param messageSize Max size of message
  * @param separator Separator to join chunks with, defaults to newline
  */
-export async function slicedReply(interaction: Discord.CommandInteraction, list: string[], messageSize: number, separator = "\n"): Promise<void> {
+export async function slicedReply(
+	interaction: Discord.CommandInteraction,
+	list: string[],
+	messageSize: number,
+	separator = "\n"
+): Promise<void> {
 	const joined = list.join(separator);
 	if (joined.length > messageSize) {
 		let reply: Discord.Message;
@@ -153,7 +203,10 @@ export async function slicedReply(interaction: Discord.CommandInteraction, list:
 		interaction.reply(joined);
 	}
 
-	async function performReply(slice: string, reply: Discord.Message): Promise<Discord.Message> {
+	async function performReply(
+		slice: string,
+		reply: Discord.Message
+	): Promise<Discord.Message> {
 		const response = { content: slice, fetchReply: true } as const;
 		if (interaction.replied) {
 			reply = await reply.reply(response);

@@ -1,14 +1,40 @@
 import * as Discord from "discord.js";
 import { role_name, Role, Side, RoleAction } from "./role";
-import { calculate_lynch, death_messages, list_lynch, shuffle_array, State } from "./util";
+import {
+	calculate_lynch,
+	death_messages,
+	list_lynch,
+	shuffle_array,
+	State,
+} from "./util";
 import { Inventory, Item } from "./item";
 import { games_happening, mizukithumbsup } from "./mafia";
 
-export const TALK_REACT_PERMS = { ViewChannel: true, SendMessages: true, AddReactions: true };
-export const VIEW_ONLY_PERMS = { ViewChannel: true, SendMessages: false, AddReactions: false };
-export const NO_SEND_PERMS = { SendMessages: false, AddReactions: false, AttachFiles: false };
-export const PARTIAL_SEND_PERMS = { SendMessages: true, AddReactions: true, AttachFiles: false };
-export const FULL_SEND_PERMS = { SendMessages: true, AddReactions: true, AttachFiles: true };
+export const TALK_REACT_PERMS = {
+	ViewChannel: true,
+	SendMessages: true,
+	AddReactions: true,
+};
+export const VIEW_ONLY_PERMS = {
+	ViewChannel: true,
+	SendMessages: false,
+	AddReactions: false,
+};
+export const NO_SEND_PERMS = {
+	SendMessages: false,
+	AddReactions: false,
+	AttachFiles: false,
+};
+export const PARTIAL_SEND_PERMS = {
+	SendMessages: true,
+	AddReactions: true,
+	AttachFiles: false,
+};
+export const FULL_SEND_PERMS = {
+	SendMessages: true,
+	AddReactions: true,
+	AttachFiles: true,
+};
 
 export class Player {
 	number: number;
@@ -44,29 +70,51 @@ export class Player {
 	/** add to hook_actions and keep existing hooks */
 	hook_action(state: number, action: RoleAction) {
 		const prev = this.hook_actions[state];
-		this.hook_actions[state] = prev ? (player => prev(player) ? true : action(player)) : action;
+		this.hook_actions[state] = prev
+			? player => (prev(player) ? true : action(player))
+			: action;
 	}
 
 	do_state(state: State): boolean {
 		if (state == State.GAME) {
 			if (this.role.side == Side.MAFIA) {
-				this.game.mafia_secret_chat.permissionOverwrites.create(this.member, { ViewChannel: true }).finally(() => {
-					this.game.mafia_secret_chat.send(`${this.member.toString()} You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
-				});
+				this.game.mafia_secret_chat.permissionOverwrites
+					.create(this.member, { ViewChannel: true })
+					.finally(() => {
+						this.game.mafia_secret_chat.send(
+							`${this.member.toString()} You are number ${
+								this.number
+							}, ${role_name(this)}. ${this.role.help}`
+						);
+					});
 			} else {
-				this.game.mafia_secret_chat.permissionOverwrites.delete(this.member);
-				this.member.send(`You are number ${this.number}, ${role_name(this)}. ${this.role.help}`);
+				this.game.mafia_secret_chat.permissionOverwrites.delete(
+					this.member
+				);
+				this.member.send(
+					`You are number ${this.number}, ${role_name(this)}. ${
+						this.role.help
+					}`
+				);
 			}
 		} else if (state == State.DAY) {
 			this.protected = false;
 		}
 		//		game.mafia_secret_chat.send("[debug] player " + this.number + " do state " + State[state]);
 		for (const it of this.inventory.items) {
-			if (it.hook_actions && it.hook_actions[state] && it.hook_actions[state](this)) {
+			if (
+				it.hook_actions &&
+				it.hook_actions[state] &&
+				it.hook_actions[state](this)
+			) {
 				return true; // item canceled further callbacks for this state
 			}
 		}
-		if (this.hook_actions && this.hook_actions[state] && this.hook_actions[state](this)) {
+		if (
+			this.hook_actions &&
+			this.hook_actions[state] &&
+			this.hook_actions[state](this)
+		) {
 			return true; // player canceled further callbacks for this state
 		}
 		const act = this.role.actions[state];
@@ -74,7 +122,11 @@ export class Player {
 			return true;
 		}
 		for (const it of this.inventory.items) {
-			if (it.post_actions && it.post_actions[state] && it.post_actions[state](this)) {
+			if (
+				it.post_actions &&
+				it.post_actions[state] &&
+				it.post_actions[state](this)
+			) {
 				return true;
 			}
 		}
@@ -82,7 +134,10 @@ export class Player {
 	}
 
 	can_overturn(): boolean {
-		return this.role.can_overturn || !!this.inventory.items.find(x => x.can_overturn);
+		return (
+			this.role.can_overturn ||
+			!!this.inventory.items.find(x => x.can_overturn)
+		);
 	}
 
 	receive(item: Item) {
@@ -93,16 +148,29 @@ export class Player {
 	remove(item: Item) {
 		this.inventory.items.splice(this.inventory.items.indexOf(item), 1);
 		if (this.inventory.items.length !== 0) {
-			this.member.send(`You have lost one ${item.name}.\n${this.inventory.print(this, this.game)}`);
+			this.member.send(
+				`You have lost one ${item.name}.\n${this.inventory.print(
+					this,
+					this.game
+				)}`
+			);
 		} else {
-			this.member.send(`You have lost one ${item.name}. Your inventory is empty.`);
+			this.member.send(
+				`You have lost one ${item.name}. Your inventory is empty.`
+			);
 		}
 	}
 }
 
 //export let maf_start_state: State = {};
 
-export const valid_options = ["daystart", "dayless", "nightless", "nonk", "nonk1"];
+export const valid_options = [
+	"daystart",
+	"dayless",
+	"nightless",
+	"nonk",
+	"nonk1",
+];
 
 export const foods = [
 	"spaghetti",
@@ -118,7 +186,7 @@ export const foods = [
 	"lemon pie",
 	"chocolate",
 	"mashed potatoes",
-	"fries"
+	"fries",
 ];
 
 export class Game {
@@ -158,7 +226,10 @@ export class Game {
 		if (side === Side.TIE && thirds.length === 0) {
 			list += "It was a tie between the VILLAGE and the MAFIA!";
 		} else if (side) {
-			list += `The ${Side[side]} (${this.all_players.filter(p => p.role.side === side).map(p => `${p.member.toString()}`).join(", ")}${thirds.length > 0 ? "), " : ")"}`;
+			list += `The ${Side[side]} (${this.all_players
+				.filter(p => p.role.side === side)
+				.map(p => `${p.member.toString()}`)
+				.join(", ")}${thirds.length > 0 ? "), " : ")"}`;
 		}
 		if (thirds.length > 0) {
 			list += thirds.map(p => `${p.member.toString()}`).join(", ");
@@ -167,7 +238,11 @@ export class Game {
 		for (const player of this.all_players) {
 			list += `\n${player.number}- ${player.name} (${player.role.name})`;
 			if (player.dead) list += " (dead)";
-			if (player.role.side === side || thirds.find(p => p.number === player.number)) list += " (won)";
+			if (
+				player.role.side === side ||
+				thirds.find(p => p.number === player.number)
+			)
+				list += " (won)";
 		}
 		this.do_state(State.GAME_END);
 		for (const player of Object.values(this.players)) {
@@ -190,7 +265,10 @@ export class Game {
 			}
 		}
 		for (const player of Object.values(this.players)) {
-			if (player.role.side === Side.MAFIA && player.action_report_pending) {
+			if (
+				player.role.side === Side.MAFIA &&
+				player.action_report_pending
+			) {
 				if (this.mafia_night_report_passed) {
 					player.do_state(State.NIGHT_REPORT);
 				} else if (this.killing !== player.number) {
@@ -200,7 +278,10 @@ export class Game {
 			}
 		}
 		for (const player of Object.values(this.players)) {
-			if (player.role.side === Side.VILLAGE && player.action_report_pending) {
+			if (
+				player.role.side === Side.VILLAGE &&
+				player.action_report_pending
+			) {
 				if (this.night_report_passed) {
 					player.do_state(State.NIGHT_REPORT);
 				} else if (this.killing !== player.number) {
@@ -225,7 +306,8 @@ export class Game {
 		let thirds_win = [];
 		const thirds_other = [];
 		for (const player of Object.values(this.players)) {
-			if (player.role.side !== Side.MAFIA && player.can_overturn()) village_can_overturn = true;
+			if (player.role.side !== Side.MAFIA && player.can_overturn())
+				village_can_overturn = true;
 			if (player.role.side === Side.MAFIA) {
 				maf++;
 			} else {
@@ -244,7 +326,7 @@ export class Game {
 		}
 		let winning_side = null;
 		// const has_vil = this.all_players.find(p => p.role.side === Side.VILLAGE);
-		if (village_can_overturn ? vil == 0 : (non_maf <= maf)) {
+		if (village_can_overturn ? vil == 0 : non_maf <= maf) {
 			winning_side = Side.MAFIA;
 		}
 		if (maf == 0) {
@@ -252,8 +334,11 @@ export class Game {
 			else winning_side = Side.VILLAGE;
 		}
 		if (winning_side || thirds_win.length) {
-			thirds_win = thirds_win.filter(p => !p.role.ensure_win || p.role.ensure_win(p)); // check for canceled wins
-			for (const p of thirds_other) { // check for third parties winning without having caused the win
+			thirds_win = thirds_win.filter(
+				p => !p.role.ensure_win || p.role.ensure_win(p)
+			); // check for canceled wins
+			for (const p of thirds_other) {
+				// check for third parties winning without having caused the win
 				if (p.role.ensure_win && p.role.ensure_win(p)) {
 					thirds_win.push(p);
 				}
@@ -272,7 +357,12 @@ export class Game {
 	 * @param on_death to call if the player actually dies, before wins are registered
 	 * @param prevent_win this kill will not update the win condition
 	 */
-	kill(player: Player, killer: Player | Player[], on_death: () => void, prevent_win?: boolean) {
+	kill(
+		player: Player,
+		killer: Player | Player[],
+		on_death: () => void,
+		prevent_win?: boolean
+	) {
 		if (player.dead || player.protected) return;
 		const prev_prevent_win = this.prevent_win; // just be careful
 		player.dead = true;
@@ -309,294 +399,127 @@ export class Game {
 		// this.mafia_secret_chat.send(`[debug] game do state ${State[state]}`);
 		this.cur_state = state;
 		switch (state) {
-		case State.GAME:
-			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			for (const player of Object.values(this.players)) {
-				if (player.role.side === Side.MAFIA) {
-					await this.mafia_secret_chat.permissionOverwrites.create(player.member, { ViewChannel: true });
-				} else {
-					this.mafia_secret_chat.permissionOverwrites.delete(player.member);
-				}
-				player.member.createDM().then(ch => {
-					player.member.send(`Setup is ${this.setup}`);
-					player.item_collector = ch.createMessageCollector();
-					player.item_collector.on("collect", async msg => {
-						msg = await msg.fetch();
-						if (msg.content.match(/^; *inv$/)) {
-							msg.reply(player.inventory.print(player, this));
-							return;
-						}
-						const m = msg.content.match(/^; *use +([a-zA-Z0-9]+)( +([0-9]+))?$/);
-						if (m) {
-							const it = player.inventory.items.find(it => it.name.toLowerCase() == m[1].toLowerCase());
-							if (!it) {
-								player.member.send("You don't have this item.");
-							} else if (!it.use) {
-								player.member.send("You can't use this item, it's passive.");
-							} else if (it.night_use ? this.cur_state === State.NIGHT : this.cur_state === State.DAY) {
-								if (it.no_target) {
-									it.use(player, player, player.game);
-									if (!it.stays_after_use) {
-										player.remove(it);
-									}
-								} else if (m[3]) {
-									const target = player.game.players[parseInt(m[3])];
-									if (target) {
-										it.use(target, player, player.game);
+			case State.GAME:
+				this.day_channel.permissionOverwrites.edit(
+					this.day_channel.guild.roles.everyone,
+					NO_SEND_PERMS
+				);
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				for (const player of Object.values(this.players)) {
+					if (player.role.side === Side.MAFIA) {
+						await this.mafia_secret_chat.permissionOverwrites.create(
+							player.member,
+							{ ViewChannel: true }
+						);
+					} else {
+						this.mafia_secret_chat.permissionOverwrites.delete(
+							player.member
+						);
+					}
+					player.member.createDM().then(ch => {
+						player.member.send(`Setup is ${this.setup}`);
+						player.item_collector = ch.createMessageCollector();
+						player.item_collector.on("collect", async msg => {
+							msg = await msg.fetch();
+							if (msg.content.match(/^; *inv$/)) {
+								msg.reply(player.inventory.print(player, this));
+								return;
+							}
+							const m = msg.content.match(
+								/^; *use +([a-zA-Z0-9]+)( +([0-9]+))?$/
+							);
+							if (m) {
+								const it = player.inventory.items.find(
+									it =>
+										it.name.toLowerCase() ==
+										m[1].toLowerCase()
+								);
+								if (!it) {
+									player.member.send(
+										"You don't have this item."
+									);
+								} else if (!it.use) {
+									player.member.send(
+										"You can't use this item, it's passive."
+									);
+								} else if (
+									it.night_use
+										? this.cur_state === State.NIGHT
+										: this.cur_state === State.DAY
+								) {
+									if (it.no_target) {
+										it.use(player, player, player.game);
 										if (!it.stays_after_use) {
 											player.remove(it);
 										}
+									} else if (m[3]) {
+										const target =
+											player.game.players[parseInt(m[3])];
+										if (target) {
+											it.use(target, player, player.game);
+											if (!it.stays_after_use) {
+												player.remove(it);
+											}
+										} else {
+											msg.reply("Invalid target.");
+										}
 									} else {
-										msg.reply("Invalid target.");
+										msg.reply(
+											"This item requires a target."
+										);
 									}
 								} else {
-									msg.reply("This item requires a target.");
+									player.member.send(
+										`You can't use this item in the ${
+											State[this.cur_state]
+										}.`
+									);
 								}
-							} else {
-								player.member.send(`You can't use this item in the ${State[this.cur_state]}.`);
 							}
-						}
+						});
 					});
-				});
-				player.do_state(state);
-			}
-			this.day = 1;
-			this.hiding_names = true;
-			if (this.options.includes("daystart") || this.options.includes("nightless")) {
-				return this.do_state(State.DAY);
-			} else {
-				return this.do_state(State.NIGHT);
-			}
-		case State.GAME_END:
-			this.running = false;
-			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, FULL_SEND_PERMS);
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, FULL_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			for (const player of Object.values(this.all_players)) {
-				this.mafia_secret_chat.permissionOverwrites.delete(player.member);
-			}
-			for (const player of Object.values(this.players)) {
-				player.item_collector.stop("game end");
-				player.do_state(state);
-			}
-			if (this.day_collector) {
-				this.day_collector.stop();
-				this.day_collector = null;
-			}
-			if (this.mafia_collector) {
-				this.mafia_collector.stop();
-				this.mafia_collector = null;
-			}
-			if (this.timeout) {
-				clearTimeout(this.timeout);
-				this.timeout = null;
-			}
-			delete games_happening[this.day_channel.id];
-			break;
-		case State.DAY: {
-			this.hiding_names = false;
-			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, PARTIAL_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			for (const player of Object.values(this.players)) {
-				player.lynch_vote = null;
-				if (player.inventory.items.find(x => !x.night_use)) {
-					player.member.send(player.inventory.print(player, this));
+					player.do_state(state);
 				}
-				player.do_state(state);
-			}
-			let numbers = "";
-			for (const player of Object.values(this.players)) {
-				numbers += `\n${player.number}- ${player.name}`;
-			}
-			this.day_channel.send(`${this.role_mafia_player.toString()} Day ${this.day} has begun. You have 10 minutes to vote on who to lynch with \`;lynch @usermention\`.${numbers}`);
-			this.lunches = shuffle_array(foods).slice(0, 4);
-			this.day_collector = this.day_channel.createMessageCollector();
-			this.day_collector.on("collect", async message => {
-				message = await message.fetch();
-				let all_voted = true;
+				this.day = 1;
+				this.hiding_names = true;
+				if (
+					this.options.includes("daystart") ||
+					this.options.includes("nightless")
+				) {
+					return this.do_state(State.DAY);
+				} else {
+					return this.do_state(State.NIGHT);
+				}
+			case State.GAME_END:
+				this.running = false;
+				this.day_channel.permissionOverwrites.edit(
+					this.day_channel.guild.roles.everyone,
+					FULL_SEND_PERMS
+				);
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					FULL_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				for (const player of Object.values(this.all_players)) {
+					this.mafia_secret_chat.permissionOverwrites.delete(
+						player.member
+					);
+				}
 				for (const player of Object.values(this.players)) {
-					if (player.member.id === message.author.id) {
-						if (message.content.match(/^; *lynch$/)) {
-							player.lynch_vote = 0;
-							message.react(mizukithumbsup);
-						} else if (message.content.match(/^; *removelynch$/)) {
-							player.lynch_vote = null;
-							message.react(mizukithumbsup);
-						} else if (message.content.match(/^; *listlynch$/)) {
-							message.reply(list_lynch(this.players));
-						} else if (message.content.match(/^; *listlunch$/)) {
-							message.reply(`Lunches available today are:\n${this.lunches.join(", ")}`);
-						} else if (message.content.match(/^; *lunch$/)) {
-							message.reply("Don't stay hungry.");
-						} else if (message.content.match(/^; *lunch +<@!?([0-9]{17,18})>$/)) {
-							message.reply("Interesting lunch choice.");
-						} else if (message.content.match(/^; *lunch +(.+)$/)) {
-							if (this.lunches.includes(message.content.match(/^; *lunch +(.+)$/)[1])) {
-								message.reply("Good lunch choice.");
-							} else {
-								message.reply("Unavailable lunch choice.");
-							}
-						} else {
-							const match = message.content.match(/^; *lynch +<@!?([0-9]{17,18})>$/);
-							if (match) {
-								for (const player2 of Object.values(this.players)) {
-									if (player2.member.id === match[1]) {
-										player.lynch_vote = player2.number;
-										message.react(mizukithumbsup);
-										break;
-									}
-								}
-							}
-						}
-					}
-					if (player.lynch_vote === null || (player.lynch_vote !== 0 && !this.players[player.lynch_vote])) {
-						all_voted = false;
-					}
+					player.item_collector.stop("game end");
+					player.do_state(state);
 				}
-				if (all_voted) {
-					if (this.timeout) {
-						clearTimeout(this.timeout);
-						this.timeout = null;
-					}
-					this.day_collector.stop("day end");
-					this.day_collector = null;
-					this.do_state(State.DAY_END);
-				}
-			});
-			this.timeout = setTimeout(() => {
-				this.day_channel.send("5min remaining.");
-				this.timeout = setTimeout(() => {
-					this.day_channel.send("2min30s remaining.");
-					this.timeout = setTimeout(() => {
-						this.day_channel.send("1min remaining.");
-						this.timeout = setTimeout(() => {
-							this.day_channel.send("10s remaining.");
-							this.timeout = setTimeout(() => {
-								this.timeout = null;
-								if (this.day_collector) {
-									this.day_collector.stop();
-									this.day_collector = null;
-								}
-								this.do_state(State.DAY_END);
-							}, 10000); // 10 -> 0 seconds
-						}, 50000); // 1 minute -> 10 seconds
-					}, 90000); // 2.5 -> 1 minute
-				}, 150000); // 5 -> 2.5 minutes
-			}, 300000); // 10 -> 5 minutes
-			break;
-		}
-		case State.DAY_END:
-			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			for (const player of Object.values(this.players)) {
-				player.do_state(state);
-			}
-			const [lynched, lynchers] = calculate_lynch(this.players);
-			if (lynched === 0) {
-				this.day_channel.send("Nobody was lynched.");
-			} else {
-				const target = this.players[lynched];
-				this.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was lynched.`);
-				this.kill(target, lynchers, null); // even if lynched doesn't die, we need to report the result
-			}
-			if (this.day_collector) {
-				this.day_collector.stop("night end");
-				this.day_collector = null;
-			}
-			if (this.timeout) {
-				clearTimeout(this.timeout);
-				this.timeout = null;
-			}
-			this.day++;
-			if (this.options.includes("nightless")) {
-				return this.do_state(State.DAY);
-			} else {
-				return this.do_state(State.NIGHT);
-			}
-		case State.NIGHT: {
-			this.day_channel.permissionOverwrites.edit(this.day_channel.guild.roles.everyone, NO_SEND_PERMS);
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, PARTIAL_SEND_PERMS);
-			if (this.timeout) {
-				clearTimeout(this.timeout);
-				this.timeout = null;
-			}
-			this.kill_pending = true;
-			if (this.options.includes("nonk1")){
-				this.no_mafia_kill = this.day === 1;
-			} else {
-				this.no_mafia_kill = this.options.includes("nonk");
-			}
-			this.night_report_passed = true;
-			this.mafia_night_report_passed = true;
-			let numbers = "";
-			for (const p of Object.values(this.players)) {
-				if (p.role.side !== Side.MAFIA) {
-					numbers += `\n${p.number}- ${this.hiding_names ? "<hidden>" : p.name}`;
-				}
-			}
-			const mafiaPings = Object.values(this.players).filter(player => player.role.side === Side.MAFIA).map(player => player.member.toString()).join("\n");
-			if(this.no_mafia_kill) {
-				this.mafia_secret_chat.send(`${mafiaPings}\n Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`);
-			} else {
-				this.mafia_secret_chat.send(`${mafiaPings}\n Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`);
-			}
-			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
-			this.mafia_collector.on("collect", async msg => {
-				msg = await msg.fetch();
-				const matches = msg.content.match(/^; *kill +([0-9]+)$/);
-				if (this.kill_pending && matches && !this.no_mafia_kill) {
-					const number = parseInt(matches[1]);
-					const target = this.players[number];
-					if (target) {
-						if (target.role.side === Side.MAFIA) {
-							msg.reply(`${matches[1]}- ${target.name} is mafia-aligned.`);
-						} else {
-							const killer = Object.values(this.players).find(p => p.member.id === msg.member.id);
-							target.data.night_targeted_by = killer;
-							if (!target.do_state(State.NIGHT_TARGETED)) {
-								this.kill_pending = false;
-								this.killing = number;
-								this.mafia_killer = killer;
-							}
-							msg.reply(`You chose to kill number ${matches[1]}, ${this.players[number].name}.`);
-							this.mafia_collector.stop("kill chosen");
-							this.mafia_collector = null;
-							this.update_night();
-						}
-					} else {
-						msg.reply(`${matches[1]} is not a valid player.`);
-					}
-				} else if (this.kill_pending && msg.content.match(/^; *kill$/)) {
-					this.kill_pending = false;
-					this.killing = 0;
-					this.mafia_killer = null;
-					msg.reply("You chose to kill nobody.");
-					this.mafia_collector.stop("null kill chosen");
-					this.mafia_collector = null;
-					this.update_night();
-				}
-			});
-			for (const player of Object.values(this.players)) {
-				player.hooked = false;
-				player.protected = false;
-				player.action_pending = false;
-				player.action_report_pending = false;
-				if (player.inventory.items.find(x => x.night_use)) {
-					player.member.send(player.inventory.print(player, this));
-				}
-				player.do_state(State.PRE_NIGHT);
-			}
-			this.day_channel.send(`${this.role_mafia_player.toString()} Night ${this.day} has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.`);
-			for (const player of Object.values(this.players)) {
-				player.do_state(state);
-			}
-			this.timeout = setTimeout(() => {
-				this.timeout = null;
 				if (this.day_collector) {
 					this.day_collector.stop();
 					this.day_collector = null;
@@ -605,57 +528,393 @@ export class Game {
 					this.mafia_collector.stop();
 					this.mafia_collector = null;
 				}
-				this.do_state(State.NIGHT_END);
-			}, 240000); // 4 minutes
-			this.update_night();
-			break;
-		}
-		case State.NIGHT_END:
-			this.hiding_names = false;
-			this.day_channel.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			this.mafia_secret_chat.permissionOverwrites.edit(this.role_mafia_player, NO_SEND_PERMS);
-			if (this.mafia_collector) {
-				this.mafia_collector.stop("night end");
-				this.mafia_collector = null;
+				if (this.timeout) {
+					clearTimeout(this.timeout);
+					this.timeout = null;
+				}
+				delete games_happening[this.day_channel.id];
+				break;
+			case State.DAY: {
+				this.hiding_names = false;
+				this.day_channel.permissionOverwrites.edit(
+					this.day_channel.guild.roles.everyone,
+					NO_SEND_PERMS
+				);
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					PARTIAL_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				for (const player of Object.values(this.players)) {
+					player.lynch_vote = null;
+					if (player.inventory.items.find(x => !x.night_use)) {
+						player.member.send(
+							player.inventory.print(player, this)
+						);
+					}
+					player.do_state(state);
+				}
+				let numbers = "";
+				for (const player of Object.values(this.players)) {
+					numbers += `\n${player.number}- ${player.name}`;
+				}
+				this.day_channel.send(
+					`${this.role_mafia_player.toString()} Day ${
+						this.day
+					} has begun. You have 10 minutes to vote on who to lynch with \`;lynch @usermention\`.${numbers}`
+				);
+				this.lunches = shuffle_array(foods).slice(0, 4);
+				this.day_collector = this.day_channel.createMessageCollector();
+				this.day_collector.on("collect", async message => {
+					message = await message.fetch();
+					let all_voted = true;
+					for (const player of Object.values(this.players)) {
+						if (player.member.id === message.author.id) {
+							if (message.content.match(/^; *lynch$/)) {
+								player.lynch_vote = 0;
+								message.react(mizukithumbsup);
+							} else if (
+								message.content.match(/^; *removelynch$/)
+							) {
+								player.lynch_vote = null;
+								message.react(mizukithumbsup);
+							} else if (
+								message.content.match(/^; *listlynch$/)
+							) {
+								message.reply(list_lynch(this.players));
+							} else if (
+								message.content.match(/^; *listlunch$/)
+							) {
+								message.reply(
+									`Lunches available today are:\n${this.lunches.join(
+										", "
+									)}`
+								);
+							} else if (message.content.match(/^; *lunch$/)) {
+								message.reply("Don't stay hungry.");
+							} else if (
+								message.content.match(
+									/^; *lunch +<@!?([0-9]{17,18})>$/
+								)
+							) {
+								message.reply("Interesting lunch choice.");
+							} else if (
+								message.content.match(/^; *lunch +(.+)$/)
+							) {
+								if (
+									this.lunches.includes(
+										message.content.match(
+											/^; *lunch +(.+)$/
+										)[1]
+									)
+								) {
+									message.reply("Good lunch choice.");
+								} else {
+									message.reply("Unavailable lunch choice.");
+								}
+							} else {
+								const match = message.content.match(
+									/^; *lynch +<@!?([0-9]{17,18})>$/
+								);
+								if (match) {
+									for (const player2 of Object.values(
+										this.players
+									)) {
+										if (player2.member.id === match[1]) {
+											player.lynch_vote = player2.number;
+											message.react(mizukithumbsup);
+											break;
+										}
+									}
+								}
+							}
+						}
+						if (
+							player.lynch_vote === null ||
+							(player.lynch_vote !== 0 &&
+								!this.players[player.lynch_vote])
+						) {
+							all_voted = false;
+						}
+					}
+					if (all_voted) {
+						if (this.timeout) {
+							clearTimeout(this.timeout);
+							this.timeout = null;
+						}
+						this.day_collector.stop("day end");
+						this.day_collector = null;
+						this.do_state(State.DAY_END);
+					}
+				});
+				this.timeout = setTimeout(() => {
+					this.day_channel.send("5min remaining.");
+					this.timeout = setTimeout(() => {
+						this.day_channel.send("2min30s remaining.");
+						this.timeout = setTimeout(() => {
+							this.day_channel.send("1min remaining.");
+							this.timeout = setTimeout(() => {
+								this.day_channel.send("10s remaining.");
+								this.timeout = setTimeout(() => {
+									this.timeout = null;
+									if (this.day_collector) {
+										this.day_collector.stop();
+										this.day_collector = null;
+									}
+									this.do_state(State.DAY_END);
+								}, 10000); // 10 -> 0 seconds
+							}, 50000); // 1 minute -> 10 seconds
+						}, 90000); // 2.5 -> 1 minute
+					}, 150000); // 5 -> 2.5 minutes
+				}, 300000); // 10 -> 5 minutes
+				break;
 			}
-			if (this.timeout) {
-				clearTimeout(this.timeout);
-				this.timeout = null;
-			}
-			for (const player of Object.values(this.players)) {
-				player.do_state(state);
-			}
-			if (this.kill_pending) {
-				this.mafia_secret_chat.send("The night ended. You killed no one.");
-			}
-			let targets = this.extra_kills || [];
-			if (this.killing && this.killing > 0 && !this.no_mafia_kill) {
-				targets.push([this.players[this.killing], this.mafia_killer]);
-			}
-			targets = shuffle_array(targets);
-			for (let i = 0; i < targets.length; i++) {
-				const target = targets[i][0];
-				for (let i2 = i + 1; i2 < targets.length; i2++) {
-					if (target.number === targets[i2][0].number) {
-						targets.splice(i2, 1);
-						i2--;
+			case State.DAY_END:
+				this.day_channel.permissionOverwrites.edit(
+					this.day_channel.guild.roles.everyone,
+					NO_SEND_PERMS
+				);
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				for (const player of Object.values(this.players)) {
+					player.do_state(state);
+				}
+				const [lynched, lynchers] = calculate_lynch(this.players);
+				if (lynched === 0) {
+					this.day_channel.send("Nobody was lynched.");
+				} else {
+					const target = this.players[lynched];
+					this.day_channel.send(
+						`${target.member.toString()}, the ${role_name(
+							target
+						)}, was lynched.`
+					);
+					this.kill(target, lynchers, null); // even if lynched doesn't die, we need to report the result
+				}
+				if (this.day_collector) {
+					this.day_collector.stop("night end");
+					this.day_collector = null;
+				}
+				if (this.timeout) {
+					clearTimeout(this.timeout);
+					this.timeout = null;
+				}
+				this.day++;
+				if (this.options.includes("nightless")) {
+					return this.do_state(State.DAY);
+				} else {
+					return this.do_state(State.NIGHT);
+				}
+			case State.NIGHT: {
+				this.day_channel.permissionOverwrites.edit(
+					this.day_channel.guild.roles.everyone,
+					NO_SEND_PERMS
+				);
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					PARTIAL_SEND_PERMS
+				);
+				if (this.timeout) {
+					clearTimeout(this.timeout);
+					this.timeout = null;
+				}
+				this.kill_pending = true;
+				if (this.options.includes("nonk1")) {
+					this.no_mafia_kill = this.day === 1;
+				} else {
+					this.no_mafia_kill = this.options.includes("nonk");
+				}
+				this.night_report_passed = true;
+				this.mafia_night_report_passed = true;
+				let numbers = "";
+				for (const p of Object.values(this.players)) {
+					if (p.role.side !== Side.MAFIA) {
+						numbers += `\n${p.number}- ${
+							this.hiding_names ? "<hidden>" : p.name
+						}`;
 					}
 				}
+				const mafiaPings = Object.values(this.players)
+					.filter(player => player.role.side === Side.MAFIA)
+					.map(player => player.member.toString())
+					.join("\n");
+				if (this.no_mafia_kill) {
+					this.mafia_secret_chat.send(
+						`${mafiaPings}\n Night ${this.day} has begun. You cannot kill someone tonight. Use \`;kill\` when you are done discussing to let the night end.`
+					);
+				} else {
+					this.mafia_secret_chat.send(
+						`${mafiaPings}\n Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`
+					);
+				}
+				this.mafia_collector =
+					this.mafia_secret_chat.createMessageCollector();
+				this.mafia_collector.on("collect", async msg => {
+					msg = await msg.fetch();
+					const matches = msg.content.match(/^; *kill +([0-9]+)$/);
+					if (this.kill_pending && matches && !this.no_mafia_kill) {
+						const number = parseInt(matches[1]);
+						const target = this.players[number];
+						if (target) {
+							if (target.role.side === Side.MAFIA) {
+								msg.reply(
+									`${matches[1]}- ${target.name} is mafia-aligned.`
+								);
+							} else {
+								const killer = Object.values(this.players).find(
+									p => p.member.id === msg.member.id
+								);
+								target.data.night_targeted_by = killer;
+								if (!target.do_state(State.NIGHT_TARGETED)) {
+									this.kill_pending = false;
+									this.killing = number;
+									this.mafia_killer = killer;
+								}
+								msg.reply(
+									`You chose to kill number ${matches[1]}, ${this.players[number].name}.`
+								);
+								this.mafia_collector.stop("kill chosen");
+								this.mafia_collector = null;
+								this.update_night();
+							}
+						} else {
+							msg.reply(`${matches[1]} is not a valid player.`);
+						}
+					} else if (
+						this.kill_pending &&
+						msg.content.match(/^; *kill$/)
+					) {
+						this.kill_pending = false;
+						this.killing = 0;
+						this.mafia_killer = null;
+						msg.reply("You chose to kill nobody.");
+						this.mafia_collector.stop("null kill chosen");
+						this.mafia_collector = null;
+						this.update_night();
+					}
+				});
+				for (const player of Object.values(this.players)) {
+					player.hooked = false;
+					player.protected = false;
+					player.action_pending = false;
+					player.action_report_pending = false;
+					if (player.inventory.items.find(x => x.night_use)) {
+						player.member.send(
+							player.inventory.print(player, this)
+						);
+					}
+					player.do_state(State.PRE_NIGHT);
+				}
+				this.day_channel.send(
+					`${this.role_mafia_player.toString()} Night ${
+						this.day
+					} has begun. You have 7 minutes to act. If you are a power role, check your DMs. If you are mafia, check the mafia secret chat.`
+				);
+				for (const player of Object.values(this.players)) {
+					player.do_state(state);
+				}
+				this.timeout = setTimeout(() => {
+					this.timeout = null;
+					if (this.day_collector) {
+						this.day_collector.stop();
+						this.day_collector = null;
+					}
+					if (this.mafia_collector) {
+						this.mafia_collector.stop();
+						this.mafia_collector = null;
+					}
+					this.do_state(State.NIGHT_END);
+				}, 240000); // 4 minutes
+				this.update_night();
+				break;
 			}
-			for (const [target, killer] of targets) {
-				this.kill(target, killer, () => {
-					const message = death_messages[Math.floor(Math.random() * death_messages.length)];
-					this.day_channel.send(message.replace(/%pr/g, `${target.member.toString()} (${role_name(target)})`));
-				}, true);
-			}
-			this.extra_kills = [];
-			this.update_win_condition();
-			if (this.options.includes("dayless")) {
-				this.day++;
-				return this.do_state(State.NIGHT);
-			} else {
-				return this.do_state(State.DAY);
-			}
+			case State.NIGHT_END:
+				this.hiding_names = false;
+				this.day_channel.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				this.mafia_secret_chat.permissionOverwrites.edit(
+					this.role_mafia_player,
+					NO_SEND_PERMS
+				);
+				if (this.mafia_collector) {
+					this.mafia_collector.stop("night end");
+					this.mafia_collector = null;
+				}
+				if (this.timeout) {
+					clearTimeout(this.timeout);
+					this.timeout = null;
+				}
+				for (const player of Object.values(this.players)) {
+					player.do_state(state);
+				}
+				if (this.kill_pending) {
+					this.mafia_secret_chat.send(
+						"The night ended. You killed no one."
+					);
+				}
+				let targets = this.extra_kills || [];
+				if (this.killing && this.killing > 0 && !this.no_mafia_kill) {
+					targets.push([
+						this.players[this.killing],
+						this.mafia_killer,
+					]);
+				}
+				targets = shuffle_array(targets);
+				for (let i = 0; i < targets.length; i++) {
+					const target = targets[i][0];
+					for (let i2 = i + 1; i2 < targets.length; i2++) {
+						if (target.number === targets[i2][0].number) {
+							targets.splice(i2, 1);
+							i2--;
+						}
+					}
+				}
+				for (const [target, killer] of targets) {
+					this.kill(
+						target,
+						killer,
+						() => {
+							const message =
+								death_messages[
+									Math.floor(
+										Math.random() * death_messages.length
+									)
+								];
+							this.day_channel.send(
+								message.replace(
+									/%pr/g,
+									`${target.member.toString()} (${role_name(
+										target
+									)})`
+								)
+							);
+						},
+						true
+					);
+				}
+				this.extra_kills = [];
+				this.update_win_condition();
+				if (this.options.includes("dayless")) {
+					this.day++;
+					return this.do_state(State.NIGHT);
+				} else {
+					return this.do_state(State.DAY);
+				}
 		}
 	}
 }

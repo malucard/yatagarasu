@@ -6,7 +6,8 @@
     "start": "tsc && node dist/bot.js",
     "serve": "node dist/bot.js",
     "watch-node": "nodemon dist/bot.js",
-    "watch-ts": "tsc -w"
+    "watch-ts": "tsc -w",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@types/mongodb": "^3.1.19",
@@ -25,8 +26,8 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.25",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.2",
+    "@typescript-eslint/parser": "^7.0.2",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.10.0",
     "eslint-config-standard": "^17.1.0",

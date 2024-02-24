@@ -20,7 +20,7 @@ export const death_messages = [
 	"%pr's body was found very squished this morning.",
 	"%pr's body was found blown up this morning.",
 	"%pr's body was found in a briefcase this morning.",
-	"%pr's body was found wearing a fancy red suit and sunglasses this morning."
+	"%pr's body was found wearing a fancy red suit and sunglasses this morning.",
 ];
 
 /** points of the game where things happen automatically and roles and items have callbacks to run */
@@ -35,7 +35,7 @@ export enum State {
 	/** can return true to cancel the report for the targeted action */
 	NIGHT_TARGETED,
 	NIGHT_END,
-	DEAD
+	DEAD,
 }
 
 export function shuffle_array<T>(array: Array<T>) {
@@ -46,10 +46,15 @@ export function shuffle_array<T>(array: Array<T>) {
 	return array;
 }
 
-export function calculate_lynch(players: { [num: number]: Player }): [number, Player[]] {
+export function calculate_lynch(players: {
+	[num: number]: Player;
+}): [number, Player[]] {
 	const votes: { [num: number]: Player[] } = {};
 	for (const player of Object.values(players)) {
-		if (player.lynch_vote === 0 || (player.lynch_vote && player.game.players[player.lynch_vote])) {
+		if (
+			player.lynch_vote === 0 ||
+			(player.lynch_vote && player.game.players[player.lynch_vote])
+		) {
 			if (votes[player.lynch_vote]) {
 				votes[player.lynch_vote].push(player);
 			} else {
@@ -81,12 +86,14 @@ export function list_lynch(players: { [num: number]: Player }) {
 		} else if (!player.lynch_vote) {
 			text += `\n*${player.name} has not voted*`;
 		} else if (players[player.lynch_vote]) {
-			text += `\n${player.name} votes to lynch ${players[player.lynch_vote].name}`;
+			text += `\n${player.name} votes to lynch ${
+				players[player.lynch_vote].name
+			}`;
 		} else {
 			text += `\n${player.name} votes to lynch <invalid>`;
 		}
 	}
-	const [lynch, _lynchers] = calculate_lynch(players);
+	const [lynch] = calculate_lynch(players);
 	if (lynch === 0) {
 		return `${text}\n**The consensus is to lynch nobody.**`;
 	} else {

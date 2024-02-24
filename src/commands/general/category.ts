@@ -3,7 +3,7 @@ import {
 	CmdKind,
 	CombinedSlashCommand,
 	hiddenReply,
-	slicedReply
+	slicedReply,
 } from "../../utils/helpers";
 
 const USER_PERMS =
@@ -54,17 +54,23 @@ export const categoryCommands: CombinedSlashCommand[] = [
 			}
 			const subcommand = interaction.options.getSubcommand(true);
 			switch (subcommand) {
-			case "list":
-				await handleList(interaction, guild, member);
-				return;
+				case "list":
+					await handleList(interaction, guild, member);
+					return;
 			}
-		}
+		},
 	},
 ];
 
-async function handleList(interaction: Discord.ChatInputCommandInteraction, guild: Discord.Guild, member: Discord.GuildMember): Promise<void> {
+async function handleList(
+	interaction: Discord.ChatInputCommandInteraction,
+	guild: Discord.Guild,
+	member: Discord.GuildMember
+): Promise<void> {
 	const channel = interaction.channel;
-	const category = interaction.options.getChannel("category", true, [Discord.ChannelType.GuildCategory]);
+	const category = interaction.options.getChannel("category", true, [
+		Discord.ChannelType.GuildCategory,
+	]);
 	const me = await guild.members.fetchMe();
 	// check permissions
 	if (!category.permissionsFor(member).has(USER_PERMS)) {
@@ -74,7 +80,10 @@ async function handleList(interaction: Discord.ChatInputCommandInteraction, guil
 		hiddenReply(interaction, "Bot cannot send embeds in this channel");
 		return;
 	} else if (!category.permissionsFor(me).has(BOT_PERMS)) {
-		hiddenReply(interaction, "Bot does not have valid perms for the category");
+		hiddenReply(
+			interaction,
+			"Bot does not have valid perms for the category"
+		);
 		return;
 	}
 	const { children } = category;

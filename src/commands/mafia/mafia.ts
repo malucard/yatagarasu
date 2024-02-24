@@ -13,10 +13,16 @@ export class MafiaCommandBase {
 	type?: number;
 }
 
-export class MafiaCommandTextOrSlash extends MafiaCommandBase implements Discord.ChatInputApplicationCommandData {
+export class MafiaCommandTextOrSlash
+	extends MafiaCommandBase
+	implements Discord.ChatInputApplicationCommandData
+{
 	description: string;
 	kind: CmdKind.TEXT_OR_SLASH;
-	action: (interaction: Discord.Message | Discord.ChatInputCommandInteraction, args: string) => Promise<void>;
+	action: (
+		interaction: Discord.Message | Discord.ChatInputCommandInteraction,
+		args: string
+	) => Promise<void>;
 }
 
 export class MafiaCommandText extends MafiaCommandBase {
@@ -25,41 +31,76 @@ export class MafiaCommandText extends MafiaCommandBase {
 	action: (message: Discord.Message, args: string) => Promise<void>;
 }
 
-export class MafiaCommandSlash extends MafiaCommandBase implements Discord.ChatInputApplicationCommandData {
+export class MafiaCommandSlash
+	extends MafiaCommandBase
+	implements Discord.ChatInputApplicationCommandData
+{
 	description: string;
 	kind: CmdKind.SLASH;
 	action: (interaction: Discord.CommandInteraction) => Promise<void>;
 }
 
-export class MafiaCommandMessageContext extends MafiaCommandBase implements Discord.MessageApplicationCommandData {
+export class MafiaCommandMessageContext
+	extends MafiaCommandBase
+	implements Discord.MessageApplicationCommandData
+{
 	type: Discord.ApplicationCommandType.Message;
 	kind: CmdKind.MESSAGE_CONTEXT;
-	action: (interaction: Discord.MessageContextMenuCommandInteraction) => Promise<void>;
+	action: (
+		interaction: Discord.MessageContextMenuCommandInteraction
+	) => Promise<void>;
 }
 
-export type MafiaCommand = MafiaCommandTextOrSlash | MafiaCommandText | MafiaCommandSlash | MafiaCommandMessageContext;
-
+export type MafiaCommand =
+	| MafiaCommandTextOrSlash
+	| MafiaCommandText
+	| MafiaCommandSlash
+	| MafiaCommandMessageContext;
 
 const setups: { [name: string]: [number, string] } = {
-	"confused cops": [5, "[Cop] [ParanoidCop] [InsaneCop] [NaiveCop] [Vanilla]"],
+	"confused cops": [
+		5,
+		"[Cop] [ParanoidCop] [InsaneCop] [NaiveCop] [Vanilla]",
+	],
 	"solo hooker": [5, "[Blue] [Blue] [Blue] [Cop] [Hooker]"],
-	"standoff": [5, "[MachoDoc]x2 [Gunsmith] [Oracle] [Illusionist]"],
-	"standoff 6": [6, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] -daystart"],
-	"standoff 7": [7, "[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] [Angel]"],
+	standoff: [5, "[MachoDoc]x2 [Gunsmith] [Oracle] [Illusionist]"],
+	"standoff 6": [
+		6,
+		"[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] -daystart",
+	],
+	"standoff 7": [
+		7,
+		"[MachoDoc]x2 [Gunsmith] [Oracle] [Vanilla] [Illusionist] [Angel]",
+	],
 	"hookers into dreams": [5, "[Blue]x2 [Doc] [Dreamer] [Hooker]"],
 	"hookers into dreams 6": [6, "[Blue]x2 [Doc] [Dreamer] [Vanilla] [Hooker]"],
-	"classic": [7, "[Blue]x3 [Doc] [Cop] [Vanilla]x2"],
+	classic: [7, "[Blue]x3 [Doc] [Cop] [Vanilla]x2"],
 	"guns and hookers": [7, "[Blue]x3 [Cop] [Gunsmith] [Vanilla] [Hooker]"],
-	"fancy pants": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Janitor]"],
-	"fancy hookers": [7, "[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Hooker]"],
-	"sinister sundown": [7, "[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]"],
+	"fancy pants": [
+		7,
+		"[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Janitor]",
+	],
+	"fancy hookers": [
+		7,
+		"[Blue]x3 [Cop] [Bomb/Gunsmith/Oracle/Doc] [Vanilla] [Hooker]",
+	],
+	"sinister sundown": [
+		7,
+		"[Blue]x2 [Deputy]x2 [Oracle] [Vanilla] [Illusionist]",
+	],
 	"cold stone": [7, "[Blue]x3 [Cop] [TalentScout] [Vanilla] [Godfather]"],
 	"team cops": [7, "[Blue]x3 [Doc] [Cop]x3 [Vanilla]x2 [Hooker]"],
 	//"revengeful 5": [5, "[VengefulBlue]x3 [VengefulVanilla]x2 -nightless -daychat"],
 	//"revengeful 7": [7, "[VengefulBlue]x5 [VengefulVanilla]x2 -nightless -daychat"],
 	//"revengeful": [11, "[VengefulBlue]x7 [VengefulVanilla]x4 -nightless -daychat"],
-	"purgatory": [5, "[Gunsmith] [Cop] [Dreamer] [TalentScout] [Godfather] -nightless"],
-	"hope plus one": [14, "[Blue]x7 [MachoDoc]x2 [Cop]x2 [Vanilla]x3 -daystart"]
+	purgatory: [
+		5,
+		"[Gunsmith] [Cop] [Dreamer] [TalentScout] [Godfather] -nightless",
+	],
+	"hope plus one": [
+		14,
+		"[Blue]x7 [MachoDoc]x2 [Cop]x2 [Vanilla]x3 -daystart",
+	],
 };
 
 export const cmds: MafiaCommand[] = [
@@ -67,31 +108,48 @@ export const cmds: MafiaCommand[] = [
 		name: "startsignup",
 		description: "startsignup",
 		kind: CmdKind.TEXT_OR_SLASH,
-		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
+		action: async (
+			interaction: Discord.Message | Discord.ChatInputCommandInteraction
+		) => {
 			if (mafiaCommandChecks(interaction, true, true)) {
 				let reply: Discord.Message;
 				if (interaction instanceof Discord.CommandInteraction) {
-					reply = await interaction.deferReply({ fetchReply: true }) as Discord.Message;
+					reply = (await interaction.deferReply({
+						fetchReply: true,
+					})) as Discord.Message;
 				}
-				const [role_mafia_player, _mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
+				const [role_mafia_player] = get_mafia_channel_data(
+					interaction.channel as Discord.TextChannel
+				);
 				const reply_opts = await signup_message(role_mafia_player);
-				if (reply && interaction instanceof Discord.CommandInteraction) {
+				if (
+					reply &&
+					interaction instanceof Discord.CommandInteraction
+				) {
 					interaction.editReply(reply_opts);
 				} else interaction.reply(reply_opts);
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "cleanup",
 		description: "cleanup",
 		kind: CmdKind.TEXT_OR_SLASH,
-		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
+		action: async (
+			interaction: Discord.Message | Discord.ChatInputCommandInteraction
+		) => {
 			if (mafiaCommandChecks(interaction, false, true)) {
-				const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
-				mafia_secret_chat.permissionOverwrites.cache.forEach(element => {
-					if (element.type === Discord.OverwriteType.Member) {
-						element.delete("cleanup");
+				const [role_mafia_player, mafia_secret_chat] =
+					get_mafia_channel_data(
+						interaction.channel as Discord.TextChannel
+					);
+				mafia_secret_chat.permissionOverwrites.cache.forEach(
+					element => {
+						if (element.type === Discord.OverwriteType.Member) {
+							element.delete("cleanup");
+						}
 					}
-				});
+				);
 				const game = games_happening[interaction.channel.id];
 				if (game) {
 					game.do_state(State.GAME_END);
@@ -100,67 +158,111 @@ export const cmds: MafiaCommand[] = [
 					}
 					delete games_happening[interaction.channel.id];
 				}
-				(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, FULL_SEND_PERMS);
-				(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
-				if (interaction instanceof Discord.Message) interaction.react(mizukithumbsup);
+				(
+					interaction.channel as Discord.TextChannel
+				).permissionOverwrites.edit(
+					interaction.guild.roles.everyone,
+					FULL_SEND_PERMS
+				);
+				(
+					interaction.channel as Discord.TextChannel
+				).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
+				if (interaction instanceof Discord.Message)
+					interaction.react(mizukithumbsup);
 				else interaction.reply(`<:mizukithumbsup:${mizukithumbsup}>`);
 			}
 		},
-	}, {
+	},
+	{
 		name: "partialcleanup",
 		description: "partialcleanup",
 		kind: CmdKind.TEXT_OR_SLASH,
-		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
+		action: async (
+			interaction: Discord.Message | Discord.ChatInputCommandInteraction
+		) => {
 			if (mafiaCommandChecks(interaction, false, true)) {
-				const [role_mafia_player, mafia_secret_chat] = get_mafia_channel_data(interaction.channel as Discord.TextChannel);
-				mafia_secret_chat.permissionOverwrites.cache.forEach(element => {
-					if (element.type === Discord.OverwriteType.Member) {
-						element.delete("partialcleanup");
+				const [role_mafia_player, mafia_secret_chat] =
+					get_mafia_channel_data(
+						interaction.channel as Discord.TextChannel
+					);
+				mafia_secret_chat.permissionOverwrites.cache.forEach(
+					element => {
+						if (element.type === Discord.OverwriteType.Member) {
+							element.delete("partialcleanup");
+						}
 					}
-				});
+				);
 				const game = games_happening[interaction.channel.id];
 				if (game) {
 					game.do_state(State.GAME_END);
 					delete games_happening[interaction.channel.id];
 				}
-				(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, FULL_SEND_PERMS);
-				(interaction.channel as Discord.TextChannel).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
-				if (interaction instanceof Discord.Message) interaction.react(mizukithumbsup);
+				(
+					interaction.channel as Discord.TextChannel
+				).permissionOverwrites.edit(
+					interaction.guild.roles.everyone,
+					FULL_SEND_PERMS
+				);
+				(
+					interaction.channel as Discord.TextChannel
+				).permissionOverwrites.edit(role_mafia_player, FULL_SEND_PERMS);
+				if (interaction instanceof Discord.Message)
+					interaction.react(mizukithumbsup);
 				else interaction.reply(`<:mizukithumbsup:${mizukithumbsup}>`);
 			}
 		},
-	}, {
+	},
+	{
 		name: "role",
 		description: "role",
 		kind: CmdKind.TEXT_OR_SLASH,
-		options: [{
-			name: "name",
-			description: "name of the role",
-			type: 3,
-			required: true
-		}],
-		action: async (message: Discord.Message | Discord.ChatInputCommandInteraction, args: string) => {
+		options: [
+			{
+				name: "name",
+				description: "name of the role",
+				type: 3,
+				required: true,
+			},
+		],
+		action: async (
+			message: Discord.Message | Discord.ChatInputCommandInteraction,
+			args: string
+		) => {
 			if (mafiaCommandChecks(message)) {
-				const role = Object.values(roles).find(role => role.name.toLowerCase() === args.toLowerCase());
+				const role = Object.values(roles).find(
+					role => role.name.toLowerCase() === args.toLowerCase()
+				);
 				if (role) {
-					message.reply(`${role.name} (${Side[role.side]}): ${role.help}${role.hidden_help ? ` ${role.hidden_help}` : ""}`);
+					message.reply(
+						`${role.name} (${Side[role.side]}): ${role.help}${
+							role.hidden_help ? ` ${role.hidden_help}` : ""
+						}`
+					);
 				} else {
 					message.reply("Invalid role name");
 				}
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "roles",
 		description: "roles",
 		kind: CmdKind.TEXT_OR_SLASH,
-		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction) => {
+		action: async (
+			interaction: Discord.Message | Discord.ChatInputCommandInteraction
+		) => {
 			if (mafiaCommandChecks(interaction, true)) {
 				let helperText = "";
 				for (const r of Object.values(roles)) {
-					const line = `\n${Side[r.side][0]}/${r.name}: ${r.help}${r.hidden_help ? ` ${r.hidden_help}` : ""}`;
+					const line = `\n${Side[r.side][0]}/${r.name}: ${r.help}${
+						r.hidden_help ? ` ${r.hidden_help}` : ""
+					}`;
 					const testConcat = helperText + line;
 					if (testConcat.length > 2000) {
-						if (interaction instanceof Discord.CommandInteraction && interaction.replied) {
+						if (
+							interaction instanceof Discord.CommandInteraction &&
+							interaction.replied
+						) {
 							await interaction.followUp(helperText);
 						} else {
 							await interaction.reply(helperText);
@@ -168,57 +270,90 @@ export const cmds: MafiaCommand[] = [
 						helperText = line;
 					} else helperText = testConcat;
 				}
-				if (interaction instanceof Discord.CommandInteraction && interaction.replied) {
+				if (
+					interaction instanceof Discord.CommandInteraction &&
+					interaction.replied
+				) {
 					interaction.followUp(helperText);
 				} else {
 					interaction.reply(helperText);
 				}
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "setup",
 		description: "setup",
 		kind: CmdKind.TEXT_OR_SLASH,
-		options: [{
-			name: "setup",
-			description: "name of setup",
-			type: Discord.ApplicationCommandOptionType.String,
-			required: true,
-			choices: Object.keys(setups).length <= 25 ? Object.keys(setups).map(setup => ({
-				name: `${setup} (${setups[setup][0]}) - ${setups[setup][1]}`, value: setup
-			})) : undefined
-		}],
-		action: async (interaction: Discord.Message | Discord.ChatInputCommandInteraction, args: string) => {
+		options: [
+			{
+				name: "setup",
+				description: "name of setup",
+				type: Discord.ApplicationCommandOptionType.String,
+				required: true,
+				choices:
+					Object.keys(setups).length <= 25
+						? Object.keys(setups).map(setup => ({
+								name: `${setup} (${setups[setup][0]}) - ${setups[setup][1]}`,
+								value: setup,
+						  }))
+						: undefined,
+			},
+		],
+		action: async (
+			interaction: Discord.Message | Discord.ChatInputCommandInteraction,
+			args: string
+		) => {
 			if (mafiaCommandChecks(interaction, true, true)) {
 				if (setups[args]) {
-					await do_setup(interaction.member as Discord.GuildMember, interaction.channel as Discord.TextChannel, interaction, setups[args][1]);
+					await do_setup(
+						interaction.member as Discord.GuildMember,
+						interaction.channel as Discord.TextChannel,
+						interaction,
+						setups[args][1]
+					);
 				} else {
 					interaction.reply("Unknown setup");
 				}
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "setupcustom",
 		description: "setupcustom",
 		kind: CmdKind.TEXT_OR_SLASH,
-		options: [{
-			name: "setup",
-			description: "list of roles and options",
-			type: Discord.ApplicationCommandOptionType.String,
-			required: true
-		}],
-		action: async (message: Discord.Message | Discord.ChatInputCommandInteraction, args: string) => {
+		options: [
+			{
+				name: "setup",
+				description: "list of roles and options",
+				type: Discord.ApplicationCommandOptionType.String,
+				required: true,
+			},
+		],
+		action: async (
+			message: Discord.Message | Discord.ChatInputCommandInteraction,
+			args: string
+		) => {
 			if (mafiaCommandChecks(message, true, true)) {
-				if (message instanceof Discord.CommandInteraction) args = message.options.getString("setup");
-				await do_setup(message.member as Discord.GuildMember, message.channel as Discord.TextChannel, message, args);
+				if (message instanceof Discord.CommandInteraction)
+					args = message.options.getString("setup");
+				await do_setup(
+					message.member as Discord.GuildMember,
+					message.channel as Discord.TextChannel,
+					message,
+					args
+				);
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "players",
 		kind: CmdKind.TEXT,
 		action: async (message: Discord.Message) => {
 			if (mafiaCommandChecks(message)) {
-				const role_mafia_player = message.guild.roles.cache.find(x => x.name === "Mafia Player");
+				const role_mafia_player = message.guild.roles.cache.find(
+					x => x.name === "Mafia Player"
+				);
 				const count = role_mafia_player.members.size;
 				if (count < 10) {
 					message.react(`${count}\u20e3`);
@@ -226,51 +361,63 @@ export const cmds: MafiaCommand[] = [
 					message.react("🔟");
 				} else if (count < 21) {
 					let one = false;
-					count.toString().split("").forEach(async (v) => {
-						if (v === "1") {
-							if (one) {
-								await message.react("538537337609781258");
+					count
+						.toString()
+						.split("")
+						.forEach(async v => {
+							if (v === "1") {
+								if (one) {
+									await message.react("538537337609781258");
+								} else {
+									await message.react("1\u20e3");
+									one = true;
+								}
 							} else {
-								await message.react("1\u20e3");
-								one = true;
+								await message.react(`${v}\u20e3`);
 							}
-						} else {
-							await message.react(`${v}\u20e3`);
-						}
-					});
+						});
 				} else {
 					message.reply(count.toString());
 				}
 			}
-		}
-	}, {
+		},
+	},
+	{
 		name: "playerlist",
 		description: "get list of players",
 		kind: CmdKind.TEXT_OR_SLASH,
-		action: async (message: Discord.Message | Discord.ChatInputCommandInteraction) => {
+		action: async (
+			message: Discord.Message | Discord.ChatInputCommandInteraction
+		) => {
 			if (mafiaCommandChecks(message)) {
 				if (message instanceof Discord.CommandInteraction) return;
-				const role_mafia_player = message.guild.roles.cache.find(x => x.name === "Mafia Player");
+				const role_mafia_player = message.guild.roles.cache.find(
+					x => x.name === "Mafia Player"
+				);
 				const players = role_mafia_player.members;
 				if (!players.size) {
 					message.reply({
-						content: "There are no players currently signed up."
+						content: "There are no players currently signed up.",
 					});
 				} else {
 					let playerList = "";
 					players.toJSON().forEach((player, index) => {
-						playerList += `${index + 1}: ${player.user.toString()}\n`;
+						playerList += `${
+							index + 1
+						}: ${player.user.toString()}\n`;
 					});
 					message.reply({
-						embeds: [{
-							title: "Signed up players",
-							description: playerList
-						}]
+						embeds: [
+							{
+								title: "Signed up players",
+								description: playerList,
+							},
+						],
 					});
 				}
 			}
-		}
-	}
+		},
+	},
 	// {
 	// 	name: "lunch",
 	// 	type: ApplicationCommandTypes.MESSAGE,
@@ -281,67 +428,113 @@ export const cmds: MafiaCommand[] = [
 	// }
 ];
 
-export const buttons: { [id: string]: (interaction: Discord.ButtonInteraction) => Promise<void> } = {
+export const buttons: {
+	[id: string]: (interaction: Discord.ButtonInteraction) => Promise<void>;
+} = {
 	signup: async (interaction: Discord.ButtonInteraction) => {
 		if (buttonsCheck(interaction)) {
 			interaction.update({});
-			const role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
+			const role_mafia_player = interaction.guild.roles.cache.find(
+				x => x.name === "Mafia Player"
+			);
 			if (role_mafia_player) {
-				await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.add(role_mafia_player).catch(() => interaction.reply("Could not add role"));
-				await (interaction.message as Discord.Message).edit(await signup_message(role_mafia_player));
+				await interaction.guild.members.cache
+					.find(x => x.id === interaction.user.id)
+					.roles.add(role_mafia_player)
+					.catch(() => interaction.reply("Could not add role"));
+				await (interaction.message as Discord.Message).edit(
+					await signup_message(role_mafia_player)
+				);
 			}
 		}
 	},
 	signout: async (interaction: Discord.ButtonInteraction) => {
 		if (buttonsCheck(interaction)) {
 			interaction.update({});
-			const role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
+			const role_mafia_player = interaction.guild.roles.cache.find(
+				x => x.name === "Mafia Player"
+			);
 			if (role_mafia_player) {
-				await interaction.guild.members.cache.find(x => x.id === interaction.user.id).roles.remove(role_mafia_player).catch(() => interaction.reply("Could not remove role"));
-				await (interaction.message as Discord.Message).edit(await signup_message(role_mafia_player));
+				await interaction.guild.members.cache
+					.find(x => x.id === interaction.user.id)
+					.roles.remove(role_mafia_player)
+					.catch(() => interaction.reply("Could not remove role"));
+				await (interaction.message as Discord.Message).edit(
+					await signup_message(role_mafia_player)
+				);
 			}
 		}
 	},
 	stopsignup: async (interaction: Discord.ButtonInteraction) => {
 		if (buttonsCheck(interaction)) {
-			if (!(interaction.member as Discord.GuildMember).roles.cache.find(v => v.name === "Mafia Manager")) {
-				interaction.reply({ content: "You need the Mafia Manager role for this.", ephemeral: true });
+			if (
+				!(interaction.member as Discord.GuildMember).roles.cache.find(
+					v => v.name === "Mafia Manager"
+				)
+			) {
+				interaction.reply({
+					content: "You need the Mafia Manager role for this.",
+					ephemeral: true,
+				});
 				return;
 			}
-			const role_mafia_player = interaction.guild.roles.cache.find(x => x.name === "Mafia Player");
+			const role_mafia_player = interaction.guild.roles.cache.find(
+				x => x.name === "Mafia Player"
+			);
 			if (role_mafia_player) {
-				interaction.update({}).catch((e) => { console.error(e); });
-				role_mafia_player.members.forEach(member => member.roles.remove(role_mafia_player));
-				await (interaction.message as Discord.Message).edit(await signup_message(role_mafia_player)).catch((e) => { console.error(e); });
+				interaction.update({}).catch(e => {
+					console.error(e);
+				});
+				role_mafia_player.members.forEach(member =>
+					member.roles.remove(role_mafia_player)
+				);
+				await (interaction.message as Discord.Message)
+					.edit(await signup_message(role_mafia_player))
+					.catch(e => {
+						console.error(e);
+					});
 			}
 		}
-	}
+	},
 };
 
-export const select_menus: { [id: string]: (interaction: Discord.SelectMenuInteraction) => Promise<void> } = {
+export const select_menus: {
+	[id: string]: (interaction: Discord.SelectMenuInteraction) => Promise<void>;
+} = {
 	start: async interaction => {
 		if (games_happening[interaction.channel.id]) return;
-		if (!(interaction.member as Discord.GuildMember).roles.cache.find(x => x.name === "Mafia Manager")) {
+		if (
+			!(interaction.member as Discord.GuildMember).roles.cache.find(
+				x => x.name === "Mafia Manager"
+			)
+		) {
 			return;
 		}
 		interaction.update({});
-		await do_setup(interaction.member as Discord.GuildMember, interaction.channel as Discord.TextChannel, interaction, interaction.values[0]);
-	}
+		await do_setup(
+			interaction.member as Discord.GuildMember,
+			interaction.channel as Discord.TextChannel,
+			interaction,
+			interaction.values[0]
+		);
+	},
 };
 
 export const games_happening: { [channel: string]: Game } = {};
 
-function get_mafia_channel_data(channel: Discord.TextChannel): [Discord.Role, Discord.TextChannel] | undefined {
+function get_mafia_channel_data(
+	channel: Discord.TextChannel
+): [Discord.Role, Discord.TextChannel] | undefined {
 	// Check if the channel is a text channel
 	if (channel.type !== Discord.ChannelType.GuildText) {
 		return undefined;
 	}
 	// Return the "Mafia Player" role and the "mafia-secret-chat" text channel, if they exist
 	const mafiaPlayerRole = channel.guild.roles.cache.find(
-		(role) => role.name === "Mafia Player"
+		role => role.name === "Mafia Player"
 	);
 	const mafiaSecretChatChannel = channel.guild.channels.cache.find(
-		(channel) =>
+		channel =>
 			channel.name === "mafia-secret-chat" &&
 			channel.type === Discord.ChannelType.GuildText
 	) as Discord.TextChannel;
@@ -350,7 +543,6 @@ function get_mafia_channel_data(channel: Discord.TextChannel): [Discord.Role, Di
 	}
 	return [mafiaPlayerRole, mafiaSecretChatChannel];
 }
-  
 
 async function player_list_embed(role_mafia_player: Discord.Role) {
 	const players = role_mafia_player.members;
@@ -360,11 +552,18 @@ async function player_list_embed(role_mafia_player: Discord.Role) {
 	});
 	return {
 		title: "Signed up players",
-		description: playerList
+		description: playerList,
 	};
 }
 
-async function signup_message(role_mafia_player: Discord.Role): Promise<{ content: string; components: (Discord.ActionRowBuilder<Discord.ButtonBuilder> | Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>)[]; embeds: { title: string; description: string; }[]; }> {
+async function signup_message(role_mafia_player: Discord.Role): Promise<{
+	content: string;
+	components: (
+		| Discord.ActionRowBuilder<Discord.ButtonBuilder>
+		| Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>
+	)[];
+	embeds: { title: string; description: string }[];
+}> {
 	const embed = await player_list_embed(role_mafia_player);
 	const opts: Array<Discord.SelectMenuComponentOptionData> = [];
 	for (const [i, v] of Object.entries(setups)) {
@@ -372,31 +571,66 @@ async function signup_message(role_mafia_player: Discord.Role): Promise<{ conten
 			label: `${i} (${v[0]})`,
 			value: v[1],
 			description: v[1],
-			default: false
+			default: false,
 		});
 	}
-	const buttons: Array<Partial<Discord.ButtonComponentData>> = [{
-		label: "Sign up", customId: "signup", style: Discord.ButtonStyle.Primary
-	}, {
-		label: "Sign out", customId: "signout", style: Discord.ButtonStyle.Secondary
-	}, {
-		label: "Rules", style: Discord.ButtonStyle.Link, url: "https://canary.discord.com/channels/485666008128946179/686603623446347899"
-	}, {
-		label: "Clear", customId: "stopsignup", style: Discord.ButtonStyle.Danger
-	}];
-	const buttonRow = new Discord.ActionRowBuilder<Discord.ButtonBuilder>().addComponents(buttons.map(data => new Discord.ButtonBuilder(data)));
-	const optionRow = opts.length && new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().addComponents([
-		new Discord.StringSelectMenuBuilder().setPlaceholder("Start").setCustomId("start").addOptions(opts)
-	]);
+	const buttons: Array<Partial<Discord.ButtonComponentData>> = [
+		{
+			label: "Sign up",
+			customId: "signup",
+			style: Discord.ButtonStyle.Primary,
+		},
+		{
+			label: "Sign out",
+			customId: "signout",
+			style: Discord.ButtonStyle.Secondary,
+		},
+		{
+			label: "Rules",
+			style: Discord.ButtonStyle.Link,
+			url: "https://canary.discord.com/channels/485666008128946179/686603623446347899",
+		},
+		{
+			label: "Clear",
+			customId: "stopsignup",
+			style: Discord.ButtonStyle.Danger,
+		},
+	];
+	const buttonRow =
+		new Discord.ActionRowBuilder<Discord.ButtonBuilder>().addComponents(
+			buttons.map(data => new Discord.ButtonBuilder(data))
+		);
+	const optionRow =
+		opts.length &&
+		new Discord.ActionRowBuilder<Discord.StringSelectMenuBuilder>().addComponents(
+			[
+				new Discord.StringSelectMenuBuilder()
+					.setPlaceholder("Start")
+					.setCustomId("start")
+					.addOptions(opts),
+			]
+		);
 	const rows = [buttonRow, optionRow].filter(Boolean);
 	return {
 		content: "Signup for a new round of Mafia has started!",
-		components: rows, embeds: [embed]
+		components: rows,
+		embeds: [embed],
 	};
 }
 
-async function do_setup(member: Discord.GuildMember, channel: Discord.TextChannel, message: Discord.Message | Discord.ChatInputCommandInteraction | Discord.SelectMenuInteraction, setup: string) {
-	if (games_happening[channel.id] || !member.roles.cache.find(x => x.name === "Mafia Manager")) {
+async function do_setup(
+	member: Discord.GuildMember,
+	channel: Discord.TextChannel,
+	message:
+		| Discord.Message
+		| Discord.ChatInputCommandInteraction
+		| Discord.SelectMenuInteraction,
+	setup: string
+) {
+	if (
+		games_happening[channel.id] ||
+		!member.roles.cache.find(x => x.name === "Mafia Manager")
+	) {
 		return;
 	}
 	const data = get_mafia_channel_data(channel);
@@ -415,14 +649,16 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 			count = parseInt(match.substring(idx + 2));
 		}
 		const role = match.substring(1, idx);
-		const alts = (role.includes("/") ? role.split("/") : [role]).map(roleName => {
-			roleName = roleName[0].toUpperCase() + roleName.substring(1);
-			if (roleName in roles) {
-				return roles[roleName];
-			} else {
-				error.push(roleName);
+		const alts = (role.includes("/") ? role.split("/") : [role]).map(
+			roleName => {
+				roleName = roleName[0].toUpperCase() + roleName.substring(1);
+				if (roleName in roles) {
+					return roles[roleName];
+				} else {
+					error.push(roleName);
+				}
 			}
-		});
+		);
 		for (let i = 0; i < count; i++) {
 			setup_roles.push(alts[Math.floor(Math.random() * alts.length)]);
 		}
@@ -448,7 +684,11 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 		if (oerror.length != 0) {
 			text += `Options not found: ${oerror.join(", ")}\n`;
 		}
-		if (message instanceof Discord.Message || message instanceof Discord.CommandInteraction) message.reply(text);
+		if (
+			message instanceof Discord.Message ||
+			message instanceof Discord.CommandInteraction
+		)
+			message.reply(text);
 		else channel.send(text);
 		return;
 	}
@@ -456,7 +696,8 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 	const player_count = role_mafia_player.members.size;
 	if (player_count === setup_roles.length) {
 		if (message instanceof Discord.Message) message.react(mizukithumbsup);
-		else if (message instanceof Discord.CommandInteraction) message.reply("Starting");
+		else if (message instanceof Discord.CommandInteraction)
+			message.reply("Starting");
 		const new_game = new Game();
 		const players: { [number: number]: Player } = {};
 		let all_players = [];
@@ -467,7 +708,11 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 			player.game = new_game;
 			player.role = setup_roles[i];
 			player.member = member;
-			player.name = everyone_prevent(member.nickname !== undefined && member.nickname !== null ? member.nickname : member.user.username);
+			player.name = everyone_prevent(
+				member.nickname !== undefined && member.nickname !== null
+					? member.nickname
+					: member.user.username
+			);
 			all_players.push(player);
 			i++;
 		}
@@ -487,16 +732,35 @@ async function do_setup(member: Discord.GuildMember, channel: Discord.TextChanne
 		channel.send(`Setup selected: ${setup}`);
 		await new_game.do_state(State.GAME);
 	} else if (player_count < setup_roles.length) {
-		channel.send(`Not enough players. You need ${setup_roles.length}, but there are ${player_count}.`);
+		channel.send(
+			`Not enough players. You need ${setup_roles.length}, but there are ${player_count}.`
+		);
 	} else {
-		channel.send(`Too many players. You need ${setup_roles.length}, but there are ${player_count}.`);
+		channel.send(
+			`Too many players. You need ${setup_roles.length}, but there are ${player_count}.`
+		);
 	}
 }
 
-function mafiaCommandChecks(msg_or_interaction: Discord.Message | Discord.ChatInputCommandInteraction, no_ingame?: boolean, manager_only?: boolean): boolean {
-	if (!get_mafia_channel_data(msg_or_interaction.channel as Discord.TextChannel)) return false;
-	if (no_ingame && games_happening[msg_or_interaction.channel.id]) return false;
-	if (manager_only && !(msg_or_interaction.member as Discord.GuildMember).roles.cache.find(x => x.name === "Mafia Manager")) {
+function mafiaCommandChecks(
+	msg_or_interaction: Discord.Message | Discord.ChatInputCommandInteraction,
+	no_ingame?: boolean,
+	manager_only?: boolean
+): boolean {
+	if (
+		!get_mafia_channel_data(
+			msg_or_interaction.channel as Discord.TextChannel
+		)
+	)
+		return false;
+	if (no_ingame && games_happening[msg_or_interaction.channel.id])
+		return false;
+	if (
+		manager_only &&
+		!(msg_or_interaction.member as Discord.GuildMember).roles.cache.find(
+			x => x.name === "Mafia Manager"
+		)
+	) {
 		msg_or_interaction.reply("You need the Mafia Manager role for this.");
 		return false;
 	}

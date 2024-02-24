@@ -41,19 +41,24 @@ export class Inventory {
 			res += `\n- ${id} x${count} `;
 			if (it.use) {
 				res += it.night_use ? "(use at night" : "(use at day";
-				res += it.no_target ? ", does not require a target)" : ", requires a target)";
+				res += it.no_target
+					? ", does not require a target)"
+					: ", requires a target)";
 			} else {
 				res += "(passive)";
 			}
 			res += `\n= ${it.help}`;
 		}
-		res += "\nUse an item by sending me `;use <item name> <target number>` at any time during the day or night depending on the item. Check your inventory at any time with `;inv`.";
+		res +=
+			"\nUse an item by sending me `;use <item name> <target number>` at any time during the day or night depending on the item. Check your inventory at any time with `;inv`.";
 		if (!player.already_sent_player_list) {
 			player.already_sent_player_list = true;
 			res += " Targets:";
 			for (const p of Object.values(game.players)) {
 				if (p.number != player.number) {
-					res += `\n${p.number}- ${game.hiding_names ? "<hidden>" : p.name}`;
+					res += `\n${p.number}- ${
+						game.hiding_names ? "<hidden>" : p.name
+					}`;
 				}
 			}
 		}
@@ -70,12 +75,20 @@ export const items: { [name: string]: Item } = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
 				if (Math.random() < 0.5) {
-					game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot by ${player.member.toString()}.`);
+					game.day_channel.send(
+						`${target.member.toString()}, the ${role_name(
+							target
+						)}, was shot by ${player.member.toString()}.`
+					);
 				} else {
-					game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot.`);
+					game.day_channel.send(
+						`${target.member.toString()}, the ${role_name(
+							target
+						)}, was shot.`
+					);
 				}
 			});
-		}
+		},
 	},
 	DeputyGun: {
 		name: "DeputyGun",
@@ -84,9 +97,13 @@ export const items: { [name: string]: Item } = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
-				game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot.`);
+				game.day_channel.send(
+					`${target.member.toString()}, the ${role_name(
+						target
+					)}, was shot.`
+				);
 			});
-		}
+		},
 	},
 	IllusionistGun: {
 		name: "IllusionistGun",
@@ -94,32 +111,38 @@ export const items: { [name: string]: Item } = {
 		can_overturn: true,
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
-			const framed: Player = player.data.framing ? player.data.framing as Player : player;
+			const framed: Player = player.data.framing
+				? (player.data.framing as Player)
+				: player;
 			game.kill(target, player, () => {
-				game.day_channel.send(`${target.member.toString()}, the ${role_name(target)}, was shot by ${framed.member.toString()}.`);
+				game.day_channel.send(
+					`${target.member.toString()}, the ${role_name(
+						target
+					)}, was shot by ${framed.member.toString()}.`
+				);
 			});
-		}
+		},
 	},
 	Syringe: {
 		name: "Syringe",
 		help: "Prevent a target from dying tonight.",
 		night_use: true,
-		use: (target, player, _game) => {
+		use: (target, player) => {
 			target.protected = true;
 			player.member.send(`You chose to protect ${target.name}.`);
-		}
+		},
 	},
 	Bread: {
 		name: "Bread",
 		help: "Nourish yourself.",
 		no_target: true,
-		use: (_target, player, _game) => {
+		use: (_target, player) => {
 			player.member.send("You ate Bread.");
-		}
+		},
 	},
 	Money: {
 		name: "Money",
-		help: "Riches."
+		help: "Riches.",
 	},
 	Armor: {
 		name: "Armor",
@@ -129,7 +152,7 @@ export const items: { [name: string]: Item } = {
 				player.remove(items.Armor);
 				player.dead = false;
 				return true;
-			}
-		}
-	}
+			},
+		},
+	},
 };
