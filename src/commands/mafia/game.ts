@@ -322,7 +322,8 @@ export class Game {
 				player.member.createDM().then(ch => {
 					player.member.send(`Setup is ${this.setup}`);
 					player.item_collector = ch.createMessageCollector();
-					player.item_collector.on("collect", msg => {
+					player.item_collector.on("collect", async msg => {
+						msg = await msg.fetch();
 						if (msg.content.match(/^; *inv$/)) {
 							msg.reply(player.inventory.print(player, this));
 							return;
@@ -413,7 +414,8 @@ export class Game {
 			this.day_channel.send(`${this.role_mafia_player.toString()} Day ${this.day} has begun. You have 10 minutes to vote on who to lynch with \`;lynch @usermention\`.${numbers}`);
 			this.lunches = shuffle_array(foods).slice(0, 4);
 			this.day_collector = this.day_channel.createMessageCollector();
-			this.day_collector.on("collect", message => {
+			this.day_collector.on("collect", async message => {
+				message = await message.fetch();
 				let all_voted = true;
 				for (const player of Object.values(this.players)) {
 					if (player.member.id === message.author.id) {
@@ -544,7 +546,8 @@ export class Game {
 				this.mafia_secret_chat.send(`${mafiaPings}\n Night ${this.day} has begun. Select a player to kill with \`;kill <number>\`, or just \`;kill\` to not kill tonight. Targets:${numbers}`);
 			}
 			this.mafia_collector = this.mafia_secret_chat.createMessageCollector();
-			this.mafia_collector.on("collect", msg => {
+			this.mafia_collector.on("collect", async msg => {
+				msg = await msg.fetch();
 				const matches = msg.content.match(/^; *kill +([0-9]+)$/);
 				if (this.kill_pending && matches && !this.no_mafia_kill) {
 					const number = parseInt(matches[1]);

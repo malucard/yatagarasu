@@ -95,29 +95,36 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 			}
 		}
 	}
-	action_follow_up(player, opt.mafia, null, msg_txt).then(req_msg => {
+	action_follow_up(player, opt.mafia, null, msg_txt).then(async req_msg => {
+		req_msg = await req_msg.fetch();
 		let collector: Discord.ReactionCollector | Discord.MessageCollector;
 		if (opt.mafia) {
 			collector = req_msg.channel.createMessageCollector();
 		} else {
 			if (opt.yes_no) {
-				req_msg.react("✅");
+				await req_msg.react("✅");
 			} else {
 				for (const p of Object.values(player.game.players)) {
-					if (p.number !== player.number) req_msg.react(p.number + "\u20E3");
+					if (p.number !== player.number) {
+						await req_msg.react(p.number + "\u20E3");
+					}
 				}
 			}
-			if (can_cancel) req_msg.react("❌");
+			if (can_cancel) {
+				await req_msg.react("❌");
+			}
 			collector = req_msg.createReactionCollector();
 		}
 		player.data.collector = collector;
-		collector.handleCollect((recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
-			let reaction, content;
+		const handler = async (recv: Discord.Message | Discord.MessageReaction, user?: Discord.User) => {
+			let reaction: string, content: string;
+			recv = await recv.fetch();
 			if (recv instanceof Discord.Message) {
 				content = recv.content;
 				user = recv.member.user;
 			} else {
 				reaction = recv.emoji.name;
+
 			}
 			if (user.id !== player.member.id) return;
 			if (can_cancel && (reaction ? reaction === "❌" : content.match(new RegExp(`^; *${verb}$`)))) {
@@ -183,6 +190,13 @@ function request_action(verb: string, report: RoleActionReport, opt: ActionOptio
 					}
 					player.game.update_night();
 				}
+			}
+		};
+		collector.on("collect", (arg1, arg2) => {
+			if (arg2 instanceof Discord.User) {
+				handler(arg1, arg2);
+			} else {
+				handler(arg1);
 			}
 		});
 	});
