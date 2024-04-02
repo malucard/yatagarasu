@@ -11,6 +11,7 @@ import {
 	categoryCommands,
 	embedCommands,
 	threadpinCommands,
+	securityCommands,
 } from "./commands/general";
 import {
 	moveCommands,
@@ -37,6 +38,7 @@ const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
 	...MF_Commands,
 	...threadpinCommands,
 	...categoryCommands,
+	...securityCommands
 ];
 
 client.on("ready", async () => {
@@ -73,6 +75,7 @@ client.on("error", error => {
 });
 
 client.on("messageCreate", async msg => {
+	return;
 	try {
 		msg = await msg.fetch();
 		const matches = msg.content.match(/^; *([a-z]+)(\s+(.*))?$/);
@@ -96,6 +99,24 @@ client.on("messageCreate", async msg => {
 		}
 	} catch (error) {
 		console.error(error, msg);
+	}
+});
+
+client.on("messageReactionAdd", async (reaction, user) => {
+	if (reaction.message.id == "1224789493899591771" && reaction.message.channel.isTextBased()) {
+		const channel = reaction.message.channel as Discord.TextChannel;
+		if (user.partial) {
+			user = await user.fetch();
+		}
+		const member = await reaction.message.guild.members.resolve(user.id);
+		await member.roles.add("1224548316285763584", "instant death button");
+	} else if (reaction.message.id == "1224789666725761084" && reaction.message.channel.isTextBased()) {
+		const channel = reaction.message.channel as Discord.TextChannel;
+		if (user.partial) {
+			user = await user.fetch();
+		}
+		const member = await reaction.message.guild.members.resolve(user.id);
+		await member.roles.add("1224753960179728445", "instant death button");
 	}
 });
 
@@ -147,6 +168,54 @@ client.on("interactionCreate", async (interaction: Discord.Interaction) => {
 			mafia.buttons[interaction.customId]
 		) {
 			await mafia.buttons[interaction.customId](interaction);
+		} else if (interaction.isButton() && (interaction as Discord.ButtonInteraction).customId.startsWith("captcha_")) {
+			const customId = (interaction as Discord.ButtonInteraction).customId;
+			const [_, buttonNum, roleToRemoveId] = customId.match("captcha_([1-3])_rmrole_([1-9]+)");
+			if (buttonNum === "3") {
+				const member = await interaction.guild.members.fetch(interaction.member.user.id);
+				for (let [_, roleToCheck] of member.roles.cache) {
+					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
+						await member.roles.remove(roleToCheck);
+					}
+				}
+				await member.roles.add(interaction.guild.roles.cache.find(x => x.name == "yatty_captcha_step_1"));
+				await interaction.reply({content: "Accepted. Please press the **1** button now.", ephemeral: true});
+			} else if (buttonNum === "1") {
+				const member = await interaction.guild.members.fetch(interaction.member.user.id);
+				let denied = false;
+				if (!member.roles.cache.find(x => x.name === "yatty_captcha_step_1")) {
+					denied = true;
+				}
+				for (let [_, roleToCheck] of member.roles.cache) {
+					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
+						await member.roles.remove(roleToCheck);
+					}
+				}
+				await member.roles.add(interaction.guild.roles.cache.find(x => x.name == "yatty_captcha_step_2"));
+				if (!denied) {
+					await interaction.reply({content: "Accepted. Please press the **2** button now.", ephemeral: true});
+				} else {
+					await interaction.reply({content: "Incorrect input.", ephemeral: true});
+				}
+			} else if (buttonNum === "2") {
+				const member = await interaction.guild.members.fetch(interaction.member.user.id);
+				let denied = false;
+				if (!member.roles.cache.find(x => x.name === "yatty_captcha_step_2")) {
+					denied = true;
+				}
+				for (let [_, roleToCheck] of member.roles.cache) {
+					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
+						await member.roles.remove(roleToCheck);
+					}
+				}
+				if (!denied) {
+					await member.roles.remove(interaction.guild.roles.cache.find(x => x.name === "deathed"));
+					await interaction.reply({content: "Accepted.", ephemeral: true});
+				} else {
+					await interaction.reply({content: "Incorrect input.", ephemeral: true});
+				}
+			}
+			
 		} else {
 			console.error("Unknown interaction", interaction);
 		}

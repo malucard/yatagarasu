@@ -10,7 +10,8 @@
 		"baseUrl": ".",
 		"skipLibCheck": true,
 		"lib": [
-			"es2017"
+			"es2017",
+			"DOM"
 		]
 	},
 	"include": [
