@@ -29,7 +29,10 @@
                 "varsIgnorePattern": "^_"
             }
         ],
-        "prettier/prettier": "error"
+        "prettier/prettier": [
+			"warn",
+			{"endOfLine": "auto"}
+		]
     },
     "ignorePatterns": [
         ".vscode/",
