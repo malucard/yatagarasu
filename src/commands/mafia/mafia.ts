@@ -438,11 +438,9 @@ export const buttons: {
 				x => x.name === "Mafia Player"
 			);
 			if (role_mafia_player) {
-				await interaction.guild.members
-					.addRole({
-						role: role_mafia_player,
-						user: interaction.user,
-					})
+				await interaction.guild.members.cache
+					.find(x => x.id === interaction.user.id)
+					.roles.add(role_mafia_player)
 					.catch(() => interaction.reply("Could not add role"));
 				await (interaction.message as Discord.Message).edit(
 					await signup_message(role_mafia_player)
@@ -457,11 +455,9 @@ export const buttons: {
 				x => x.name === "Mafia Player"
 			);
 			if (role_mafia_player) {
-				await interaction.guild.members
-					.removeRole({
-						role: role_mafia_player,
-						user: interaction.user,
-					})
+				await interaction.guild.members.cache
+					.find(x => x.id === interaction.user.id)
+					.roles.remove(role_mafia_player)
 					.catch(() => interaction.reply("Could not remove role"));
 				await (interaction.message as Discord.Message).edit(
 					await signup_message(role_mafia_player)
@@ -549,7 +545,6 @@ function get_mafia_channel_data(
 }
 
 async function player_list_embed(role_mafia_player: Discord.Role) {
-	await role_mafia_player.guild.members.fetch(); // refresh cache
 	const players = role_mafia_player.members;
 	let playerList = "";
 	players.toJSON().forEach((player, index) => {
