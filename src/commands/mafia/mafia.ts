@@ -545,6 +545,7 @@ function get_mafia_channel_data(
 }
 
 async function player_list_embed(role_mafia_player: Discord.Role) {
+	await role_mafia_player.guild.members.fetch(); // refresh cache
 	const players = role_mafia_player.members;
 	let playerList = "";
 	players.toJSON().forEach((player, index) => {
