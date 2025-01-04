@@ -18,7 +18,7 @@ export class MafiaCommandTextOrSlash
 	implements Discord.ChatInputApplicationCommandData
 {
 	description: string;
-	kind: CmdKind.TEXT_OR_SLASH;
+	declare kind: CmdKind.TEXT_OR_SLASH;
 	action: (
 		interaction: Discord.Message | Discord.ChatInputCommandInteraction,
 		args: string
@@ -26,8 +26,8 @@ export class MafiaCommandTextOrSlash
 }
 
 export class MafiaCommandText extends MafiaCommandBase {
-	name: string;
-	kind: CmdKind.TEXT;
+	declare name: string;
+	declare kind: CmdKind.TEXT;
 	action: (message: Discord.Message, args: string) => Promise<void>;
 }
 
@@ -36,7 +36,7 @@ export class MafiaCommandSlash
 	implements Discord.ChatInputApplicationCommandData
 {
 	description: string;
-	kind: CmdKind.SLASH;
+	declare kind: CmdKind.SLASH;
 	action: (interaction: Discord.CommandInteraction) => Promise<void>;
 }
 
@@ -44,8 +44,8 @@ export class MafiaCommandMessageContext
 	extends MafiaCommandBase
 	implements Discord.MessageApplicationCommandData
 {
-	type: Discord.ApplicationCommandType.Message;
-	kind: CmdKind.MESSAGE_CONTEXT;
+	declare type: Discord.ApplicationCommandType.Message;
+	declare kind: CmdKind.MESSAGE_CONTEXT;
 	action: (
 		interaction: Discord.MessageContextMenuCommandInteraction
 	) => Promise<void>;
