@@ -87,6 +87,12 @@ export const createLpCommands: CombinedSlashCommand[] = [
 				return;
 			}
 			const name = interaction.options.getString("name");
+			// assert name is of form "lp-<game>-<lper>"
+			if (!name || !name.match(/^lp-[a-z0-9-]+-[a-z0-9-]+$/i)) {
+				hiddenReply(interaction, "Invalid LP channel name");
+				console.error("Invalid LP channel name");
+				return;
+			}
 			const lper = interaction.options.getUser("lper");
 			const category =
 				interaction.options.getChannel<Discord.ChannelType.GuildCategory>(
