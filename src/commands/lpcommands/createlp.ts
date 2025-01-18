@@ -170,7 +170,7 @@ export const createLpCommands: CombinedSlashCommand[] = [
 					}
 				));
 			// add roles to the channel
-			const roles = [role1, role2, role3, role4].filter(Boolean);
+			const roles = [role1, role2, role3, role4].flatMap(x => x ?? []);
 			for (const role of roles) {
 				await channel.permissionOverwrites.create(
 					role.id,
@@ -190,7 +190,7 @@ export const createLpCommands: CombinedSlashCommand[] = [
 				me?.permissionsIn(lpList).has(LP_LIST_PERMS)
 			) {
 				await lpList.messages.fetch();
-				if (lpList.lastMessage?.member.id === me.id) {
+				if (lpList.lastMessage?.member?.id === me.id) {
 					const oldContent = lpList.lastMessage.content;
 					lpList.lastMessage.edit(
 						[oldContent, lpListMessage].join("\n\n")

@@ -298,7 +298,8 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 			} else {
 				hiddenReply(interaction, "You do not have valid perms");
 				console.error(member.permissionsIn(channel).toJSON());
-				console.error(member.permissionsIn(category).toJSON());
+				category &&
+					console.error(member.permissionsIn(category).toJSON());
 			}
 		},
 	},
@@ -321,7 +322,7 @@ async function handle_reply(
 		me?.permissionsIn(lpList).has(LP_LIST_PERMS)
 	) {
 		await lpList.messages.fetch();
-		if (lpList.lastMessage?.member.id === me.id) {
+		if (lpList.lastMessage?.member?.id === me.id) {
 			const oldContent = lpList.lastMessage.content;
 			lpList.lastMessage.edit([oldContent, lpListMessage].join("\n\n"));
 		} else {
@@ -334,14 +335,16 @@ async function handle_no_bot_perms(
 	interaction: Discord.CommandInteraction,
 	guild: Discord.Guild,
 	channel: Discord.TextChannel,
-	category?: Discord.CategoryChannel
+	category?: Discord.CategoryChannel | null
 ) {
 	let missingPerms = "";
 	let missingPermsArr: string[] = [];
 	const me = await guild.members.fetchMe();
 	const channelPerms = me.permissionsIn(channel);
-	const categoryPerms: Readonly<Discord.PermissionsBitField> =
-		category && me.permissionsIn(category);
+	const categoryPerms:
+		| Readonly<Discord.PermissionsBitField>
+		| undefined
+		| null = category && me.permissionsIn(category);
 	if (!channelPerms.has(BOT_CHANNEL_PERMS)) {
 		missingPerms += "Channel: ";
 		if (!channelPerms.has(Discord.PermissionFlagsBits.SendMessages)) {
@@ -359,12 +362,12 @@ async function handle_no_bot_perms(
 		missingPerms += "\n";
 	}
 	missingPermsArr = [];
-	if (category && !categoryPerms.has(BOT_CATEGORY_PERMS)) {
+	if (category && !categoryPerms?.has(BOT_CATEGORY_PERMS)) {
 		missingPerms += "Category: ";
-		if (!categoryPerms.has(Discord.PermissionFlagsBits.ViewChannel)) {
+		if (!categoryPerms?.has(Discord.PermissionFlagsBits.ViewChannel)) {
 			missingPermsArr.push("View Channel");
 		}
-		if (!categoryPerms.has(Discord.PermissionFlagsBits.ManageRoles)) {
+		if (!categoryPerms?.has(Discord.PermissionFlagsBits.ManageRoles)) {
 			missingPermsArr.push("Manage Roles");
 		}
 		if (missingPermsArr.length) {

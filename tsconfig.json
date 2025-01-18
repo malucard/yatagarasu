@@ -9,9 +9,9 @@
 		"outDir": "dist",
 		"baseUrl": ".",
 		"skipLibCheck": true,
+		"strict": true,
 		"lib": [
 			"es2017",
-			"DOM"
 		]
 	},
 	"include": [

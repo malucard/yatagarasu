@@ -4,7 +4,7 @@ import {
 	CombinedSlashCommand,
 	hiddenReply,
 	isInvalidMoveTarget,
-	move_channel,
+	moveChannelPromise,
 } from "../../utils/helpers";
 
 const CHANNEL_PERMS =
@@ -43,7 +43,11 @@ export const moveCommands: CombinedSlashCommand[] = [
 		action: async interaction => {
 			const member = interaction.member;
 			const usedChannel = interaction.channel;
-			const me = await interaction.guild.members.fetchMe();
+			const me = await interaction.guild?.members.fetchMe();
+			if (!me) {
+				hiddenReply(interaction, "Bot not found in guild.");
+				return;
+			}
 
 			const givenChannel = interaction.options.getChannel(
 				"channel",
@@ -54,91 +58,87 @@ export const moveCommands: CombinedSlashCommand[] = [
 				true
 			);
 
-			let channel: Discord.TextChannel = null;
+			let channel: Discord.TextChannel | null = null;
 			if (usedChannel instanceof Discord.TextChannel) {
 				channel = usedChannel;
 			}
 			if (givenChannel instanceof Discord.TextChannel) {
 				channel = givenChannel;
 			}
-			if (channel && member instanceof Discord.GuildMember) {
-				if (!channel.permissionsFor(member).has(CHANNEL_PERMS)) {
-					hiddenReply(
-						interaction,
-						"You do not have valid perms to perform this action"
-					);
-				} else if (!channel.permissionsFor(me).has(CHANNEL_PERMS)) {
-					hiddenReply(
-						interaction,
-						"Bot does not have valid perms for the channel."
-					);
-				} else {
-					let parent: Discord.CategoryChannel;
-					if (
-						targetChannel instanceof Discord.TextChannel ||
-						targetChannel instanceof Discord.CategoryChannel
-					) {
-						if (targetChannel instanceof Discord.TextChannel) {
-							// same category, one place after or same channel
-							if (isInvalidMoveTarget(channel, targetChannel)) {
-								hiddenReply(
-									interaction,
-									"Channel already at target"
-								);
-								return;
-							}
-							parent = targetChannel.parent;
-						} else {
-							parent = targetChannel;
-						}
-						if (!parent) {
-							hiddenReply(
-								interaction,
-								"Uncategorized channels are not supported"
-							);
-							return;
-						}
-						if (
-							!parent.permissionsFor(member).has(CATEGORY_PERMS)
-						) {
-							hiddenReply(
-								interaction,
-								"You do not have valid perms for the category."
-							);
-						} else if (
-							!parent.permissionsFor(me).has(CATEGORY_PERMS)
-						) {
-							hiddenReply(
-								interaction,
-								"Bot does not have valid perms for the category"
-							);
-						} else {
-							move_channel(
-								channel,
-								targetChannel,
-								() => {
-									interaction.reply(
-										`${channel.toString()} - (${
-											channel.name
-										}) moved after ${targetChannel.toString()} - (${
-											targetChannel.name
-										}).`
-									);
-								},
-								() => {
-									hiddenReply(
-										interaction,
-										"Move failed, is the category full?"
-									);
-								}
-							);
-						}
-					}
-				}
-			} else {
+			if (!channel || !(member instanceof Discord.GuildMember)) {
 				hiddenReply(
 					interaction,
 					"Invalid channel provided or used in a thread without providing a channel."
+				);
+				return;
+			}
+			if (!channel.permissionsFor(member).has(CHANNEL_PERMS)) {
+				hiddenReply(
+					interaction,
+					"You do not have valid perms to perform this action"
+				);
+				return;
+			} else if (!channel.permissionsFor(me).has(CHANNEL_PERMS)) {
+				hiddenReply(
+					interaction,
+					"Bot does not have valid perms for the channel."
+				);
+				return;
+			}
+			let parent: Discord.CategoryChannel | null = null;
+			if (
+				!(
+					targetChannel instanceof Discord.TextChannel ||
+					targetChannel instanceof Discord.CategoryChannel
+				)
+			) {
+				hiddenReply(interaction, "Invalid target channel");
+				return;
+			}
+			if (targetChannel instanceof Discord.TextChannel) {
+				// same category, one place after or same channel
+				if (isInvalidMoveTarget(channel, targetChannel)) {
+					hiddenReply(interaction, "Channel already at target");
+					return;
+				}
+				parent = targetChannel.parent;
+			} else {
+				parent = targetChannel;
+			}
+			if (!parent) {
+				hiddenReply(
+					interaction,
+					"Uncategorized channels are not supported"
+				);
+				return;
+			}
+			if (!parent.permissionsFor(member).has(CATEGORY_PERMS)) {
+				hiddenReply(
+					interaction,
+					"You do not have valid perms for the category."
+				);
+			} else if (!parent.permissionsFor(me).has(CATEGORY_PERMS)) {
+				hiddenReply(
+					interaction,
+					"Bot does not have valid perms for the category"
+				);
+			} else {
+				moveChannelPromise(channel, targetChannel).then(
+					() => {
+						interaction.reply(
+							`${channel?.toString()} - (${
+								channel?.name
+							}) moved after ${targetChannel.toString()} - (${
+								targetChannel.name
+							}).`
+						);
+					},
+					() => {
+						hiddenReply(
+							interaction,
+							"Move failed, is the category full?"
+						);
+					}
 				);
 			}
 		},

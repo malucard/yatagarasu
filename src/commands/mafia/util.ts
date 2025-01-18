@@ -53,7 +53,7 @@ export function calculate_lynch(players: {
 	for (const player of Object.values(players)) {
 		if (
 			player.lynch_vote === 0 ||
-			(player.lynch_vote && player.game.players[player.lynch_vote])
+			(player.lynch_vote && player.game.players?.[player.lynch_vote])
 		) {
 			if (votes[player.lynch_vote]) {
 				votes[player.lynch_vote].push(player);
