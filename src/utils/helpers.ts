@@ -7,9 +7,8 @@ export enum CmdKind {
 	MESSAGE_CONTEXT,
 }
 
-export class CombinedSlashCommand
-	implements Discord.ChatInputApplicationCommandData
-{
+export interface CombinedSlashCommand
+	extends Discord.ChatInputApplicationCommandData {
 	name: string;
 	description: string;
 	options?: Discord.ApplicationCommandOptionData[];
@@ -18,9 +17,8 @@ export class CombinedSlashCommand
 	action?: (interaction: Discord.ChatInputCommandInteraction) => unknown;
 }
 
-export class CombinedMessageContextCommand
-	implements Discord.MessageApplicationCommandData
-{
+export interface CombinedMessageContextCommand
+	extends Discord.MessageApplicationCommandData {
 	type: Discord.ApplicationCommandType.Message;
 	name: string;
 	kind: CmdKind.MESSAGE_CONTEXT;
@@ -55,7 +53,7 @@ export const move_channel = (
 	onrejected?: () => void
 ): void => {
 	// at this point it is known that perms are valid.
-	let targetCategory: Discord.CategoryChannel;
+	let targetCategory: Discord.CategoryChannel | null;
 	let targetPosition: number;
 	if (target instanceof Discord.CategoryChannel) {
 		targetCategory = target;
@@ -65,7 +63,7 @@ export const move_channel = (
 		targetCategory = parent;
 		// in same category, moving below causes an upshift, so you have to place at the same location
 		if (
-			targetCategory.id === channel.parent.id &&
+			targetCategory?.id === channel.parent?.id &&
 			target.position > channel.position
 		) {
 			targetPosition = target.position;
@@ -84,6 +82,15 @@ export const move_channel = (
 		.catch(onrejected);
 };
 
+export async function moveChannelPromise(
+	channel: Discord.TextChannel,
+	target: Discord.TextChannel | Discord.CategoryChannel
+): Promise<void> {
+	return new Promise((resolve, reject) => {
+		move_channel(channel, target, resolve, reject);
+	});
+}
+
 /**
  * Verifies if moving channels is valid
  * @param channel - Channel to move
@@ -95,7 +102,7 @@ export const isInvalidMoveTarget = (
 	targetChannel: Discord.TextChannel
 ) => {
 	return (
-		(targetChannel.parent.id === channel.parent.id &&
+		(targetChannel.parent?.id === channel.parent?.id &&
 			targetChannel.position + 1 === channel.position) ||
 		targetChannel.id === channel.id
 	);
@@ -112,10 +119,12 @@ export const getMessageFromLink = async (
 	guild: Discord.Guild,
 	link: string
 ): Promise<Discord.Message | string> => {
-	const ID_MAP =
-		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(
-			link
-		).groups;
+	const matches = link.match(
+		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/([^/]+)\/([^/]+)\/([^/\s][0-9]+)/
+	);
+	const ID_MAP = matches
+		? { ID_1: matches[1], ID_2: matches[2], ID_3: matches[3] }
+		: null;
 	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
 		return "Invalid Message Link";
 	}
@@ -144,10 +153,12 @@ export const getChannelFromLink = async (
 	guild: Discord.Guild,
 	link: string
 ): Promise<Discord.NonThreadGuildBasedChannel | string> => {
-	const ID_MAP =
-		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/(?<ID_1>[^/]+)\/(?<ID_2>[^/]+)\/(?<ID_3>[^/\s][0-9]+)/.exec(
-			link
-		).groups;
+	const matches = link.match(
+		/https:\/\/(?:canary\.)?discord(?:app)?\.com\/channels\/([^/]+)\/([^/]+)\/([^/\s][0-9]+)/
+	);
+	const ID_MAP = matches
+		? { ID_1: matches[1], ID_2: matches[2], ID_3: matches[3] }
+		: null;
 	if (!(ID_MAP && ID_MAP.ID_1 && ID_MAP.ID_2 && ID_MAP.ID_3)) {
 		return "Invalid Message Link";
 	}
@@ -186,7 +197,7 @@ export async function slicedReply(
 ): Promise<void> {
 	const joined = list.join(separator);
 	if (joined.length > messageSize) {
-		let reply: Discord.Message;
+		let reply: Discord.Message | null = null;
 		let slice = "";
 		for (let index = 0; index < list.length; index++) {
 			if (slice.length + list[index].length > messageSize) {
@@ -205,11 +216,13 @@ export async function slicedReply(
 
 	async function performReply(
 		slice: string,
-		reply: Discord.Message
-	): Promise<Discord.Message> {
+		reply: Discord.Message | null
+	): Promise<Discord.Message | null> {
 		const response = { content: slice, fetchReply: true } as const;
 		if (interaction.replied) {
-			reply = await reply.reply(response);
+			if (reply) {
+				reply = await reply.reply(response);
+			}
 		} else {
 			reply = await interaction.reply(response);
 		}

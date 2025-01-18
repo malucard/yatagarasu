@@ -7,7 +7,7 @@ import { shuffle_array, State } from "./util";
 export type RoleAction = (player: Player) => void | boolean;
 /** if returning true, should cancel further callbacks to this state for this player */
 export type RoleActionReport = (
-	target: Player,
+	target: Player | null,
 	player: Player
 ) => void | boolean;
 /** if returning true, should cancel further callbacks to this state for this player */
@@ -26,7 +26,7 @@ export enum Side {
 	TIE,
 }
 
-export class Role {
+export interface Role {
 	name: string;
 	/** will be called this before the game ends, even to themselves */
 	fake_name?: string;
@@ -50,7 +50,7 @@ export class Role {
 	/** if can't be hooked; will also cause its report to come earlier than for other roles */
 	unhookable?: boolean;
 	/** callbacks for states */
-	actions: { [state: number]: RoleAction } = {};
+	actions: { [state: number]: RoleAction };
 
 	/** override village and mafia wins, but not other third parties */
 	override_sides_win?: boolean;
@@ -75,16 +75,16 @@ function get_side(role: Role): Side {
 		: role.fake_side;
 }
 
-function action_follow_up(
+async function action_follow_up(
 	player: Player,
-	mafia: boolean,
+	mafia: boolean | undefined,
 	to: Discord.Message | Discord.MessageReaction | null,
 	content: string
-): Promise<Discord.Message> {
+): Promise<Discord.Message | undefined> {
 	if (mafia) {
 		return to instanceof Discord.Message
 			? to.reply(content)
-			: player.game.mafia_secret_chat.send(
+			: player.game.mafia_secret_chat?.send(
 					`${player.member.toString()} ${content}`
 			  );
 	} else {
@@ -124,7 +124,7 @@ function request_action(
 	if (!opt.yes_no && !opt.mafia) {
 		// night kill already has target list so don't duplicate it
 		msg_txt += " Targets:";
-		for (const p of Object.values(player.game.players)) {
+		for (const p of Object.values(player.game.players ?? {})) {
 			if (p.number !== player.number) {
 				msg_txt += `\n${p.number}- ${
 					player.game.hiding_names ? "<hidden>" : p.name
@@ -133,6 +133,7 @@ function request_action(
 		}
 	}
 	action_follow_up(player, opt.mafia, null, msg_txt).then(async req_msg => {
+		if (!req_msg) return;
 		req_msg = await req_msg.fetch();
 		let collector: Discord.ReactionCollector | Discord.MessageCollector;
 		if (opt.mafia) {
@@ -141,7 +142,7 @@ function request_action(
 			if (opt.yes_no) {
 				await req_msg.react("✅");
 			} else {
-				for (const p of Object.values(player.game.players)) {
+				for (const p of Object.values(player.game.players ?? {})) {
 					if (p.number !== player.number) {
 						await req_msg.react(p.number + "\u20E3");
 					}
@@ -157,15 +158,16 @@ function request_action(
 			recv: Discord.Message | Discord.MessageReaction,
 			user?: Discord.User
 		) => {
-			let reaction: string, content: string;
+			let reaction: string | null = null,
+				content: string = "";
 			recv = await recv.fetch();
 			if (recv instanceof Discord.Message) {
 				content = recv.content;
-				user = recv.member.user;
+				user = recv.member?.user;
 			} else {
 				reaction = recv.emoji.name;
 			}
-			if (user.id !== player.member.id) return;
+			if (user?.id !== player.member.id) return;
 			if (
 				can_cancel &&
 				(reaction
@@ -218,7 +220,7 @@ function request_action(
 					if (!match) return;
 					targetNo = parseInt(match[1]);
 				}
-				if (isNaN(targetNo) || !player.game.players[targetNo]) {
+				if (isNaN(targetNo) || !player.game.players?.[targetNo]) {
 					action_follow_up(
 						player,
 						opt.mafia,
@@ -233,7 +235,8 @@ function request_action(
 						`You can't ${verb} yourself.`
 					);
 				} else {
-					const target = player.game.players[targetNo];
+					const target = player.game.players?.[targetNo];
+					if (!target) return;
 					collector.stop();
 					player.data.collector = null;
 					player.action_pending = false;
@@ -443,11 +446,12 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} is sided with ${
-						Side[get_side(target.role)]
-					}.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} is sided with ${
+							Side[get_side(target.role)]
+						}.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -460,11 +464,12 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} is sided with ${
-						Side[get_side(target.role)]
-					}.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} is sided with ${
+							Side[get_side(target.role)]
+						}.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -478,9 +483,10 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} is sided with ${Side[Side.MAFIA]}.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} is sided with ${Side[Side.MAFIA]}.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -494,9 +500,10 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} is sided with ${Side[Side.VILLAGE]}.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} is sided with ${Side[Side.VILLAGE]}.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -510,15 +517,16 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} is sided with ${
-						Side[
-							get_side(target.role) === Side.MAFIA
-								? Side.VILLAGE
-								: Side.MAFIA
-						]
-					}.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} is sided with ${
+							Side[
+								get_side(target.role) === Side.MAFIA
+									? Side.VILLAGE
+									: Side.MAFIA
+							]
+						}.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -530,11 +538,12 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"investigate",
 			(target, player) => {
-				player.member.send(
-					`${target.name} ${
-						target.role.powerless ? "doesn't have" : "has"
-					} a talent.`
-				);
+				target &&
+					player.member.send(
+						`${target.name} ${
+							target.role.powerless ? "doesn't have" : "has"
+						} a talent.`
+					);
 			},
 			{ hooked_report: true }
 		),
@@ -544,6 +553,7 @@ export const roles: { [name: string]: Role } = {
 		help: "Every night, choose a player to prevent from dying that night.",
 		side: Side.VILLAGE,
 		actions: template_action("protect", target => {
+			if (!target) return;
 			if (!target.role.macho) target.protected = true;
 		}),
 	},
@@ -553,6 +563,7 @@ export const roles: { [name: string]: Role } = {
 		side: Side.VILLAGE,
 		macho: true,
 		actions: template_action("protect", target => {
+			if (!target) return;
 			if (!target.role.macho) target.protected = true;
 		}),
 	},
@@ -569,7 +580,7 @@ export const roles: { [name: string]: Role } = {
 				) {
 					const killer = player.killed_by;
 					player.game.kill(player.killed_by, player, () => {
-						player.game.day_channel.send(
+						player.game.day_channel?.send(
 							`${killer.member.toString()}, the ${role_name(
 								killer
 							)}, exploded.`
@@ -668,13 +679,13 @@ export const roles: { [name: string]: Role } = {
 			{
 				[State.DEAD]: player => {
 					if (player.data.oracle_target instanceof Player) {
-						player.game.day_channel.send(
+						player.game.day_channel?.send(
 							`Oracle's prophecy: ${
 								player.data.oracle_target.name
 							} is a ${role_name(player.data.oracle_target)}.`
 						);
 					} else {
-						player.game.day_channel.send(
+						player.game.day_channel?.send(
 							"Oracle's prophecy: none."
 						);
 					}
@@ -688,7 +699,9 @@ export const roles: { [name: string]: Role } = {
 		side: Side.VILLAGE,
 		actions: template_report(player => {
 			if (Math.random() < 0.5) {
-				const vil: Player[] = Object.values(player.game.players).filter(
+				const vil: Player[] = Object.values(
+					player.game.players ?? {}
+				).filter(
 					x =>
 						get_side(x.role) === Side.VILLAGE &&
 						x.number !== player.number
@@ -699,9 +712,10 @@ export const roles: { [name: string]: Role } = {
 				);
 			} else {
 				let list: Player[] = shuffle_array(
-					Object.values(player.game.players)
+					Object.values(player.game.players ?? {})
 				);
 				const maf = list.find(x => get_side(x.role) === Side.MAFIA);
+				if (!maf) return;
 				list = list
 					.filter(
 						x =>
@@ -725,7 +739,7 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"give a gun to",
 			target => {
-				target.receive(items.Gun);
+				target?.receive(items.Gun);
 			},
 			{ hooked_report: true }
 		),
@@ -748,7 +762,7 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"give armor to",
 			target => {
-				target.receive(items.Armor);
+				target?.receive(items.Armor);
 			},
 			{ hooked_report: true }
 		),
@@ -784,18 +798,19 @@ export const roles: { [name: string]: Role } = {
 		actions: template_action(
 			"clean",
 			(target, player) => {
+				if (!target) return;
 				if (player.game.kill_pending) {
 					player.game.kill_pending = false;
 					player.game.killing = -1;
 					player.game.mafia_killer = player;
-					player.game.mafia_collector.stop("janitor cleaned");
+					player.game.mafia_collector?.stop("janitor cleaned");
 					player.game.mafia_collector = null;
 					player.game.kill(target, player, () => {
-						player.game.day_channel.send(
+						player.game.day_channel?.send(
 							`${target.member.toString()} is missing!`
 						);
-						player.game.mafia_secret_chat.send(
-							`${player.game.role_mafia_player.toString()} While cleaning up the mess, you learned that ${
+						player.game.mafia_secret_chat?.send(
+							`${player.game.role_mafia_player?.toString()} While cleaning up the mess, you learned that ${
 								target.name
 							} is a ${role_name(target)}.`
 						);
@@ -813,6 +828,7 @@ export const roles: { [name: string]: Role } = {
 			template_action(
 				"hook",
 				(target, player) => {
+					if (!target) return;
 					if (!target.role.unhookable) {
 						target.hooked = true;
 					}
@@ -897,7 +913,7 @@ export const roles: { [name: string]: Role } = {
 					if (!player.role.fake_name)
 						player.role.fake_name = player.role.name;
 					if (player.role.side == Side.MAFIA) {
-						player.game.mafia_secret_chat.send(
+						player.game.mafia_secret_chat?.send(
 							`${player.member.toString()} You ate ${
 								target.name
 							} and became their role.`
@@ -907,7 +923,7 @@ export const roles: { [name: string]: Role } = {
 							`You ate ${target.name} and became their role.`
 						);
 					}
-					player.game.day_channel.send(`${target.name} was eaten.`);
+					player.game.day_channel?.send(`${target.name} was eaten.`);
 					player.do_state(State.GAME); // send them help and do whatever that role does when starting
 					player.role.name += " (Kirby)"; // only do this after do_state in case the role changes its own name
 				});
@@ -929,7 +945,7 @@ export const roles: { [name: string]: Role } = {
 		side: Side.THIRD,
 		actions: {
 			[State.GAME]: (player: Player) => {
-				const others = Object.values(player.game.players).filter(
+				const others = Object.values(player.game.players ?? {}).filter(
 					p => p.number !== player.number
 				);
 				const angel_of =
@@ -937,14 +953,19 @@ export const roles: { [name: string]: Role } = {
 				angel_of.hook_action(State.DEAD, (angel_of: Player) => {
 					if (!player.dead) {
 						angel_of.dead = false;
-						angel_of.game.kill(player, angel_of.killed_by, () => {
-							player.member.send(
-								`You sacrificed yourself to save ${angel_of.name}.`
+						angel_of.killed_by &&
+							angel_of.game.kill(
+								player,
+								angel_of.killed_by,
+								() => {
+									player.member.send(
+										`You sacrificed yourself to save ${angel_of.name}.`
+									);
+									angel_of.game.day_channel?.send(
+										`${player.name} sacrificed themselves.`
+									);
+								}
 							);
-							angel_of.game.day_channel.send(
-								`${player.name} sacrificed themselves.`
-							);
-						});
 						return true;
 					}
 				});
@@ -961,6 +982,8 @@ export const roles: { [name: string]: Role } = {
 			},
 		},
 		ensure_win: (player: Player) =>
-			player.data.angel_of && !(player.data.angel_of as Player).dead,
+			player.data.angel_of
+				? !(player.data.angel_of as Player).dead
+				: false,
 	},
 };

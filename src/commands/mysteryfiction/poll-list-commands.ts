@@ -47,7 +47,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 		action: async interaction => {
 			const member = interaction.member as Discord.GuildMember;
 			const usedChannel = interaction.channel;
-			const me = await interaction.guild.members.fetchMe();
+			const me = await interaction.guild?.members.fetchMe();
 
 			const name = interaction.options.getString("name", true);
 			const link = interaction.options.getString("link", true);
@@ -59,7 +59,7 @@ export const MF_Commands: CombinedSlashCommand[] = [
 				"channel",
 				false
 			);
-			let channel: Discord.TextChannel;
+			let channel: Discord.TextChannel | undefined;
 			if (targetChannel instanceof Discord.TextChannel) {
 				channel = targetChannel;
 			} else if (targetChannel) {
@@ -77,64 +77,68 @@ export const MF_Commands: CombinedSlashCommand[] = [
 				);
 				return;
 			}
-			if (channel) {
-				if (channel.permissionsFor(me).has(BOT_PERMS)) {
-					if (channel.permissionsFor(member).has(USER_PERMS)) {
-						const message = await channel.send({
-							embeds: [
-								{
-									title: name,
-									description: [
-										"1\u20e3 - Have Played",
-										"2\u20e3 - Have Planned / Are Playing",
-										"3\u20e3 - Interested in the Future",
-										"4\u20e3 - Is Mystery and Belongs here",
-										"5\u20e3 - Does not Belong here (mention why)",
-										"6\u20e3 - Is NOT a mystery title (mention why)",
-									].join("\n"),
-									url: link,
-								},
-							],
-							components: [
-								{
-									type: Discord.ComponentType.ActionRow,
-									components: [
-										{
-											type: Discord.ComponentType.Button,
-											url: link,
-											style: Discord.ButtonStyle.Link,
-											label: "Go to Suggestion Post",
-											disabled: false,
-										},
-									],
-								},
-							],
-						});
-						hiddenReply(interaction, "Poll sent.");
-						for (let index = 1; index <= 6; ++index) {
-							await message.react(`${index}\u20e3`);
-						}
-					} else {
-						hiddenReply(
-							interaction,
-							"You do not have permissions to use this command"
-						);
-					}
-				} else {
-					const missing = channel
-						.permissionsFor(me)
-						.missing(BOT_PERMS)
-						.join(", ");
-					hiddenReply(
-						interaction,
-						`Bot does not have valid perms ${missing}`
-					);
-				}
-			} else {
+			if (!channel) {
 				hiddenReply(
 					interaction,
 					"Channel does not exist or is invalid"
 				);
+				return;
+			}
+			if (!me) {
+				hiddenReply(interaction, "Bot not found in guild");
+				return;
+			}
+			if (!channel.permissionsFor(me).has(BOT_PERMS)) {
+				const missing = channel
+					.permissionsFor(me)
+					.missing(BOT_PERMS)
+					.join(", ");
+				hiddenReply(
+					interaction,
+					`Bot does not have valid perms ${missing}`
+				);
+				return;
+			}
+			if (!channel.permissionsFor(member).has(USER_PERMS)) {
+				hiddenReply(
+					interaction,
+					"You do not have permissions to use this command"
+				);
+				return;
+			}
+			const message = await channel.send({
+				embeds: [
+					{
+						title: name,
+						description: [
+							"1\u20e3 - Have Played",
+							"2\u20e3 - Have Planned / Are Playing",
+							"3\u20e3 - Interested in the Future",
+							"4\u20e3 - Is Mystery and Belongs here",
+							"5\u20e3 - Does not Belong here (mention why)",
+							"6\u20e3 - Is NOT a mystery title (mention why)",
+						].join("\n"),
+						url: link,
+					},
+				],
+				components: [
+					{
+						type: Discord.ComponentType.ActionRow,
+						components: [
+							{
+								type: Discord.ComponentType.Button,
+								url: link,
+								style: Discord.ButtonStyle.Link,
+								label: "Go to Suggestion Post",
+								disabled: false,
+							},
+						],
+					},
+				],
+			});
+			hiddenReply(interaction, "Poll sent.");
+			for (let index = 1; index <= 6; ++index) {
+				await message.react(`${index}\u20e3`);
 			}
 		},
 	},
@@ -168,8 +172,8 @@ export const MF_Commands: CombinedSlashCommand[] = [
 		],
 		action: async interaction => {
 			const guild = interaction.guild;
-			const me = await guild.members.fetchMe();
-			const mysteryListChannel = guild.channels.cache.find(
+			const me = await guild?.members.fetchMe();
+			const mysteryListChannel = guild?.channels.cache.find(
 				channel => channel.name === "mystery-list"
 			);
 			const member = interaction.member as Discord.GuildMember;
@@ -182,6 +186,17 @@ export const MF_Commands: CombinedSlashCommand[] = [
 				hiddenReply(interaction, "Only admins can use these commands");
 				return;
 			}
+			if (!me) {
+				hiddenReply(interaction, "Bot not found in guild");
+				return;
+			}
+			if (
+				!mysteryListChannel ||
+				!(mysteryListChannel instanceof Discord.TextChannel)
+			) {
+				hiddenReply(interaction, "Mystery List channel not found.");
+				return;
+			}
 			if (!me.permissionsIn(mysteryListChannel).has(BOT_PERMS)) {
 				hiddenReply(
 					interaction,
@@ -190,68 +205,74 @@ export const MF_Commands: CombinedSlashCommand[] = [
 				return;
 			}
 			let name = interaction.options.getString("name");
-			if (mysteryListChannel instanceof Discord.TextChannel) {
-				const messages = (
-					await mysteryListChannel.messages.fetch()
-				).filter(message => message.author.id === me.id);
-				const message = messages
-					.filter(message =>
-						message.embeds.some(embed =>
-							embed.title.startsWith("Other Games")
-						)
+			const messages = (await mysteryListChannel.messages.fetch()).filter(
+				message => message.author.id === me.id
+			);
+			const message = messages
+				.filter(message =>
+					message.embeds.some(embed =>
+						embed.title?.startsWith("Other Games")
 					)
-					.first();
-				const embeds = message.embeds.filter(embed =>
-					embed.title.startsWith("Other Games")
+				)
+				.first();
+			if (!message) {
+				hiddenReply(interaction, "Mystery List message not found.");
+				return;
+			}
+			const embeds = message.embeds.filter(embed =>
+				embed.title?.startsWith("Other Games")
+			);
+			const games = embeds.flatMap(
+				embed => embed.description?.split("\n") ?? []
+			);
+			if (action === "add" && name) {
+				games.push(name);
+			} else {
+				const index = games.findIndex(
+					game => game.toLowerCase() === name?.toLowerCase()
 				);
-				const games = embeds.flatMap(embed =>
-					embed.description.split("\n")
-				);
-				if (action === "add") {
-					games.push(name);
+				if (index > -1) {
+					[name] = games.splice(index, 1);
 				} else {
-					const index = games.findIndex(
-						game => game.toLowerCase() === name?.toLowerCase()
-					);
-					if (index > -1) {
-						[name] = games.splice(index, 1);
-					} else {
-						hiddenReply(interaction, "Game not found.");
-						return;
-					}
-				}
-				games.sort();
-				const [header, spoiler, ...others] = message.embeds;
-				const tiermakers = others.at(-1);
-				const newOthers = getNewOthers(games);
-				if (newOthers.length > 7) {
-					hiddenReply(interaction, "Too many embeds");
+					hiddenReply(interaction, "Game not found.");
 					return;
 				}
-				// edit the embed
-				message.edit({
-					embeds: [header, spoiler, ...newOthers, tiermakers],
-				});
-				if (action === "add") {
-					hiddenReply(
-						interaction,
-						`${name} added to ${mysteryListChannel.toString()}`
-					);
-				} else {
-					hiddenReply(
-						interaction,
-						`${name} removed from ${mysteryListChannel.toString()}`
-					);
-				}
-			} else {
-				hiddenReply(interaction, "Mystery List channel not found.");
+			}
+			games.sort();
+			const [header, spoiler, ...others] = message.embeds.map(embed =>
+				embed.toJSON()
+			);
+			const tiermakers = others.at(-1);
+			const newOthers = getNewOthers(games);
+			if (newOthers.length > 7) {
+				hiddenReply(interaction, "Too many embeds");
 				return;
+			}
+			// edit the embed
+			message.edit({
+				embeds: Array<Discord.APIEmbed>().concat(
+					header,
+					spoiler,
+					newOthers,
+					tiermakers ?? []
+				),
+			});
+			if (action === "add") {
+				hiddenReply(
+					interaction,
+					`${name} added to ${mysteryListChannel.toString()}`
+				);
+			} else {
+				hiddenReply(
+					interaction,
+					`${name} removed from ${mysteryListChannel.toString()}`
+				);
 			}
 		},
 	},
 ];
 
-function getNewOthers(games: string[]): Discord.EmbedBuilder[] {
+function getNewOthers(games: string[]): Discord.APIEmbed[] {
 	let join = "";
 	const descriptions: string[] = [];
 	for (let index = 0; index < games.length; index++) {
@@ -264,11 +285,12 @@ function getNewOthers(games: string[]): Discord.EmbedBuilder[] {
 		join = !join ? game : `${join}\n${game}`;
 	}
 	descriptions.push(join);
-	const newOthers: Discord.EmbedBuilder[] = descriptions.map(
+	const newOthers: Discord.APIEmbed[] = descriptions.map(
 		(description, index) =>
 			new Discord.EmbedBuilder()
 				.setTitle(`Other Games${index > 0 ? " (continued)" : ""}`)
 				.setDescription(description)
+				.toJSON()
 	);
 	return newOthers;
 }

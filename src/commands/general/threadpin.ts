@@ -49,7 +49,7 @@ export const threadpinCommands: CombinedMessageContextCommand[] = [
 			const owner = await thread.fetchOwner();
 			const me = await guild.members.fetchMe();
 			// check perms
-			if (member.id !== owner.id) {
+			if (member.id !== owner?.id) {
 				hiddenReply(
 					interaction,
 					"You are not the owner of the thread. If you are a mod, please use the normal pin operation"

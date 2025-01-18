@@ -72,11 +72,23 @@ async function handleList(
 		Discord.ChannelType.GuildCategory,
 	]);
 	const me = await guild.members.fetchMe();
+	if (!me) {
+		hiddenReply(interaction, "An error occured");
+		return;
+	}
+	if (!channel) {
+		hiddenReply(interaction, "An error occured");
+		return;
+	}
+	if (!(channel instanceof Discord.TextChannel)) {
+		hiddenReply(interaction, "This command must be used in a text channel");
+		return;
+	}
 	// check permissions
 	if (!category.permissionsFor(member).has(USER_PERMS)) {
 		hiddenReply(interaction, "You do not have valid perms to use this");
 		return;
-	} else if (!channel.permissionsFor(me).has(BOT_SEND_PERMS)) {
+	} else if (!channel?.permissionsFor(me).has(BOT_SEND_PERMS)) {
 		hiddenReply(interaction, "Bot cannot send embeds in this channel");
 		return;
 	} else if (!category.permissionsFor(me).has(BOT_PERMS)) {

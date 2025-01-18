@@ -18,6 +18,7 @@ import {
 	upgradelpCommands,
 	createLpCommands,
 } from "./commands/lpcommands";
+import { deathedHandler } from "./utils/deathed";
 
 const client = new Discord.Client({
 	intents:
@@ -43,8 +44,8 @@ const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
 ];
 
 client.on("ready", async () => {
-	console.log(`Connected as ${client.user.tag}`);
-	const appcmds = await client.application.commands.fetch();
+	console.log(`Connected as ${client?.user?.tag}`);
+	const appcmds = await client.application?.commands.fetch();
 	for (const command of cmds) {
 		const newcmdstr =
 			command.kind !== CmdKind.MESSAGE_CONTEXT
@@ -52,10 +53,10 @@ client.on("ready", async () => {
 						?.map(opt => opt.name + opt.description + opt.type)
 						.join(", ")
 				: "";
-		const appcmd = appcmds.find(x => x.name === command.name);
+		const appcmd = appcmds?.find(x => x.name === command.name);
 		if (command.kind !== CmdKind.TEXT) {
 			if (!appcmd) {
-				client.application.commands.create(command);
+				client.application?.commands.create(command);
 			} else if (
 				newcmdstr !==
 				appcmd.options
@@ -75,34 +76,6 @@ client.on("error", error => {
 	console.error(error.message);
 });
 
-client.on("messageCreate", async (/*msg*/) => {
-	return;
-	// try {
-	// 	msg = await msg.fetch();
-	// 	const matches = msg.content.match(/^; *([a-z]+)(\s+(.*))?$/);
-	// 	if (matches) {
-	// 		for (const command of cmds) {
-	// 			if (command.name === matches[1]) {
-	// 				if (
-	// 					command.kind === undefined ||
-	// 					command.kind === CmdKind.TEXT_OR_SLASH ||
-	// 					command.kind === CmdKind.TEXT
-	// 				) {
-	// 					if (!(command instanceof CombinedSlashCommand)) {
-	// 						await (
-	// 							command as mafia.MafiaCommandTextOrSlash
-	// 						).action(msg, matches[2]?.trim() || "");
-	// 					}
-	// 				}
-	// 				break;
-	// 			}
-	// 		}
-	// 	}
-	// } catch (error) {
-	// 	console.error(error, msg);
-	// }
-});
-
 client.on("messageReactionAdd", async (reaction, user) => {
 	if (
 		reaction.message.id == "1224789493899591771" &&
@@ -111,8 +84,8 @@ client.on("messageReactionAdd", async (reaction, user) => {
 		if (user.partial) {
 			user = await user.fetch();
 		}
-		const member = await reaction.message.guild.members.resolve(user.id);
-		await member.roles.add("1224548316285763584", "instant death button");
+		const member = reaction.message.guild?.members.resolve(user.id);
+		await member?.roles.add("1224548316285763584", "instant death button");
 	} else if (
 		reaction.message.id == "1224789666725761084" &&
 		reaction.message.channel.isTextBased()
@@ -120,8 +93,8 @@ client.on("messageReactionAdd", async (reaction, user) => {
 		if (user.partial) {
 			user = await user.fetch();
 		}
-		const member = await reaction.message.guild.members.resolve(user.id);
-		await member.roles.add("1224753960179728445", "instant death button");
+		const member = reaction.message.guild?.members.resolve(user.id);
+		await member?.roles.add("1224753960179728445", "instant death button");
 	}
 });
 
@@ -147,12 +120,12 @@ async function resolveApplicationCommand(
 		command.kind === CmdKind.SLASH &&
 		interaction.isChatInputCommand()
 	) {
-		await command.action(interaction);
+		await command.action?.(interaction);
 	} else if (
 		command.kind === CmdKind.MESSAGE_CONTEXT &&
 		interaction.isMessageContextMenuCommand()
 	) {
-		await command.action(interaction);
+		await command.action?.(interaction);
 	} else {
 		console.error("Unknown Interaction", interaction);
 		hiddenReply(interaction, "Unknown Interaction");
@@ -179,96 +152,7 @@ client.on("interactionCreate", async (interaction: Discord.Interaction) => {
 				"captcha_"
 			)
 		) {
-			const customId = (interaction as Discord.ButtonInteraction)
-				.customId;
-			const [, buttonNum] = customId.match(
-				"captcha_([1-3])_rmrole_([1-9]+)"
-			);
-			if (buttonNum === "3") {
-				const member = await interaction.guild.members.fetch(
-					interaction.member.user.id
-				);
-				for (const [, roleToCheck] of member.roles.cache) {
-					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
-						await member.roles.remove(roleToCheck);
-					}
-				}
-				await member.roles.add(
-					interaction.guild.roles.cache.find(
-						x => x.name == "yatty_captcha_step_1"
-					)
-				);
-				await interaction.reply({
-					content: "Accepted. Please press the **1** button now.",
-					ephemeral: true,
-				});
-			} else if (buttonNum === "1") {
-				const member = await interaction.guild.members.fetch(
-					interaction.member.user.id
-				);
-				let denied = false;
-				if (
-					!member.roles.cache.find(
-						x => x.name === "yatty_captcha_step_1"
-					)
-				) {
-					denied = true;
-				}
-				for (const [, roleToCheck] of member.roles.cache) {
-					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
-						await member.roles.remove(roleToCheck);
-					}
-				}
-				await member.roles.add(
-					interaction.guild.roles.cache.find(
-						x => x.name == "yatty_captcha_step_2"
-					)
-				);
-				if (!denied) {
-					await interaction.reply({
-						content: "Accepted. Please press the **2** button now.",
-						ephemeral: true,
-					});
-				} else {
-					await interaction.reply({
-						content: "Incorrect input.",
-						ephemeral: true,
-					});
-				}
-			} else if (buttonNum === "2") {
-				const member = await interaction.guild.members.fetch(
-					interaction.member.user.id
-				);
-				let denied = false;
-				if (
-					!member.roles.cache.find(
-						x => x.name === "yatty_captcha_step_2"
-					)
-				) {
-					denied = true;
-				}
-				for (const [, roleToCheck] of member.roles.cache) {
-					if (roleToCheck.name.startsWith("yatty_captcha_step_")) {
-						await member.roles.remove(roleToCheck);
-					}
-				}
-				if (!denied) {
-					await member.roles.remove(
-						interaction.guild.roles.cache.find(
-							x => x.name === "deathed"
-						)
-					);
-					await interaction.reply({
-						content: "Accepted.",
-						ephemeral: true,
-					});
-				} else {
-					await interaction.reply({
-						content: "Incorrect input.",
-						ephemeral: true,
-					});
-				}
-			}
+			await deathedHandler(interaction);
 		} else {
 			console.error("Unknown interaction", interaction);
 		}

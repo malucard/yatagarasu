@@ -2,7 +2,7 @@ import { Game, Player } from "./game";
 import { role_name, RoleAction } from "./role";
 import { State } from "./util";
 
-export class Item {
+export interface Item {
 	name: string;
 	help: string;
 	no_target?: boolean;
@@ -54,7 +54,7 @@ export class Inventory {
 		if (!player.already_sent_player_list) {
 			player.already_sent_player_list = true;
 			res += " Targets:";
-			for (const p of Object.values(game.players)) {
+			for (const p of Object.values(game.players ?? {})) {
 				if (p.number != player.number) {
 					res += `\n${p.number}- ${
 						game.hiding_names ? "<hidden>" : p.name
@@ -75,13 +75,13 @@ export const items: { [name: string]: Item } = {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
 				if (Math.random() < 0.5) {
-					game.day_channel.send(
+					game.day_channel?.send(
 						`${target.member.toString()}, the ${role_name(
 							target
 						)}, was shot by ${player.member.toString()}.`
 					);
 				} else {
-					game.day_channel.send(
+					game.day_channel?.send(
 						`${target.member.toString()}, the ${role_name(
 							target
 						)}, was shot.`
@@ -97,7 +97,7 @@ export const items: { [name: string]: Item } = {
 		use: (target, player, game) => {
 			player.member.send(`You chose to shoot ${target.name}.`);
 			game.kill(target, player, () => {
-				game.day_channel.send(
+				game.day_channel?.send(
 					`${target.member.toString()}, the ${role_name(
 						target
 					)}, was shot.`
@@ -115,7 +115,7 @@ export const items: { [name: string]: Item } = {
 				? (player.data.framing as Player)
 				: player;
 			game.kill(target, player, () => {
-				game.day_channel.send(
+				game.day_channel?.send(
 					`${target.member.toString()}, the ${role_name(
 						target
 					)}, was shot by ${framed.member.toString()}.`

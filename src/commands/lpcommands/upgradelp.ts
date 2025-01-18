@@ -91,6 +91,10 @@ export const upgradelpCommands: CombinedSlashCommand[] = [
 			} else return;
 			const member = interaction.member;
 			const guild = interaction.guild;
+			if (!guild) {
+				hiddenReply(interaction, "An error occured");
+				return;
+			}
 			const me = await guild.members.fetchMe();
 			if (
 				me &&

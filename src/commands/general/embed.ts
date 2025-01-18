@@ -181,15 +181,18 @@ async function handleSend(
 		if (!json) {
 			throw Error("Please recheck the json given");
 		}
-		const embeds = []
+		const embeds = Array<unknown>()
 			.concat(json)
-			.map((entry: unknown) => new Discord.EmbedBuilder(entry));
+			.map(
+				(entry: unknown) =>
+					new Discord.EmbedBuilder(entry as Discord.APIEmbed)
+			);
 		await channel.send({ content, embeds });
 		interaction.reply(
 			`Embed sent to ${channel.toString()} - (${channel.name})`
 		);
 	} catch (error) {
-		hiddenReply(interaction, error.message);
+		hiddenReply(interaction, (error as Error).message);
 		return;
 	}
 }
@@ -203,6 +206,14 @@ async function handleFetch(
 ) {
 	const channel = interaction.channel;
 	const me = await guild.members.fetchMe();
+	if (!me || !channel) {
+		hiddenReply(interaction, "An error occured");
+		return;
+	}
+	if (!(channel instanceof Discord.TextChannel)) {
+		hiddenReply(interaction, "This command must be used in a text channel");
+		return;
+	}
 	// check permissions
 	if (!channel.permissionsFor(member).has(USER_SEND_PERMS)) {
 		hiddenReply(interaction, "You do not have valid perms to use this");
@@ -212,6 +223,10 @@ async function handleFetch(
 		return;
 	}
 	const link = interaction.options.getString("message");
+	if (!link) {
+		hiddenReply(interaction, "Please provide a message link");
+		return;
+	}
 	try {
 		await interaction.deferReply();
 		const message = await getMessageFromLink(guild, link);
@@ -250,7 +265,7 @@ async function handleFetch(
 			}
 		}
 	} catch (error) {
-		hiddenReply(interaction, error.message);
+		hiddenReply(interaction, (error as Error).message);
 		return;
 	}
 }
@@ -265,6 +280,10 @@ async function handleEdit(
 	member: Discord.GuildMember
 ) {
 	const targetURL = interaction.options.getString("target");
+	if (!targetURL) {
+		hiddenReply(interaction, "Please provide a target message link");
+		return;
+	}
 	try {
 		const channel = await getChannelFromLink(guild, targetURL);
 		if (typeof channel === "string") {
@@ -285,7 +304,7 @@ async function handleEdit(
 		const target = await getMessageFromLink(guild, targetURL);
 		if (typeof target === "string") {
 			throw Error(target);
-		} else if (target.member.id !== me.id) {
+		} else if (target.member?.id !== me.id) {
 			hiddenReply(interaction, "Cannot edit messages outside mine");
 			return;
 		}
@@ -308,14 +327,17 @@ async function handleEdit(
 			return;
 		}
 		const embeds = json
-			? []
+			? Array<unknown>()
 					.concat(json)
-					.map((entry: unknown) => new Discord.EmbedBuilder(entry))
+					.map(
+						(entry: unknown) =>
+							new Discord.EmbedBuilder(entry as Discord.APIEmbed)
+					)
 			: undefined;
 		await target.edit({ content, embeds });
 		interaction.reply("Embed Edited");
 	} catch (error) {
-		hiddenReply(interaction, error.message);
+		hiddenReply(interaction, (error as Error).message);
 		return;
 	}
 }
@@ -324,14 +346,14 @@ async function handleEdit(
 // Shared
 async function getMessageText(
 	guild: Discord.Guild,
-	text?: string,
-	messageLink?: string
+	text: string | undefined | null,
+	messageLink: string | undefined | null
 ): Promise<string | undefined> {
-	if (!text && !messageLink) {
-		return undefined;
-	}
 	if (text) {
 		return text;
+	}
+	if (!messageLink) {
+		return undefined;
 	}
 	const message = await getMessageFromLink(guild, messageLink);
 	if (typeof message === "string") {
@@ -339,7 +361,10 @@ async function getMessageText(
 	}
 	return message.content;
 }
-async function getJSON(fileJSON: string, textJSON: string): Promise<unknown> {
+async function getJSON(
+	fileJSON: string | null,
+	textJSON: string | null
+): Promise<unknown> {
 	if (textJSON) {
 		return JSON.parse(textJSON);
 	} else if (fileJSON) {
