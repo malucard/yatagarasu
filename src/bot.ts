@@ -42,7 +42,7 @@ const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
 	...securityCommands,
 ];
 
-client.on("ready", async () => {
+client.on("clientReady", async () => {
 	console.log(`Connected as ${client.user.tag}`);
 	const appcmds = await client.application.commands.fetch();
 	for (const command of cmds) {
@@ -130,6 +130,7 @@ async function resolveApplicationCommand(
 		| Discord.ChatInputCommandInteraction<Discord.CacheType>
 		| Discord.MessageContextMenuCommandInteraction<Discord.CacheType>
 		| Discord.UserContextMenuCommandInteraction<Discord.CacheType>
+		| Discord.PrimaryEntryPointCommandInteraction<Discord.CacheType>
 ) {
 	const command = cmds.find(cmd => cmd.name === interaction.commandName);
 	if (!command) {

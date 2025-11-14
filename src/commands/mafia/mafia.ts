@@ -296,7 +296,7 @@ export const cmds: MafiaCommand[] = [
 						? Object.keys(setups).map(setup => ({
 								name: `${setup} (${setups[setup][0]}) - ${setups[setup][1]}`,
 								value: setup,
-						  }))
+							}))
 						: undefined,
 			},
 		],

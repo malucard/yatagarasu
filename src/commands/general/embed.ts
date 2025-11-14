@@ -1,5 +1,4 @@
 import * as Discord from "discord.js";
-import axios from "axios";
 import {
 	CmdKind,
 	CombinedSlashCommand,
@@ -347,12 +346,8 @@ async function getJSON(fileJSON: string, textJSON: string): Promise<unknown> {
 		if (url.protocol !== "https:") {
 			throw Error("Invalid protocol");
 		}
-		const response = await axios({
-			method: "get",
-			url: url.href,
-			responseType: "json",
-		});
-		return response.data;
+		const res = await fetch(url);
+		return res.json();
 	}
 	return undefined;
 }
