@@ -1,0 +1,8 @@
+node_modules/
+dist/
+archive/
+.vscode/
+bot.js
+*.md
+*.ini
+tsconfig.json

@@ -86,7 +86,7 @@ function action_follow_up(
 			? to.reply(content)
 			: player.game.mafia_secret_chat.send(
 					`${player.member.toString()} ${content}`
-			  );
+				);
 	} else {
 		return to instanceof Discord.MessageReaction && to.message.editable
 			? to.message.edit(`${to.message.content}\n${content}`)
@@ -109,12 +109,12 @@ function request_action(
 	msg_txt += opt.yes_no
 		? `whether to ${verb} tonight.`
 		: can_cancel
-		? opt.mafia
-			? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to not do this.`
-			: `a player to ${verb} tonight, or ❌ to not do this.`
-		: opt.mafia
-		? `a player to ${verb} tonight with \`;${verb} <number>\`.`
-		: `a player to ${verb} tonight.`;
+			? opt.mafia
+				? `a player to ${verb} tonight with \`;${verb} <number>\`, or just \`;${verb}\` to not do this.`
+				: `a player to ${verb} tonight, or ❌ to not do this.`
+			: opt.mafia
+				? `a player to ${verb} tonight with \`;${verb} <number>\`.`
+				: `a player to ${verb} tonight.`;
 	if (opt.max_shots !== undefined) {
 		const left = opt.max_shots - ((player.data.shots_done as number) || 0);
 		msg_txt += ` You have ${left} use${
@@ -134,9 +134,13 @@ function request_action(
 	}
 	action_follow_up(player, opt.mafia, null, msg_txt).then(async req_msg => {
 		req_msg = await req_msg.fetch();
+		const channel = req_msg.channel;
+		if (!("createMessageCollector" in channel)) {
+			return;
+		}
 		let collector: Discord.ReactionCollector | Discord.MessageCollector;
 		if (opt.mafia) {
-			collector = req_msg.channel.createMessageCollector();
+			collector = channel.createMessageCollector();
 		} else {
 			if (opt.yes_no) {
 				await req_msg.react("✅");

@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"module": "commonjs",
 		"esModuleInterop": true,
-		"target": "es2017",
+		"target": "es2020",
 		"noImplicitAny": true,
 		"moduleResolution": "node",
 		"sourceMap": true,
@@ -10,7 +10,7 @@
 		"baseUrl": ".",
 		"skipLibCheck": true,
 		"lib": [
-			"es2017",
+			"es2020",
 			"DOM"
 		]
 	},

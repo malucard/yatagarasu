@@ -154,7 +154,7 @@ export const createLpCommands: CombinedSlashCommand[] = [
 				lper.id,
 				{
 					ViewChannel: true,
-					ManageMessages: true,
+					PinMessages: true,
 				},
 				{ type: Discord.OverwriteType.Member }
 			);

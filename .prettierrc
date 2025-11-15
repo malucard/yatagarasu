@@ -1,8 +1,7 @@
 {
-  "arrowParens": "avoid",
-  "endOfLine": "crlf",
-  "useTabs": true,
-  "tabWidth": 4,
-  "parser": "typescript",
-  "trailingComma": "es5"
+	"arrowParens": "avoid",
+	"endOfLine": "crlf",
+	"useTabs": true,
+	"tabWidth": 4,
+	"trailingComma": "es5"
 }

@@ -22,6 +22,7 @@ import {
 const client = new Discord.Client({
 	intents:
 		Discord.GatewayIntentBits.Guilds |
+		Discord.GatewayIntentBits.GuildMembers |
 		Discord.GatewayIntentBits.GuildMessages |
 		Discord.GatewayIntentBits.GuildMessageReactions |
 		Discord.GatewayIntentBits.DirectMessages |
@@ -42,12 +43,12 @@ const cmds: (CombinedApplicationCommand | mafia.MafiaCommand)[] = [
 	...securityCommands,
 ];
 
-client.on("ready", async () => {
+client.on("clientReady", async () => {
 	console.log(`Connected as ${client.user.tag}`);
 	const appcmds = await client.application.commands.fetch();
 	for (const command of cmds) {
 		const newcmdstr =
-			command.kind !== CmdKind.MESSAGE_CONTEXT
+			command.kind === CmdKind.SLASH
 				? command.options
 						?.map(opt => opt.name + opt.description + opt.type)
 						.join(", ")
@@ -130,6 +131,7 @@ async function resolveApplicationCommand(
 		| Discord.ChatInputCommandInteraction<Discord.CacheType>
 		| Discord.MessageContextMenuCommandInteraction<Discord.CacheType>
 		| Discord.UserContextMenuCommandInteraction<Discord.CacheType>
+		| Discord.PrimaryEntryPointCommandInteraction<Discord.CacheType>
 ) {
 	const command = cmds.find(cmd => cmd.name === interaction.commandName);
 	if (!command) {

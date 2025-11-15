@@ -14,6 +14,7 @@ const BOT_PERMS =
 	Discord.PermissionFlagsBits.ViewChannel |
 	Discord.PermissionFlagsBits.SendMessages |
 	Discord.PermissionFlagsBits.SendMessagesInThreads |
+	Discord.PermissionFlagsBits.PinMessages |
 	Discord.PermissionFlagsBits.ManageMessages;
 
 export const threadpinCommands: CombinedMessageContextCommand[] = [
