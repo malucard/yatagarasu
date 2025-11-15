@@ -6,46 +6,38 @@ import { CmdKind } from "../../utils/helpers";
 
 export const mizukithumbsup = "895512297169092729";
 
-export class MafiaCommandBase {
+export interface MafiaCommandBase {
 	name: string;
-	kind: CmdKind;
-	options?: Discord.ApplicationCommandOptionData[];
-	type?: number;
 }
 
-export class MafiaCommandTextOrSlash
-	extends MafiaCommandBase
-	implements Discord.ChatInputApplicationCommandData
-{
+export interface MafiaCommandTextOrSlash
+	extends MafiaCommandBase,
+		Discord.ChatInputApplicationCommandData {
 	description: string;
-	declare kind: CmdKind.TEXT_OR_SLASH;
+	kind: CmdKind.TEXT_OR_SLASH;
 	action: (
 		interaction: Discord.Message | Discord.ChatInputCommandInteraction,
 		args: string
 	) => Promise<void>;
 }
 
-export class MafiaCommandText extends MafiaCommandBase {
-	declare name: string;
-	declare kind: CmdKind.TEXT;
+export interface MafiaCommandText extends MafiaCommandBase {
+	kind: CmdKind.TEXT;
 	action: (message: Discord.Message, args: string) => Promise<void>;
 }
 
-export class MafiaCommandSlash
-	extends MafiaCommandBase
-	implements Discord.ChatInputApplicationCommandData
-{
+export interface MafiaCommandSlash
+	extends MafiaCommandBase,
+		Discord.ChatInputApplicationCommandData {
 	description: string;
-	declare kind: CmdKind.SLASH;
+	kind: CmdKind.SLASH;
 	action: (interaction: Discord.CommandInteraction) => Promise<void>;
 }
 
-export class MafiaCommandMessageContext
-	extends MafiaCommandBase
-	implements Discord.MessageApplicationCommandData
-{
-	declare type: Discord.ApplicationCommandType.Message;
-	declare kind: CmdKind.MESSAGE_CONTEXT;
+export interface MafiaCommandMessageContext
+	extends MafiaCommandBase,
+		Discord.MessageApplicationCommandData {
+	kind: CmdKind.MESSAGE_CONTEXT;
 	action: (
 		interaction: Discord.MessageContextMenuCommandInteraction
 	) => Promise<void>;
@@ -112,16 +104,19 @@ export const cmds: MafiaCommand[] = [
 			interaction: Discord.Message | Discord.ChatInputCommandInteraction
 		) => {
 			if (mafiaCommandChecks(interaction, true, true)) {
-				let reply: Discord.Message;
+				let reply: Discord.InteractionCallbackResponse;
 				if (interaction instanceof Discord.CommandInteraction) {
-					reply = (await interaction.deferReply({
-						fetchReply: true,
-					})) as Discord.Message;
+					reply = await interaction.deferReply({
+						withResponse: true,
+					});
 				}
 				const [role_mafia_player] = get_mafia_channel_data(
 					interaction.channel as Discord.TextChannel
 				);
-				const reply_opts = await signup_message(role_mafia_player);
+				const reply_opts = await signup_message(
+					role_mafia_player,
+					true
+				);
 				if (
 					reply &&
 					interaction instanceof Discord.CommandInteraction
@@ -443,7 +438,7 @@ export const buttons: {
 					.roles.add(role_mafia_player)
 					.catch(() => interaction.reply("Could not add role"));
 				await (interaction.message as Discord.Message).edit(
-					await signup_message(role_mafia_player)
+					await signup_message(role_mafia_player, true)
 				);
 			}
 		}
@@ -460,7 +455,7 @@ export const buttons: {
 					.roles.remove(role_mafia_player)
 					.catch(() => interaction.reply("Could not remove role"));
 				await (interaction.message as Discord.Message).edit(
-					await signup_message(role_mafia_player)
+					await signup_message(role_mafia_player, true)
 				);
 			}
 		}
@@ -489,7 +484,7 @@ export const buttons: {
 					member.roles.remove(role_mafia_player)
 				);
 				await (interaction.message as Discord.Message)
-					.edit(await signup_message(role_mafia_player))
+					.edit(await signup_message(role_mafia_player, true))
 					.catch(e => {
 						console.error(e);
 					});
@@ -544,8 +539,22 @@ function get_mafia_channel_data(
 	return [mafiaPlayerRole, mafiaSecretChatChannel];
 }
 
-async function player_list_embed(role_mafia_player: Discord.Role) {
-	const players = role_mafia_player.members;
+async function player_list_embed(
+	role_mafia_player: Discord.Role,
+	fetchAll: boolean
+) {
+	let players: Discord.Collection<string, Discord.GuildMember>;
+	if (fetchAll) {
+		const members = await role_mafia_player.guild.members.fetch({
+			withPresences: false,
+		});
+		players = members.filter(user =>
+			user.roles.cache.has(role_mafia_player.id)
+		);
+	} else {
+		players = role_mafia_player.members;
+	}
+
 	let playerList = "";
 	players.toJSON().forEach((player, index) => {
 		playerList += `${index + 1}: ${player.user.toString()}\n`;
@@ -556,7 +565,10 @@ async function player_list_embed(role_mafia_player: Discord.Role) {
 	};
 }
 
-async function signup_message(role_mafia_player: Discord.Role): Promise<{
+async function signup_message(
+	role_mafia_player: Discord.Role,
+	fetchAll = false
+): Promise<{
 	content: string;
 	components: (
 		| Discord.ActionRowBuilder<Discord.ButtonBuilder>
@@ -564,7 +576,7 @@ async function signup_message(role_mafia_player: Discord.Role): Promise<{
 	)[];
 	embeds: { title: string; description: string }[];
 }> {
-	const embed = await player_list_embed(role_mafia_player);
+	const embed = await player_list_embed(role_mafia_player, fetchAll);
 	const opts: Array<Discord.SelectMenuComponentOptionData> = [];
 	for (const [i, v] of Object.entries(setups)) {
 		opts.push({

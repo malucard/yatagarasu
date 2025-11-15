@@ -47,7 +47,7 @@ client.on("clientReady", async () => {
 	const appcmds = await client.application.commands.fetch();
 	for (const command of cmds) {
 		const newcmdstr =
-			command.kind !== CmdKind.MESSAGE_CONTEXT
+			command.kind === CmdKind.SLASH
 				? command.options
 						?.map(opt => opt.name + opt.description + opt.type)
 						.join(", ")
