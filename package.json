@@ -13,7 +13,7 @@
 		"npm": "10.2.4"
 	},
 	"dependencies": {
-		"discord.js": "^14.14.1",
+		"discord.js": "^14.24.2",
 		"typescript": "^5.2.2"
 	},
 	"devDependencies": {

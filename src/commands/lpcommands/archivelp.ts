@@ -100,7 +100,7 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 					permOverwrite =>
 						permOverwrite.type === Discord.OverwriteType.Member &&
 						permOverwrite.edit({
-							ManageMessages: null,
+							PinMessages: null,
 						})
 				);
 				move_channel(
@@ -253,7 +253,7 @@ export const archivelpCommands: CombinedSlashCommand[] = [
 				// set permissions for LPer, if doManage
 				if (doManage) {
 					await channel.permissionOverwrites.edit(LPer, {
-						ManageMessages: true,
+						PinMessages: true,
 						ViewChannel: true,
 					});
 					message.push(`${LPer.toString()} set as LPer`);
