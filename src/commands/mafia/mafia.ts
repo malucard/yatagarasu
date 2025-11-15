@@ -539,29 +539,63 @@ function get_mafia_channel_data(
 	return [mafiaPlayerRole, mafiaSecretChatChannel];
 }
 
-async function player_list_embed(
-	role_mafia_player: Discord.Role,
-	fetchAll: boolean
-) {
-	let players: Discord.Collection<string, Discord.GuildMember>;
-	if (fetchAll) {
-		const members = await role_mafia_player.guild.members.fetch({
-			withPresences: false,
-		});
-		players = members.filter(user =>
-			user.roles.cache.has(role_mafia_player.id)
-		);
-	} else {
-		players = role_mafia_player.members;
+const lastFetchAt = new Map<string, number>();
+const ongoingFetch = new Map<string, Promise<void>>();
+
+async function refreshMembersIfNeeded(guild: Discord.Guild, maxAgeMs = 60_000) {
+	const now = performance.now();
+	const key = guild.id;
+	const last = lastFetchAt.get(key) ?? -Infinity;
+
+	// If a fetch is already ongoing, await it
+	if (ongoingFetch.has(key)) {
+		await ongoingFetch.get(key);
+		return;
 	}
 
-	let playerList = "";
-	players.toJSON().forEach((player, index) => {
-		playerList += `${index + 1}: ${player.user.toString()}\n`;
-	});
+	if (now - last <= maxAgeMs) return; // still fresh
+
+	const p = (async () => {
+		try {
+			lastFetchAt.set(key, performance.now()); // optimistic set so others don't stampede
+			await guild.members.fetch({ withPresences: false });
+		} catch (err) {
+			// on error, roll back the timestamp so we retry sooner
+			lastFetchAt.delete(key);
+			throw err;
+		} finally {
+			ongoingFetch.delete(key);
+		}
+	})();
+
+	ongoingFetch.set(key, p);
+	await p;
+}
+
+async function player_list_embed(role: Discord.Role, fetchAll = false) {
+	if (fetchAll) {
+		try {
+			await refreshMembersIfNeeded(role.guild);
+		} catch (err) {
+			console.warn(
+				"Failed to refresh members, falling back to cache:",
+				err
+			);
+		}
+	}
+
+	const players = role.guild.members.cache.filter(m =>
+		m.roles.cache.has(role.id)
+	);
+
+	const playerList = players
+		.map(p => p.user)
+		.map((u, i) => `${i + 1}: ${u}`)
+		.join("\n");
+
 	return {
 		title: "Signed up players",
-		description: playerList,
+		description: playerList || "No players signed up.",
 	};
 }
 
