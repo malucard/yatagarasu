@@ -33,13 +33,14 @@ export type CombinedApplicationCommand =
 	| CombinedSlashCommand
 	| CombinedMessageContextCommand;
 
-const hiddenReplyContent = (
-	message: string
-): Discord.InteractionReplyOptions => ({ content: message, ephemeral: true });
 export const hiddenReply = (
 	interaction: Discord.CommandInteraction,
 	message: string
-) => interaction.reply(hiddenReplyContent(message));
+) =>
+	interaction.reply({
+		content: message,
+		flags: Discord.MessageFlags.Ephemeral,
+	});
 
 /**
  * Moves channels
