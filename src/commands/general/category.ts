@@ -38,6 +38,20 @@ export const categoryCommands: CombinedSlashCommand[] = [
 					},
 				],
 			},
+			{
+				name: "lp-list",
+				description: "Creates an lp-list message for the category",
+				type: Discord.ApplicationCommandOptionType.Subcommand,
+				options: [
+					{
+						name: "category",
+						description: "Category to check",
+						type: Discord.ApplicationCommandOptionType.Channel,
+						channelTypes: [Discord.ChannelType.GuildCategory],
+						required: true,
+					},
+				],
+			},
 		],
 		action: async (interaction: Discord.ChatInputCommandInteraction) => {
 			const user = interaction.user;
@@ -55,8 +69,10 @@ export const categoryCommands: CombinedSlashCommand[] = [
 			const subcommand = interaction.options.getSubcommand(true);
 			switch (subcommand) {
 				case "list":
-					await handleList(interaction, guild, member);
-					return;
+          await handleList(interaction, guild, member, false);
+          return;
+        case "lp-list":
+          await handleList(interaction, guild, member, true);
 			}
 		},
 	},
@@ -65,7 +81,8 @@ export const categoryCommands: CombinedSlashCommand[] = [
 async function handleList(
 	interaction: Discord.ChatInputCommandInteraction,
 	guild: Discord.Guild,
-	member: Discord.GuildMember
+  member: Discord.GuildMember,
+	isLpList: boolean
 ): Promise<void> {
 	const channel = interaction.channel;
 	const category = interaction.options.getChannel("category", true, [
@@ -90,11 +107,24 @@ async function handleList(
 	let index = 0;
 	const list: Array<string> = children.cache
 		.sort((a, b) => a.rawPosition - b.rawPosition)
+		.filter(child => !isLpList || child.name !== "lp-list")
 		.map(child => {
 			index++;
 			return `${index}: ${child.toString()} - (${child.name})`;
 		});
-	list.unshift(`Total Channels: ${children.cache.size}`);
+
+	if (list.length === 0) {
+		hiddenReply(interaction, "There are no channels in this category.");
+		return;
+	}
+	isLpList
+		? list.unshift(`List of LPs:`)
+		: list.unshift(`Total Channels: ${children.cache.size}`);
+	isLpList &&
+		list.push(
+			"If you would like to get access to one you don't have the role for, please let us know.",
+			"(this channel will also contain temporary LP announcements)"
+		);
 	const messageSize = 1500;
 	await slicedReply(interaction, list, messageSize, "\n");
 }
