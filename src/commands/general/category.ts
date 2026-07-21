@@ -112,6 +112,11 @@ async function handleList(
 			index++;
 			return `${index}: ${child.toString()} - (${child.name})`;
 		});
+
+	if (list.length === 0) {
+		hiddenReply(interaction, "There are no channels in this category.");
+		return;
+	}
 	isLpList
 		? list.unshift(`List of LPs:`)
 		: list.unshift(`Total Channels: ${children.cache.size}`);
