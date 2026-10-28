@@ -108,7 +108,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
 	if (
 		reaction.message.id == "1224789493899591771" &&
 		reaction.message.channel.isTextBased()
-	) {
+	) { // trinity-fiction
 		if (user.partial) {
 			user = await user.fetch();
 		}
@@ -117,12 +117,30 @@ client.on("messageReactionAdd", async (reaction, user) => {
 	} else if (
 		reaction.message.id == "1224789666725761084" &&
 		reaction.message.channel.isTextBased()
-	) {
+	) { // mystery-fiction
 		if (user.partial) {
 			user = await user.fetch();
 		}
 		const member = await reaction.message.guild.members.resolve(user.id);
 		await member.roles.add("1224753960179728445", "instant death button");
+	} else if (
+		reaction.message.id == "1565042912117530695" &&
+		reaction.message.channel.isTextBased()
+	) { // humanbrew
+		if (user.partial) {
+			user = await user.fetch();
+		}
+		const member = await reaction.message.guild.members.resolve(user.id);
+		await member.roles.add("1565041004061393007", "instant death button");
+	} else if (
+		reaction.message.id == "1526426905308299377" &&
+		reaction.message.channel.isTextBased()
+	) { // psiliberator
+		if (user.partial) {
+			user = await user.fetch();
+		}
+		const member = await reaction.message.guild.members.resolve(user.id);
+		await member.roles.add("1526424784261480481", "instant death button");
 	}
 });
 
