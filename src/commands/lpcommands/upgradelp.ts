@@ -40,6 +40,7 @@ const roleLP_Map: { [key: string]: string[] } = {
 	"PL-all": ["-pl-ls-", "-pl-ed-", "-pl-mm-", "-pl-al-", "-lmj-"],
 	DR3: ["-dr-udg-", "-dr3-"],
 	Infinity: ["-n7-", "-e17-", "-r11-", "-12r-"],
+	ofTheDevil: ["of-the-devil-ep0", "of-the-devil-ep1", "of-the-devil-ep2", "of-the-devil-ep3"],
 };
 
 const USER_PERMS =
